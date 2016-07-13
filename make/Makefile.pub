@@ -1,0 +1,59 @@
+# Makefile.pub
+#
+# ding.lixing@gmail.com
+#
+# public make rules
+# user should not modify anything there
+
+
+include Makefile
+
+# Marco build_obj_rule
+# param ${1}: source file
+# param ${2}: compile tool
+# param ${3}: program or library name
+define build_obj_rule
+${1:%.c=%.o}: ${1}
+	${2} ${${3}_CPPFLAGS} ${${3}_CFLAGS} -c $$< -o $$@
+endef
+
+# Marco build_prog_rule
+# param ${1}: program name
+define build_prog_rule
+${1}_CFLAGS += ${CFLAGS}
+${1}_CPPFLAGS += ${CPPFLAGS}
+${1}_LDFLAGS += ${LDFLAGS}
+${1}_OBJS = ${${1}_SRCS:%.c=%.o}
+${1}: $${${1}_OBJS}
+	${LD} -o $$@ $${${1}_OBJS} $${${1}_LDFLAGS}
+endef
+
+# Marco build_lib_rule
+# param ${1}: library name
+define build_lib_rule
+${1}_CFLAGS += ${CFLAGS}
+${1}_CPPFLAGS += ${CPPFLAGS}
+${1}_OBJS = ${${1}_SRCS:%.c=%.o}
+${1}: $${${1}_OBJS}
+	${AR} rcs lib${1}.a $${${1}_OBJS}
+
+$(foreach src,${{1}_SRCS},$(eval $(call build_obj_rule,${src},${CC},${1})))
+endef
+
+all: bin lib
+
+bin: ${bin_NAMES}
+
+lib: ${lib_NAMES}
+
+$(foreach prog,${bin_NAMES},$(eval $(call build_prog_rule,${prog})))
+
+$(foreach lib,${lib_NAMES},$(eval $(call build_lib_rule,${lib})))
+
+
+.PHONY: clean bin lib all
+
+clean:
+	@${RM} ${bin_NAMES} $(foreach bin,${bin_NAMES},$(call ${bin}_OBJS))
+	@${RM} ${lib_NAMES:%=lib%.a} $(foreach lib,${lib_NAMES},$(call ${lib}_OBJS))
+
