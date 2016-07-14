@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "lex.h"
-
+/*
 enum OP_CODE {
     OP_EQ,          // ==
     OP_NE,          // !=
@@ -32,6 +32,7 @@ enum OP_CODE {
     OP_LAND,        // &&
     OP_LOR,         // ||
 };
+*/
 
 enum EXPR_TYPE {
     // factor expression
@@ -42,6 +43,7 @@ enum EXPR_TYPE {
     EXPR_NULL,
     EXPR_TRUE,
     EXPR_FALSE,
+    EXPR_FUNCPROC,
     EXPR_STRING,
 
     // unary expression
@@ -84,16 +86,41 @@ enum EXPR_TYPE {
     EXPR_ELEM,
     EXPR_CALL,
 
+    EXPR_FUNCHEAD,
+    EXPR_FUNCDEF,
     EXPR_PAIR,
     EXPR_TERNARY,
 };
+
+enum STMT_TYPE {
+    STMT_EXPR,
+    STMT_IF,
+    STMT_VAR,
+    STMT_RET,
+    STMT_WHILE,
+    STMT_BREAK,
+    STMT_CONTINUE,
+    STMT_PASS,
+};
+
+struct expr_t;
+typedef struct stmt_t {
+    int type;
+
+    struct expr_t *expr;
+    struct stmt_t *block;
+    struct stmt_t *ext;
+
+    struct stmt_t *next;
+} stmt_t;
 
 typedef struct expr_t {
     int type;
     union {
         union {
-            char *str;
-            int num;
+            char   *str;
+            int     num;
+            stmt_t *proc;
         } data;
         struct {
             struct expr_t *lft;
@@ -102,16 +129,18 @@ typedef struct expr_t {
     } body;
 } expr_t;
 
-typedef struct stmt_t {
-    int type;
-} stmt_t;
-
-static inline expr_t *ast_expr_alloc(void) {
-    return (expr_t *) calloc(1, sizeof(expr_t));
-}
-
 expr_t *ast_expr_alloc_str(int type, const char *text);
 expr_t *ast_expr_alloc_num(int type, const char *text);
+static inline expr_t *ast_expr_alloc_proc(stmt_t * s) {
+    expr_t *e = (expr_t *) calloc(1, sizeof(expr_t));
+
+    if (e) {
+        e->type = EXPR_FUNCPROC;
+        e->body.data.proc = s;
+    }
+
+    return e;
+}
 static inline expr_t *ast_expr_alloc_type(int type) {
     expr_t *e = (expr_t *) calloc(1, sizeof(expr_t));
 
@@ -121,7 +150,7 @@ static inline expr_t *ast_expr_alloc_type(int type) {
     return e;
 }
 
-void ast_expr_relase(expr_t *e);
+void ast_expr_release(expr_t *e);
 
 static inline const char * ast_expr_text(expr_t *e) {
     return e->body.data.str;
@@ -129,6 +158,10 @@ static inline const char * ast_expr_text(expr_t *e) {
 
 static inline int ast_expr_num(expr_t *e) {
     return e->body.data.num;
+}
+
+static inline stmt_t * ast_expr_stmt(expr_t *e) {
+    return e->body.data.proc;
 }
 
 static inline int ast_expr_type(expr_t *e) {
@@ -151,13 +184,54 @@ static inline void ast_expr_set_rht(expr_t *e, expr_t *rht) {
     e->body.child.rht = rht;
 }
 
-static inline int ast_expr_set_id(expr_t *e, token_t *tok) {
-    e->type = EXPR_ID;
-    e->body.data.str = strdup(tok->text);
-    return e->body.data.str ? 0 : 1;
+void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *user_data);
+
+static inline stmt_t *ast_stmt_alloc_0(int type) {
+    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
+
+    if (s)
+        s->type = type;
+
+    return s;
 }
 
-void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *user_data);
+static inline stmt_t *ast_stmt_alloc_1(int t, expr_t *e) {
+    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
+
+    if (s) {
+        s->type = t;
+        s->expr = e;
+    }
+
+    return s;
+}
+
+static inline stmt_t *ast_stmt_alloc_2(int t, expr_t *e, stmt_t *block) {
+    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
+
+    if (s) {
+        s->type = t;
+        s->expr = e;
+        s->block = block;
+    }
+
+    return s;
+}
+
+static inline stmt_t *ast_stmt_alloc_3(int t, expr_t *e, stmt_t *block, stmt_t *ext) {
+    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
+
+    if (s) {
+        s->type = t;
+        s->expr = e;
+        s->block = block;
+        s->ext = ext;
+    }
+
+    return s;
+}
+
+void ast_stmt_release(stmt_t *s);
 
 #endif /* __LANG_AST_INC__ */
 

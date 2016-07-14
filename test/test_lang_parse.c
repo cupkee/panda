@@ -14,6 +14,7 @@
 #define R_ ast_expr_rht
 #define TEXT ast_expr_text
 #define NUMBER ast_expr_num
+#define STMT ast_expr_stmt
 
 static int test_setup()
 {
@@ -43,48 +44,48 @@ static void test_expr_factor(void)
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TRUE);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FALSE);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_UND);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NULL);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NAN);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_STRING && !strcmp("null", TEXT(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ID && !strcmp("hello", TEXT(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NUM && NUMBER(expr) == 12345);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_COMMA);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_((expr)))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_((expr)))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
@@ -95,7 +96,7 @@ static void test_expr_factor(void)
     CU_ASSERT(R_(L_(L_(expr))) && ast_expr_type(R_(L_(L_((expr))))) == EXPR_NUM && 1 == NUMBER(R_(L_(L_(expr)))));
     CU_ASSERT(L_(R_(L_(expr))) && ast_expr_type(L_(R_(L_((expr))))) == EXPR_ID && !strcmp("b", TEXT(L_(R_(L_(expr))))));
     CU_ASSERT(R_(R_(L_(expr))) && ast_expr_type(R_(R_(L_((expr))))) == EXPR_NUM && 2 == NUMBER(R_(R_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_primary(void)
@@ -116,7 +117,7 @@ static void test_expr_primary(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_ATTR);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ATTR);
@@ -124,13 +125,13 @@ static void test_expr_primary(void)
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ATTR);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ELEM);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ELEM);
@@ -138,13 +139,13 @@ static void test_expr_primary(void)
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ELEM);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
@@ -152,7 +153,7 @@ static void test_expr_primary(void)
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_CALL);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     // f(a)[b].c[d](e)
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
@@ -167,7 +168,7 @@ static void test_expr_primary(void)
     CU_ASSERT(L_(L_(L_(L_(expr)))) && ast_expr_type(L_(L_(L_(L_(expr))))) == EXPR_CALL);
     CU_ASSERT(R_(L_(L_(L_(L_(expr))))) && ast_expr_type(R_(L_(L_(L_(L_(expr)))))) == EXPR_ID && !strcmp("a", TEXT(R_(L_(L_(L_(L_(expr))))))));
     CU_ASSERT(L_(L_(L_(L_(L_(expr))))) && ast_expr_type(L_(L_(L_(L_(L_(expr)))))) == EXPR_ID && !strcmp("f", TEXT(L_(L_(L_(L_(L_(expr))))))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_unary(void)
@@ -184,24 +185,24 @@ static void test_expr_unary(void)
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_MINUS);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NEGATE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("b", TEXT(L_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("c", TEXT(L_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NOT);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID
                 && !strcmp("d", TEXT(L_(L_(expr)))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_mul(void)
@@ -219,19 +220,19 @@ static void test_expr_mul(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_MUL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DIV);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_MOD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("c", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_add(void)
@@ -249,13 +250,13 @@ static void test_expr_add(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_SUB);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_SUB);
@@ -266,7 +267,7 @@ static void test_expr_add(void)
     CU_ASSERT(R_(L_(expr)) && NUMBER(R_(L_(expr))) == 1);
     CU_ASSERT(L_(R_(expr)) && NUMBER(L_(R_(expr))) == 2);
     CU_ASSERT(R_(R_(expr)) && 0 == strcmp(TEXT(R_(R_(expr))), "f"));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_shift(void)
@@ -284,13 +285,13 @@ static void test_expr_shift(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 1 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_RSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT);
@@ -298,7 +299,7 @@ static void test_expr_shift(void)
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ADD);
     CU_ASSERT(L_(R_(expr)) && NUMBER(L_(R_(expr))) == 1);
     CU_ASSERT(R_(R_(expr)) && NUMBER(R_(R_(expr))) == 2);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_RSHIFT);
@@ -306,7 +307,7 @@ static void test_expr_shift(void)
     CU_ASSERT(L_(L_(expr)) && NUMBER(L_(L_(expr))) == 1);
     CU_ASSERT(R_(L_(expr)) && NUMBER(R_(L_(expr))) == 2);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && NUMBER(R_(expr)) == 1);
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_test(void)
@@ -324,43 +325,43 @@ static void test_expr_test(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_TGT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 1 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TLT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 2 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TGE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 3 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 3 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TLE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 4 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 4 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TNE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 5 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 5 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TEQ);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 6 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 6 == NUMBER(R_(expr)));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TIN);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_logic(void)
@@ -387,7 +388,7 @@ static void test_expr_logic(void)
     CU_ASSERT(R_(R_(expr)) && ast_expr_type(R_(R_(expr))) == EXPR_ID);
     CU_ASSERT(R_(R_(expr)) && 0 == strcmp(TEXT(R_(R_(expr))), "d"));
 
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_ternary(void)
@@ -412,7 +413,7 @@ static void test_expr_ternary(void)
     CU_ASSERT(R_(R_(expr)) && ast_expr_type(R_(R_(expr))) == EXPR_ID);
     CU_ASSERT(R_(R_(expr)) && 0 == strcmp(TEXT(R_(R_(expr))), "c"));
 
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_assign(void)
@@ -437,7 +438,7 @@ static void test_expr_assign(void)
     CU_ASSERT(R_(R_(expr)) && ast_expr_type(R_(R_(expr))) == EXPR_ID);
     CU_ASSERT(R_(R_(expr)) && 0 == strcmp(TEXT(R_(R_(expr))), "c"));
 
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
 }
 
 static void test_expr_comma(void)
@@ -462,7 +463,141 @@ static void test_expr_comma(void)
     CU_ASSERT(R_(R_(expr)) && ast_expr_type(R_(R_(expr))) == EXPR_ID);
     CU_ASSERT(R_(R_(expr)) && 0 == strcmp(TEXT(R_(R_(expr))), "c"));
 
-    ast_expr_relase(expr);
+    ast_expr_release(expr);
+}
+
+static void test_expr_funcdef(void)
+{
+    lexer_t  lex_st;
+    intptr_t lex;
+    expr_t   *expr;
+
+    test_clr_line();
+    test_set_line("def (x) return x + b\n");
+    test_set_line("def f() {x = x + 1 return x * 2}\n");
+    test_set_line("def () 100\n");
+    test_set_line("def f(x) {x = x + 1; return x * 2}\n");
+    test_set_line("def () {}\n");
+
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+    CU_ASSERT(!L_(L_(expr)));
+    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID);
+    CU_ASSERT(!R_(L_(expr)));
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(!L_(expr));
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID);
+    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID);
+    CU_ASSERT(STMT(R_(expr)) && STMT(R_(expr))->next);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(!L_(expr));
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+    ast_expr_release(expr);
+}
+
+static void test_stmt_simple(void)
+{
+    lexer_t  lex_st;
+    intptr_t lex;
+    stmt_t   *stmt;
+
+    test_clr_line();
+    test_set_line("a + b;\n");
+    test_set_line("a - b\n");
+    test_set_line("break\n");
+    test_set_line("continue\n");
+    test_set_line("var a = 1, b = c = 0\n");
+    test_set_line("return a + b\n");
+    test_set_line("return;\n");
+
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    // expression
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_EXPR);
+    CU_ASSERT(stmt->expr->type == EXPR_ADD);
+    ast_stmt_release(stmt);
+
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_EXPR);
+    CU_ASSERT(stmt->expr->type == EXPR_SUB);
+    ast_stmt_release(stmt);
+
+    // break
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_BREAK);
+    CU_ASSERT(!stmt->expr);
+    ast_stmt_release(stmt);
+
+    // continue
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_CONTINUE);
+    CU_ASSERT(!stmt->expr);
+    ast_stmt_release(stmt);
+
+    // var
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_VAR);
+    CU_ASSERT(stmt->expr->type == EXPR_COMMA);
+    ast_stmt_release(stmt);
+
+    // return
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_RET);
+    CU_ASSERT(stmt->expr->type == EXPR_ADD);
+    ast_stmt_release(stmt);
+
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_RET);
+    CU_ASSERT(!stmt->expr);
+    ast_stmt_release(stmt);
+}
+
+static void test_stmt_if(void)
+{
+    lexer_t  lex_st;
+    intptr_t lex;
+    stmt_t   *stmt;
+
+    test_clr_line();
+    test_set_line("if (a + b)\n");
+    test_set_line("   a = a - b\n");
+    test_set_line("else {\n");
+    test_set_line("   a = b - a\n");
+    test_set_line("   a = b - a\n");
+    test_set_line("}\n");
+
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    // expression
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_IF);
+    CU_ASSERT(stmt->expr->type == EXPR_ADD);
+    ast_stmt_release(stmt);
 }
 
 CU_pSuite test_lang_parse_entry()
@@ -481,6 +616,9 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse expression ternary",  test_expr_ternary);
         CU_add_test(suite, "parse expression assign",   test_expr_assign);
         CU_add_test(suite, "parse expression comma",    test_expr_comma);
+        CU_add_test(suite, "parse expression funcdef",  test_expr_funcdef);
+        CU_add_test(suite, "parse statements simple",   test_stmt_simple);
+        CU_add_test(suite, "parse statements if ",      test_stmt_if);
     }
 
     return suite;

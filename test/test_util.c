@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lang/ast.h"
+#include "test_util.h"
 
 static const char *lines[256];
 static int max = 0;
@@ -59,44 +59,63 @@ static void expr_stringify(void *u, expr_t *e)
         b->buf[b->pos++] = ' ';
     }
 
-    switch(e->type) {
-    case EXPR_NEGATE:
-        b->buf[b->pos++] = '~'; break;
-    case EXPR_MINUS:
-    case EXPR_SUB:
-        b->buf[b->pos++] = '-'; break;
-    case EXPR_MUL:
-        b->buf[b->pos++] = '*'; break;
-    case EXPR_DIV:
-        b->buf[b->pos++] = '/'; break;
-    case EXPR_MOD:
-        b->buf[b->pos++] = '%'; break;
-    case EXPR_ADD:
-        b->buf[b->pos++] = '+'; break;
-    case EXPR_UND:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "undefined"); break;
-    case EXPR_NULL:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "null"); break;
-    case EXPR_NAN:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "NaN"); break;
-    case EXPR_NUM:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%d", ast_expr_num(e)); break;
-    case EXPR_TRUE:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "true"); break;
-    case EXPR_FALSE:
-        b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "false"); break;
-    case EXPR_STRING:
-    case EXPR_ID:
-        // no break;
-    default:
-        b->buf[b->pos++] = '?'; break;
-        b->buf[b->pos++] = '?'; break;
+    switch (e->type) {
+        case EXPR_ID:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", ast_expr_text(e)); break;
+        case EXPR_NUM:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%d", ast_expr_num(e)); break;
+        case EXPR_NAN:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "NaN"); break;
+        case EXPR_UND:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "undefined"); break;
+        case EXPR_NULL:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "null"); break;
+        case EXPR_TRUE:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "true"); break;
+        case EXPR_FALSE:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "%s", "false"); break;
+        case EXPR_STRING:
+            b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "'%s'", ast_expr_text(e)); break;
+        // unary expression
+        case EXPR_MINUS: b->buf[b->pos++] = '-'; break;
+        case EXPR_NEGATE: b->buf[b->pos++] = '~'; break;
+        case EXPR_NOT: b->buf[b->pos++] = '!'; break;
+        case EXPR_ARRAY: b->buf[b->pos++] = '['; break;
+        case EXPR_DICT: b->buf[b->pos++] = '{'; break;
+        // binary expression
+        case EXPR_MUL: b->buf[b->pos++] = '*'; break;
+        case EXPR_DIV: b->buf[b->pos++] = '/'; break;
+        case EXPR_MOD: b->buf[b->pos++] = '%'; break;
+        case EXPR_ADD: b->buf[b->pos++] = '+'; break;
+        case EXPR_SUB: b->buf[b->pos++] = '-'; break;
+        case EXPR_LSHIFT: b->buf[b->pos++] = '<'; b->buf[b->pos++] = '<'; break;
+        case EXPR_RSHIFT: b->buf[b->pos++] = '>'; b->buf[b->pos++] = '>'; break;
+        case EXPR_AAND: b->buf[b->pos++] = '&'; break;
+        case EXPR_AOR: b->buf[b->pos++] = '|'; break;
+        case EXPR_AXOR: b->buf[b->pos++] = '^'; break;
+        case EXPR_TNE: b->buf[b->pos++] = '!'; b->buf[b->pos++] = '='; break;
+        case EXPR_TEQ: b->buf[b->pos++] = '='; b->buf[b->pos++] = '='; break;
+        case EXPR_TGT: b->buf[b->pos++] = '>'; break;
+        case EXPR_TGE: b->buf[b->pos++] = '>'; b->buf[b->pos++] = '='; break;
+        case EXPR_TLT: b->buf[b->pos++] = '<'; break;
+        case EXPR_TLE: b->buf[b->pos++] = '<'; b->buf[b->pos++] = '='; break;
+        case EXPR_TIN: b->buf[b->pos++] = 'i'; b->buf[b->pos++] = 'n'; break;
+        case EXPR_LAND: b->buf[b->pos++] = '&'; b->buf[b->pos++] = '&'; break;
+        case EXPR_LOR:  b->buf[b->pos++] = '|'; b->buf[b->pos++] = '|'; break;
+        case EXPR_ASSIGN: b->buf[b->pos++] = '='; break;
+        case EXPR_COMMA: b->buf[b->pos++] = ','; break;
+        case EXPR_ATTR: b->buf[b->pos++] = '.'; break;
+        case EXPR_ELEM: b->buf[b->pos++] = '['; b->buf[b->pos++] = ']'; break;
+        case EXPR_CALL: b->buf[b->pos++] = '('; break;
+        case EXPR_PAIR: b->buf[b->pos++] = ':'; break;
+        case EXPR_TERNARY: b->buf[b->pos++] = '?'; break;
+        default: b->buf[b->pos++] = '#'; break;
     }
 
     b->buf[b->pos] = 0;
 }
 
-char *expr_stringify_after_older(expr_t *e, int size, char *buf)
+char * expr_stringify_after_older(expr_t *e, int size, char *buf)
 {
     struct sbuf_t sbuf;
 
