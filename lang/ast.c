@@ -71,7 +71,7 @@ void ast_stmt_release(stmt_t *s)
 
         if (s->expr)  ast_expr_release(s->expr);
         if (s->block) ast_stmt_release(s->block);
-        if (s->ext)   ast_stmt_release(s->ext);
+        if (s->other) ast_stmt_release(s->other);
 
         free(s);
         s = next;

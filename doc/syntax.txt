@@ -1,0 +1,67 @@
+# miniJS syntax
+
+# expression syntax
+factor ::= id | number | string | 'true' | 'false' | 'und' | enclosure | funcdef
+  enclosure ::= parenth_form | array_form | dict_form
+    parenth_form :: '(' expr ')'
+    array_form ::= '[' [ expr ] ']'
+    dict_form ::= '{' [ kv_list ] '}'
+      kv_list ::= kv ( ',' kv )*
+      kv ::= (id | string) ':' expr
+  funcdef ::= 'def' [ id ] '(' [ vardef_list ] ')' ('{' stmt* '}' | stmt)
+	  vardef_list ::= vardef [ ',' vardef ]*
+      vardef ::= id [ '=' expr ]
+
+primary ::= factor | attr_form | elem_form | call_form
+  attr_form ::= primary | attr_form '.' id
+  elem_form ::= primary | elem_form '[' ternary ']'
+  call_form ::= primary | call_form '(' comma ')'
+
+# unary  ::= primary | ( '-' |'~' ) unary | 'new' funcall
+unary  ::= primary | ( '-' | '~' | '!') unary
+
+m_expr ::= u_expr | m_expr '*' u_expr | m_expr '/' u_expr | m_expr '%' u_expr
+a_expr ::= m_expr | a_expr '+' m_expr | a_expr '-' m_expr
+shift_expr ::= a_expr | shift_expr ( '>>' | '<<' ) a_expr
+
+# and_expr ::= shift_expr | and_expr '&' shift_expr
+# xor_expr ::= and_expr | xor_expr '^' and_expr
+# or_expr  ::= xor_expr | or_expr '|' xor_expr
+aand_expr ::= shift_expr | aand_expr ( '&' | '^' | '|' ) shift_expr
+
+test ::= aand_expr ( '>' | '<' | '>=' | '<=' | '==' | '!=' | 'in' ) aand_expr
+
+# not_test ::= comparison [ '!' not_test ]
+and_test ::= test [ '&&' and_test ] # right with
+or_test  ::= test [ '||' or_test ]  # right with
+
+ternary ::= or_test [ '?' pair ]
+  pair ::= ternary ':' ternary
+
+assign ::= ternary [ '=' assign]    # right with
+comma   ::= assign [ ',' comma ]	# right with
+
+expr ::= comma
+
+# statement syntax
+statement :: simp_stmt | comp_stmt
+simp_stmt :: expr_stmt | del_stmt | var_stmt | ret_stmt | break_stmt | continue_stmt | pass_stmt
+comp_stmt :: if_stmt | while_stmt | for_stmt
+
+pass_stmt :: ';' |  # empty statement
+expr_stmt :: expr [ ';' ]
+del_stmt :: 'del' expr [ ';' ]
+var_stmt :: 'var' vardef_list [ ';' ]
+ret_stmt :: 'return' [ expr ] [ ';' ]
+break_stmt :: 'break' [ ';' ]
+continue_stmt :: 'continue' [ ';' ]
+
+if_stmt :: 'if' expr block
+           [ 'else' block ]
+    block: statement | '{' statement*'}'
+
+while_stmt :: 'while' expr block
+
+# First
+stmt_list :: statement*
+

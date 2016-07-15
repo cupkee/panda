@@ -109,7 +109,7 @@ typedef struct stmt_t {
 
     struct expr_t *expr;
     struct stmt_t *block;
-    struct stmt_t *ext;
+    struct stmt_t *other;
 
     struct stmt_t *next;
 } stmt_t;
@@ -218,14 +218,14 @@ static inline stmt_t *ast_stmt_alloc_2(int t, expr_t *e, stmt_t *block) {
     return s;
 }
 
-static inline stmt_t *ast_stmt_alloc_3(int t, expr_t *e, stmt_t *block, stmt_t *ext) {
+static inline stmt_t *ast_stmt_alloc_3(int t, expr_t *e, stmt_t *block, stmt_t *other) {
     stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
 
     if (s) {
         s->type = t;
         s->expr = e;
         s->block = block;
-        s->ext = ext;
+        s->other = other;
     }
 
     return s;

@@ -588,7 +588,7 @@ static void test_stmt_if(void)
     test_set_line("   a = a - b\n");
     test_set_line("else {\n");
     test_set_line("   a = b - a\n");
-    test_set_line("   a = b - a\n");
+    test_set_line("   b = b - a\n");
     test_set_line("}\n");
 
     CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
@@ -597,6 +597,29 @@ static void test_stmt_if(void)
     CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
     CU_ASSERT(stmt->type == STMT_IF);
     CU_ASSERT(stmt->expr->type == EXPR_ADD);
+    CU_ASSERT(stmt->block != NULL);
+    CU_ASSERT(stmt->other != NULL);
+    ast_stmt_release(stmt);
+}
+
+static void test_stmt_while(void)
+{
+    lexer_t  lex_st;
+    intptr_t lex;
+    stmt_t   *stmt;
+
+    test_clr_line();
+    test_set_line("while (a > b) {\n");
+    test_set_line("   a = a - 1\n");
+    test_set_line("   b = b + 1\n");
+    test_set_line("}\n");
+
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    // expression
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(lex, NULL, NULL)));
+    CU_ASSERT(stmt->type == STMT_WHILE);
+    CU_ASSERT(stmt->expr->type == EXPR_TGT);
     ast_stmt_release(stmt);
 }
 
@@ -617,8 +640,10 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse expression assign",   test_expr_assign);
         CU_add_test(suite, "parse expression comma",    test_expr_comma);
         CU_add_test(suite, "parse expression funcdef",  test_expr_funcdef);
+
         CU_add_test(suite, "parse statements simple",   test_stmt_simple);
-        CU_add_test(suite, "parse statements if ",      test_stmt_if);
+        CU_add_test(suite, "parse statements if",       test_stmt_if);
+        CU_add_test(suite, "parse statements while",    test_stmt_while);
     }
 
     return suite;

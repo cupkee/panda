@@ -598,9 +598,9 @@ static stmt_t *parse_stmt_if(intptr_t lex, void (*cb)(void *, parse_event_t *), 
     }
 
     if (other) {
-        s = ast_stmt_alloc_2(STMT_IF, cond, block);
-    } else {
         s = ast_stmt_alloc_3(STMT_IF, cond, block, other);
+    } else {
+        s = ast_stmt_alloc_2(STMT_IF, cond, block);
     }
 
     if (!s) {
@@ -644,7 +644,28 @@ static stmt_t *parse_stmt_ret(intptr_t lex, void (*cb)(void *, parse_event_t *),
 
 static stmt_t *parse_stmt_while(intptr_t lex, void (*cb)(void *, parse_event_t *), void *user_data)
 {
-    return NULL;
+    expr_t *cond = NULL;
+    stmt_t *block = NULL;
+    stmt_t *s;
+
+    lex_match(lex, TOK_WHILE);
+
+    if (!(cond = parse_expr(lex, cb, user_data))) {
+        return NULL;
+    }
+
+    if (!(block = parse_stmt_block(lex, cb, user_data))) {
+        ast_expr_release(cond);
+        return NULL;
+    }
+
+    s = ast_stmt_alloc_2(STMT_WHILE, cond, block);
+    if (!s) {
+        ast_expr_release(cond);
+        ast_stmt_release(block);
+    }
+
+    return s;
 }
 
 static stmt_t *parse_stmt_break(intptr_t lex, void (*cb)(void *, parse_event_t *), void *user_data)
