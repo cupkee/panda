@@ -8,6 +8,7 @@ test_SRCS = test.c \
             test_esbl_vect.c \
             test_esbl_htbl.c \
 			test_lang_lex.c  \
+			test_lang_val.c  \
 			test_lang_parse.c
 
 

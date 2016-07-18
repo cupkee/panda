@@ -8,6 +8,7 @@ CU_pSuite test_esbl_vect_entry();
 CU_pSuite test_esbl_htbl_entry();
 
 CU_pSuite test_lang_lex_entry();
+CU_pSuite test_lang_val_entry();
 CU_pSuite test_lang_parse_entry();
 
 int main(int argc, const char *argv[])
@@ -34,6 +35,9 @@ int main(int argc, const char *argv[])
     }
     if (!test_lang_lex_entry()) {
         printf("Init test suite \"%s\" fail\n", "lang lex");
+    }
+    if (!test_lang_val_entry()) {
+        printf("Init test suite \"%s\" fail\n", "lang val");
     }
     if (!test_lang_parse_entry()) {
         printf("Init test suite \"%s\" fail\n", "lang parse");
