@@ -143,7 +143,7 @@ static inline val_t val_mk_native(void *ptr) {
 }
 
 static inline val_t val_mk_boolean(int v) {
-    return TAG_BOOLEAN | v;
+    return TAG_BOOLEAN | (!!v);
 }
 
 static inline val_t val_mk_array(void *ptr) {
@@ -246,54 +246,54 @@ static inline val_t val_rshift(val_t a, val_t b) {
     return val_mk_nan();
 }
 
-static inline val_t val_teq(val_t a, val_t b) {
+static inline int val_teq(val_t a, val_t b) {
     if (val_is_number(a)) {
         if (val_is_number(b))
-            return val_mk_boolean(val_2_double(a) == val_2_double(b));
+            return (val_2_double(a) == val_2_double(b));
     } else
     if ((a & TAG_MASK) == (b & TAG_MASK)) {
         if (val_is_boolean(a))
-            return val_mk_boolean(val_2_integer(a) == val_2_integer(b));
+            return (val_2_intptr(a) == val_2_intptr(b));
         /*
         if (val_is_string(a))
-            return val_mk_boolean(!string_compare(val_2_string(a), val_2_string(b)));
+            return (!string_compare(val_2_string(a), val_2_string(b)));
         if (val_is_array(a))
-            return val_mk_boolean(!array_compare(val_2_intptr(a), val_2_intptr(b)));
+            return (!array_compare(val_2_intptr(a), val_2_intptr(b)));
         if (val_is_dictionary(a))
-            return val_mk_boolean(!dictionary_compare(val_2_intptr(a), val_2_intptr(b)));
+            return (!dictionary_compare(val_2_intptr(a), val_2_intptr(b)));
         if (val_is_object(a))
-            return val_mk_boolean(!object_compare(val_2_intptr(a), val_2_intptr(b)));
+            return (!object_compare(val_2_intptr(a), val_2_intptr(b)));
         */
     }
-    return val_mk_boolean(0);
+    return 0;
 }
 
-static inline val_t val_tgt(val_t a, val_t b) {
+static inline int val_tgt(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_boolean(val_2_integer(a) > val_2_integer(b));
+        return (val_2_double(a) > val_2_double(b));
     }
-    return val_mk_boolean(0);
+    return 0;
 }
 
-static inline val_t val_tge(val_t a, val_t b) {
+static inline int val_tge(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_boolean(val_2_integer(a) >= val_2_integer(b));
+        return (val_2_double(a) >= val_2_double(b));
     }
-    return val_mk_boolean(0);
+    return 0;
 }
 
 static inline val_t val_tlt(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_boolean(val_2_integer(a) < val_2_integer(b));
+        return (val_2_double(a) < val_2_double(b));
     }
-    return val_mk_boolean(0);
+    return 0;
 }
 
 static inline val_t val_tle(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_boolean(val_2_integer(a) <= val_2_integer(b));
+        return (val_2_double(a) <= val_2_double(b));
     }
-    return val_mk_boolean(0);
+    return 0;
 }
 
 static inline int val_is_true(val_t v) {
