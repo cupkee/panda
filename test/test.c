@@ -10,6 +10,7 @@ CU_pSuite test_esbl_htbl_entry();
 CU_pSuite test_lang_lex_entry();
 CU_pSuite test_lang_val_entry();
 CU_pSuite test_lang_parse_entry();
+CU_pSuite test_lang_eval_entry();
 
 int main(int argc, const char *argv[])
 {
@@ -41,6 +42,9 @@ int main(int argc, const char *argv[])
     }
     if (!test_lang_parse_entry()) {
         printf("Init test suite \"%s\" fail\n", "lang parse");
+    }
+    if (!test_lang_eval_entry()) {
+        printf("Init test suite \"%s\" fail\n", "lang eval");
     }
 
     CU_basic_set_mode(CU_BRM_VERBOSE);

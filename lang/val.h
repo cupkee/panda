@@ -83,7 +83,7 @@ static inline int val_is_number(val_t v) {
 }
 
 static inline int val_is_nan(val_t v) {
-    return (v & TAG_INFINITE) == TAG_INFINITE;
+    return (v & TAG_NAN) == TAG_NAN;
 }
 
 static inline int val_is_script(val_t v) {
@@ -156,6 +156,38 @@ static inline val_t val_mk_dictionary(void *ptr) {
 
 static inline val_t val_mk_string(const char *ptr) {
     return TAG_STRING | (val_t) ptr;
+}
+
+static inline void val_set_nan(val_t *p) {
+    *((uint64_t *)p) = TAG_NAN;
+}
+
+static inline void val_set_undefined(val_t *p) {
+    *((uint64_t *)p) = TAG_UNDEFINED;
+}
+
+static inline void val_set_boolean(val_t *p, int b) {
+    *((uint64_t *)p) = TAG_BOOLEAN | !!b;
+}
+
+static inline void val_set_number(val_t *p, double d) {
+    *((double *)p) = d;
+}
+
+static inline void val_set_string(val_t *p, intptr_t s) {
+    *((uint64_t *)p) = TAG_STRING | s;
+}
+
+static inline void val_set_array(val_t *p, intptr_t a) {
+    *((uint64_t *)p) = TAG_ARRAY | a;
+}
+
+static inline void val_set_dictionary(val_t *p, intptr_t d) {
+    *((uint64_t *)p) = TAG_DICTIONARY | d;
+}
+
+static inline void val_set_object(val_t *p, intptr_t o) {
+    *((uint64_t *)p) = TAG_OBJECT | o;
 }
 
 static inline val_t val_add(val_t a, val_t b) {

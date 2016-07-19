@@ -47,7 +47,7 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_array(v));
     CU_ASSERT(!val_is_dictionary(v));
     CU_ASSERT(!val_is_object(v));
-    CU_ASSERT(val_is_nan(v));
+    CU_ASSERT(!val_is_nan(v));
     CU_ASSERT(!val_is_true(v));
 
     v = val_mk_nan();
@@ -64,7 +64,7 @@ static void test_val_make(void)
 
     v = val_mk_boolean(1);
     CU_ASSERT(!val_is_number(v));
-    CU_ASSERT(val_is_nan(v));
+    CU_ASSERT(!val_is_nan(v));
     CU_ASSERT(val_is_boolean(v));
     CU_ASSERT(!val_is_undefined(v));
     CU_ASSERT(!val_is_function(v));
@@ -74,6 +74,23 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_object(v));
     CU_ASSERT(val_is_true(v));
     CU_ASSERT(!val_is_true(val_mk_boolean(0)));
+}
+
+static void test_val_set(void)
+{
+    val_t v;
+
+    val_set_number(&v, 1.1);
+    CU_ASSERT(v == val_mk_number(1.1));
+
+    val_set_undefined(&v);
+    CU_ASSERT(v == val_mk_undefined());
+
+    val_set_nan(&v);
+    CU_ASSERT(v == val_mk_nan());
+
+    val_set_boolean(&v, 1);
+    CU_ASSERT(v == val_mk_boolean(1));
 }
 
 static void test_val_add(void)
@@ -436,6 +453,7 @@ CU_pSuite test_lang_val_entry()
 
     if (suite) {
         CU_add_test(suite, "value make", test_val_make);
+        CU_add_test(suite, "value set", test_val_set);
         CU_add_test(suite, "value add", test_val_add);
         CU_add_test(suite, "value sub", test_val_sub);
         CU_add_test(suite, "value mul", test_val_mul);
