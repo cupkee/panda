@@ -57,7 +57,6 @@ enum EXPR_TYPE {
     EXPR_MUL,
     EXPR_DIV,
     EXPR_MOD,
-
     EXPR_ADD,
     EXPR_SUB,
 
@@ -86,10 +85,12 @@ enum EXPR_TYPE {
     EXPR_ELEM,
     EXPR_CALL,
 
+    EXPR_TERNARY,
+
+    // form
     EXPR_FUNCHEAD,
     EXPR_FUNCDEF,
     EXPR_PAIR,
-    EXPR_TERNARY,
 };
 
 enum STMT_TYPE {

@@ -86,11 +86,27 @@ intptr_t htbl_create(uint32_t (*hash)(intptr_t), int (*compare)(intptr_t, intptr
     return (intptr_t) head;
 }
 
-int htbl_destroy(intptr_t htbl)
+int htbl_destroy(intptr_t htbl, void (*destroy)(intptr_t))
 {
     htbl_head_t *head = (htbl_head_t *)htbl;
 
     if (head) {
+        if (destroy) {
+            int i = 0;
+            for (i = 0; i < head->size; i++) {
+                if (head->tbl[i] != 0 || head->tbl[i] == VACATED) {
+                    continue;
+                }
+                destroy(head->tbl[i]);
+            }
+            if (head->flags & HAVE_VACA_MEMBER) {
+                destroy(VACATED);
+            }
+            if (head->flags & HAVE_ZERO_MEMBER) {
+                destroy(0);
+            }
+        }
+
         free(head->tbl);
         free(head);
         return 0;
@@ -135,7 +151,7 @@ int htbl_insert(intptr_t htbl, intptr_t data)
         return 1;
     }
 
-    if (htbl_lookup(htbl, data) == 1) {
+    if (htbl_lookup(htbl, data, NULL) == 1) {
         return 1;
     }
 
@@ -232,7 +248,7 @@ int htbl_remove(intptr_t htbl, intptr_t data)
     return 0;
 }
 
-int htbl_lookup(intptr_t htbl, intptr_t data)
+int htbl_lookup(intptr_t htbl, intptr_t data, intptr_t *res)
 {
     htbl_head_t *head = (htbl_head_t *)htbl;
     uint32_t size, pos, i, hash;
@@ -268,6 +284,7 @@ int htbl_lookup(intptr_t htbl, intptr_t data)
                 break;
             }
             if (!cmp(data, tbl[pos])) {
+                if (res) *res = tbl[pos];
                 return 1;
             }
         }

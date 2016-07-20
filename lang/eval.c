@@ -32,16 +32,46 @@ static int get_line_from_string(void *buf, int size)
     return max;
 }
 
-static void eval_expr(void *u, expr_t *e)
+static void eval_expr_lft(interp_t *interp, expr_t *e)
 {
-    interp_t *interp = (interp_t *)u;
+    if (interp->error) {
+        return;
+    }
 
+    switch(e->type) {
+    case EXPR_ID:
+    {
+        int id = interp_get_symbal(interp, ast_expr_text(e));
+        if (id < 0) {
+            interp_set_error(interp, ERR_NotDefinedId);
+        } else {
+            interp_push_var_ref(interp, id);
+        }
+        break;
+    }
+    case EXPR_ELEM: interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_ATTR: interp_set_error(interp, ERR_NotImplemented); break;
+    default: interp_set_error(interp, ERR_InvalidSyntax); break;
+    }
+}
+
+static void eval_expr(interp_t *interp, expr_t *e)
+{
     if (interp->error) {
         return;
     }
 
     switch (e->type) {
-    case EXPR_ID:       interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_ID:
+    {
+        int id = interp_get_symbal(interp, ast_expr_text(e));
+        if (id < 0) {
+            interp_set_error(interp, ERR_NotDefinedId);
+        } else {
+            interp_push_var(interp, id);
+        }
+        break;
+    }
     case EXPR_NAN:      interp_push_nan(interp); break;
     case EXPR_UND:      interp_push_undefined(interp); break;
     case EXPR_NUM:      interp_push_number(interp, ast_expr_num(e)); break;
@@ -75,6 +105,16 @@ static void eval_expr(void *u, expr_t *e)
     case EXPR_TGE:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tge_stack(interp); break;
     case EXPR_TLT:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tlt_stack(interp); break;
     case EXPR_TLE:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tle_stack(interp); break;
+    case EXPR_TIN:      interp_set_error(interp, ERR_NotImplemented); break;
+
+    case EXPR_LAND:     interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_LOR:      interp_set_error(interp, ERR_NotImplemented); break;
+
+    case EXPR_CALL:     interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_ELEM:     interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_ATTR:     interp_set_error(interp, ERR_NotImplemented); break;
+
+    case EXPR_ASSIGN:   eval_expr_lft(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_assign(interp); break;
 
     case EXPR_TERNARY:
                         eval_expr(interp, ast_expr_lft(e));

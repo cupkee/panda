@@ -32,50 +32,50 @@ static void test_common(void)
 
     CU_ASSERT(0 != (htbl = htbl_create(test_hash, test_compare)));
     CU_ASSERT(0 == htbl_length(htbl));
-    CU_ASSERT(0 == htbl_lookup(htbl, 0));
-    CU_ASSERT(0 == htbl_lookup(htbl, 1));
-    CU_ASSERT(0 == htbl_lookup(htbl, 2));
+    CU_ASSERT(0 == htbl_lookup(htbl, 0, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 1, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 2, NULL));
 
     CU_ASSERT(1 == htbl_insert(htbl, 0));
     CU_ASSERT(1 == htbl_length(htbl));
-    CU_ASSERT(1 == htbl_lookup(htbl, 0));
+    CU_ASSERT(1 == htbl_lookup(htbl, 0, NULL));
 
     CU_ASSERT(1 == htbl_insert(htbl, 1));
-    CU_ASSERT(1 == htbl_lookup(htbl, 1));
+    CU_ASSERT(1 == htbl_lookup(htbl, 1, NULL));
     CU_ASSERT(2 == htbl_length(htbl));
 
     CU_ASSERT(1 == htbl_insert(htbl, 2));
-    CU_ASSERT(1 == htbl_lookup(htbl, 2));
+    CU_ASSERT(1 == htbl_lookup(htbl, 2, NULL));
     CU_ASSERT(3 == htbl_length(htbl));
 
     CU_ASSERT(1 == htbl_insert(htbl, 0));
     CU_ASSERT(1 == htbl_insert(htbl, 1));
     CU_ASSERT(1 == htbl_insert(htbl, 2));
     CU_ASSERT(3 == htbl_length(htbl));
-    CU_ASSERT(1 == htbl_lookup(htbl, 0));
-    CU_ASSERT(1 == htbl_lookup(htbl, 1));
-    CU_ASSERT(1 == htbl_lookup(htbl, 2));
-    CU_ASSERT(0 == htbl_lookup(htbl, 3));
+    CU_ASSERT(1 == htbl_lookup(htbl, 0, NULL));
+    CU_ASSERT(1 == htbl_lookup(htbl, 1, NULL));
+    CU_ASSERT(1 == htbl_lookup(htbl, 2, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 3, NULL));
 
     CU_ASSERT(1 == htbl_remove(htbl, 2));
     CU_ASSERT(2 == htbl_length(htbl));
-    CU_ASSERT(0 == htbl_lookup(htbl, 2));
-    CU_ASSERT(1 == htbl_lookup(htbl, 1));
-    CU_ASSERT(1 == htbl_lookup(htbl, 0));
+    CU_ASSERT(0 == htbl_lookup(htbl, 2, NULL));
+    CU_ASSERT(1 == htbl_lookup(htbl, 1, NULL));
+    CU_ASSERT(1 == htbl_lookup(htbl, 0, NULL));
 
     CU_ASSERT(1 == htbl_remove(htbl, 1));
     CU_ASSERT(1 == htbl_length(htbl));
-    CU_ASSERT(0 == htbl_lookup(htbl, 2));
-    CU_ASSERT(0 == htbl_lookup(htbl, 1));
-    CU_ASSERT(1 == htbl_lookup(htbl, 0));
+    CU_ASSERT(0 == htbl_lookup(htbl, 2, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 1, NULL));
+    CU_ASSERT(1 == htbl_lookup(htbl, 0, NULL));
 
     CU_ASSERT(1 == htbl_remove(htbl, 0));
     CU_ASSERT(0 == htbl_length(htbl));
-    CU_ASSERT(0 == htbl_lookup(htbl, 2));
-    CU_ASSERT(0 == htbl_lookup(htbl, 1));
-    CU_ASSERT(0 == htbl_lookup(htbl, 0));
+    CU_ASSERT(0 == htbl_lookup(htbl, 2, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 1, NULL));
+    CU_ASSERT(0 == htbl_lookup(htbl, 0, NULL));
 
-    CU_ASSERT(0 == htbl_destroy(htbl));
+    CU_ASSERT(0 == htbl_destroy(htbl, NULL));
 }
 
 static void test_insert(void)
@@ -93,11 +93,11 @@ static void test_insert(void)
     CU_ASSERT(4097 == htbl_length(htbl));
 
     for (i = 0; i < 8000 ; i++) {
-        matched += htbl_lookup(htbl, i);
+        matched += htbl_lookup(htbl, i, NULL);
     }
     CU_ASSERT(4097 == matched);
 
-    CU_ASSERT(0 == htbl_destroy(htbl));
+    CU_ASSERT(0 == htbl_destroy(htbl, NULL));
 }
 
 static void test_remove(void)
@@ -117,7 +117,7 @@ static void test_remove(void)
         removed += htbl_remove(htbl, i);
     }
     for (i = 0; i < 8000 ; i++) {
-        matched += htbl_lookup(htbl, i);
+        matched += htbl_lookup(htbl, i, NULL);
     }
     CU_ASSERT(4097 - removed == matched);
 
@@ -129,11 +129,11 @@ static void test_remove(void)
     }
     matched = 0;
     for (i = 0; i < 8000 ; i++) {
-        matched += htbl_lookup(htbl, i);
+        matched += htbl_lookup(htbl, i, NULL);
     }
     CU_ASSERT(4097 - removed == matched);
 
-    CU_ASSERT(0 == htbl_destroy(htbl));
+    CU_ASSERT(0 == htbl_destroy(htbl, NULL));
 }
 
 CU_pSuite test_esbl_htbl_entry()

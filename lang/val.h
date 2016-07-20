@@ -47,8 +47,9 @@ typedef union {
 #define TAG_BOOLEAN         MAKE_TAG(1, 4)
 #define TAG_ARRAY           MAKE_TAG(1, 5)
 #define TAG_DICTIONARY      MAKE_TAG(1, 6)
-#define TAG_OBJECT          MAKE_TAG(0, 7)
-#define TAG_NAN             MAKE_TAG(0, 8)
+#define TAG_OBJECT          MAKE_TAG(1, 7)
+#define TAG_NAN             MAKE_TAG(1, 8)
+#define TAG_REFERENCE       MAKE_TAG(1, 9)
 
 #define TAG_STRING          MAKE_TAG(1, 0xC)
 #define TAG_STRING_I        MAKE_TAG(1, 0xD)  // Inline string (length < 5)
@@ -74,6 +75,10 @@ static inline intptr_t val_2_intptr(val_t v) {
     return (intptr_t)(v & VAR_MASK);
 }
 
+static inline val_t *val_2_reference(val_t v) {
+    return ((val_t *)(v & VAR_MASK));
+}
+
 static inline val_t double_2_val(double d) {
     return ((valnum_t)d).v;
 }
@@ -83,7 +88,7 @@ static inline int val_is_number(val_t v) {
 }
 
 static inline int val_is_nan(val_t v) {
-    return (v & TAG_NAN) == TAG_NAN;
+    return (v & TAG_MASK) == TAG_NAN;
 }
 
 static inline int val_is_script(val_t v) {
@@ -122,7 +127,13 @@ static inline int val_is_string(val_t v) {
     return (v & TAG_MASK) >= TAG_STRING;
 }
 
+static inline int val_is_reference(val_t v) {
+    return (v & TAG_MASK) == TAG_REFERENCE;
+}
+
 static inline int val_is_true(val_t v) {
+    if (val_is_reference(v)) v = *val_2_reference(v);
+
     return val_is_boolean(v) ? val_2_intptr(v) :
            val_is_number(v) ? val_2_double(v) != 0 :
            //val_is_string(v) ? string_is_true(val_2_string(v)) :
@@ -161,6 +172,10 @@ static inline val_t val_mk_string(const char *ptr) {
     return TAG_STRING | (val_t) ptr;
 }
 
+static inline val_t val_mk_reference(const val_t *ref) {
+    return TAG_REFERENCE | (val_t) ref;
+}
+
 static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (val_t) ptr;
 }
@@ -183,6 +198,10 @@ static inline void val_set_boolean(val_t *p, int b) {
 
 static inline void val_set_number(val_t *p, double d) {
     *((double *)p) = d;
+}
+
+static inline void val_set_reference(val_t *p, val_t *r) {
+    *((uint64_t *)p) = TAG_REFERENCE | (val_t) r;
 }
 
 static inline void val_set_string(val_t *p, intptr_t s) {

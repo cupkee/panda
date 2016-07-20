@@ -13,6 +13,16 @@ typedef struct interp_t{
     int ss;
     int sp;
     val_t *sb;
+
+    // env
+    val_t regs[16];
+    int arg_bgn;
+    int arg_num;
+
+    int var_num;
+    intptr_t var_map[16];
+
+    intptr_t sym_tbl;
 } interp_t;
 
 interp_t *interp_init(interp_t *intrep, val_t *stack_ptr, int stack_size);
@@ -21,12 +31,8 @@ int interp_deinit(interp_t *interp);
 
 int interp_add_symbal(interp_t *interp, const char *sym);
 int interp_get_symbal(interp_t *interp, const char *sym);
-
-static inline void interp_push_id(interp_t *interp, int id) {
-}
-
-static inline void interp_push_id_ref(interp_t *interp, int id) {
-}
+int interp_set_symbal_val(interp_t *interp, const char *sym, val_t v);
+int interp_get_symbal_val(interp_t *interp, const char *sym, val_t *p);
 
 static inline void interp_set_error(interp_t *interp, int error) {
     interp->error = error;
@@ -42,6 +48,14 @@ static inline val_t *interp_stack_pop(interp_t *interp) {
 
 static inline val_t *interp_stack_push(interp_t *interp) {
     return interp->sb + (--interp->sp);
+}
+
+static inline void interp_push_var(interp_t *interp, int id) {
+    *interp_stack_push(interp) = interp->regs[id];
+}
+
+static inline void interp_push_var_ref(interp_t *interp, int id) {
+    val_set_reference(interp_stack_push(interp), interp->regs + id);
 }
 
 static inline void interp_push_undefined(interp_t *interp) {
@@ -204,6 +218,14 @@ static inline void interp_tle_stack(interp_t *interp) {
     val_t *res = a;
 
     *res = val_mk_boolean(val_tle(*a, *b));
+}
+
+static inline void interp_assign(interp_t *interp) {
+    val_t *b = interp_stack_pop(interp);
+    val_t *a = interp_stack_peek(interp);
+    val_t *res = a;
+
+    *res = *val_2_reference(*a) = *b;
 }
 
 #endif /* __LANG_INTERP_INC__ */
