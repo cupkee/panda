@@ -122,6 +122,17 @@ static inline int val_is_string(val_t v) {
     return (v & TAG_MASK) >= TAG_STRING;
 }
 
+static inline int val_is_true(val_t v) {
+    return val_is_boolean(v) ? val_2_intptr(v) :
+           val_is_number(v) ? val_2_double(v) != 0 :
+           //val_is_string(v) ? string_is_true(val_2_string(v)) :
+           //val_is_array(v) ? array_is_true(val_2_intptr(v)) :
+           //val_is_dictionary(v) ? dictionary_is_true(val_2_intptr(v)) :
+           //val_is_object(v) ? object_is_true(val_2_intptr(v)) :
+           //val_is_function ? function_is_true(val_2_intptr(v)) :
+           0; // "undefined" and "nan", always be false.
+}
+
 static inline val_t val_mk_number(double d) {
     return double_2_val(d);
 }
@@ -146,16 +157,16 @@ static inline val_t val_mk_boolean(int v) {
     return TAG_BOOLEAN | (!!v);
 }
 
+static inline val_t val_mk_string(const char *ptr) {
+    return TAG_STRING | (val_t) ptr;
+}
+
 static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (val_t) ptr;
 }
 
 static inline val_t val_mk_dictionary(void *ptr) {
     return TAG_DICTIONARY | (val_t) ptr;
-}
-
-static inline val_t val_mk_string(const char *ptr) {
-    return TAG_STRING | (val_t) ptr;
 }
 
 static inline void val_set_nan(val_t *p) {
@@ -188,6 +199,26 @@ static inline void val_set_dictionary(val_t *p, intptr_t d) {
 
 static inline void val_set_object(val_t *p, intptr_t o) {
     *((uint64_t *)p) = TAG_OBJECT | o;
+}
+
+static inline val_t val_negation(val_t v) {
+    if (val_is_number(v)) {
+        return val_mk_number(-val_2_double(v));
+    } else {
+        return val_mk_nan();
+    }
+}
+
+static inline val_t val_not(val_t v) {
+    if (val_is_number(v)) {
+        return val_mk_number(~val_2_integer(v));
+    } else {
+        return val_mk_nan();
+    }
+}
+
+static inline val_t val_logic_not(val_t v) {
+    return val_mk_boolean(val_is_true(v) ? 0 : 1);
 }
 
 static inline val_t val_add(val_t a, val_t b) {
@@ -223,7 +254,7 @@ static inline val_t val_mul(val_t a, val_t b) {
 
 static inline val_t val_div(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_number(val_2_double(a) / val_2_double(b));
+        return val_2_double(b) == 0 ? val_mk_nan() : val_mk_number(val_2_double(a) / val_2_double(b));
     } else
     if (val_is_string(a) && val_is_number(b)) {
         //return val_mk_string(string_cut(val_2_string(a), val_2_integer(b));
@@ -234,7 +265,7 @@ static inline val_t val_div(val_t a, val_t b) {
 
 static inline val_t val_mod(val_t a, val_t b) {
     if (val_is_number(a) && val_is_number(b)) {
-        return val_mk_number(val_2_integer(a) % val_2_integer(b));
+        return val_2_double(b) == 0 ? val_mk_nan() : val_mk_number(val_2_integer(a) % val_2_integer(b));
     }
     return val_mk_nan();
 }
@@ -326,17 +357,6 @@ static inline val_t val_tle(val_t a, val_t b) {
         return (val_2_double(a) <= val_2_double(b));
     }
     return 0;
-}
-
-static inline int val_is_true(val_t v) {
-    return val_is_boolean(v) ? val_2_intptr(v) :
-           val_is_number(v) ? val_2_double(v) != 0 :
-           //val_is_string(v) ? string_is_true(val_2_string(v)) :
-           //val_is_array(v) ? array_is_true(val_2_intptr(v)) :
-           //val_is_dictionary(v) ? dictionary_is_true(val_2_intptr(v)) :
-           //val_is_object(v) ? object_is_true(val_2_intptr(v)) :
-           //val_is_function ? function_is_true(val_2_intptr(v)) :
-           0; // "undefined" and "nan", always be false.
 }
 
 #endif /* __LANG_VALUE_INC__ */

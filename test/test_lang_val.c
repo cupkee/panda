@@ -149,8 +149,8 @@ static void test_val_mul(void)
 
 static void test_val_div(void)
 {
-    CU_ASSERT(val_is_nan(val_div(val_mk_number(0), val_mk_boolean(0))));
-    CU_ASSERT(val_is_nan(val_div(val_mk_number(1), val_mk_boolean(0))));
+    CU_ASSERT(val_is_nan(val_div(val_mk_number(0), val_mk_number(0))));
+    CU_ASSERT(val_is_nan(val_div(val_mk_number(1), val_mk_number(0))));
     CU_ASSERT(0  == val_2_double(val_div(val_mk_number(0), val_mk_number(1))));
     CU_ASSERT(10/2 == val_2_double(val_div(val_mk_number(10), val_mk_number(2))));
     CU_ASSERT(10.0/2.0 == val_2_double(val_div(val_mk_number(10), val_mk_number(2))));
@@ -166,8 +166,8 @@ static void test_val_div(void)
 
 static void test_val_mod(void)
 {
-    CU_ASSERT(val_is_nan(val_mod(val_mk_number(0), val_mk_boolean(0))));
-    CU_ASSERT(val_is_nan(val_mod(val_mk_number(1), val_mk_boolean(0))));
+    CU_ASSERT(val_is_nan(val_mod(val_mk_number(0), val_mk_number(0))));
+    CU_ASSERT(val_is_nan(val_mod(val_mk_number(1), val_mk_number(0))));
     CU_ASSERT(0  == val_2_double(val_mod(val_mk_number(0), val_mk_number(1))));
     CU_ASSERT(10%3 == val_2_double(val_mod(val_mk_number(10), val_mk_number(3))));
     CU_ASSERT(10%3 == val_2_double(val_mod(val_mk_number(10.0), val_mk_number(3.0))));

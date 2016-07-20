@@ -22,3 +22,12 @@ int interp_deinit(interp_t *interp)
     return 0;
 }
 
+int interp_add_symbal(interp_t *interp, const char *sym)
+{
+    return -1;
+}
+
+int interp_get_symbal(interp_t *interp, const char *sym)
+{
+    return -1;
+}
