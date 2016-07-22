@@ -8,10 +8,10 @@
 
 #include "ast.h"
 #include "val.h"
+#include "env.h"
 #include "interp.h"
 
-int eval_string(interp_t *interp, const char *input, val_t **v);
-val_t eval_expr_ast(interp_t *interp, expr_t *expr);
+int eval_string(interp_t *interp, env_t *env, const char *input, val_t **result);
 
 #endif /* __LANG_EVAL_INC__ */
 

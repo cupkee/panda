@@ -88,8 +88,8 @@ enum EXPR_TYPE {
     EXPR_TERNARY,
 
     // form
-    EXPR_FUNCHEAD,
     EXPR_FUNCDEF,
+    EXPR_FUNCHEAD,
     EXPR_PAIR,
 };
 

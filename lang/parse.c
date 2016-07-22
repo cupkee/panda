@@ -301,7 +301,7 @@ static expr_t *parse_expr_vardef_list(intptr_t lex, void (*cb)(void *, parse_eve
     expr_t *expr = parse_expr_vardef(lex, cb, user_data);
 
     if (expr && lex_match(lex, ',')) {
-        expr = parse_expr_form_binary(lex, EXPR_COMMA, expr, parse_expr_vardef(lex, cb, user_data), cb, user_data);
+        expr = parse_expr_form_binary(lex, EXPR_COMMA, expr, parse_expr_vardef_list(lex, cb, user_data), cb, user_data);
     }
 
     return expr;

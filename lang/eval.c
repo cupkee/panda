@@ -32,7 +32,7 @@ static int get_line_from_string(void *buf, int size)
     return max;
 }
 
-static void eval_expr_lft(interp_t *interp, expr_t *e)
+static void eval_expr_lft(interp_t *interp, env_t *env, expr_t *e)
 {
     if (interp->error) {
         return;
@@ -41,11 +41,12 @@ static void eval_expr_lft(interp_t *interp, expr_t *e)
     switch(e->type) {
     case EXPR_ID:
     {
-        int id = interp_get_symbal(interp, ast_expr_text(e));
-        if (id < 0) {
+        val_t *p;
+
+        if (-1 == env_get_variable(env, ast_expr_text(e), &p)) {
             interp_set_error(interp, ERR_NotDefinedId);
         } else {
-            interp_push_var_ref(interp, id);
+            interp_push_ref(interp, p);
         }
         break;
     }
@@ -55,7 +56,7 @@ static void eval_expr_lft(interp_t *interp, expr_t *e)
     }
 }
 
-static void eval_expr(interp_t *interp, expr_t *e)
+static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
 {
     if (interp->error) {
         return;
@@ -64,11 +65,11 @@ static void eval_expr(interp_t *interp, expr_t *e)
     switch (e->type) {
     case EXPR_ID:
     {
-        int id = interp_get_symbal(interp, ast_expr_text(e));
-        if (id < 0) {
+        val_t *v;
+        if (-1 == env_get_variable(env, ast_expr_text(e), &v)) {
             interp_set_error(interp, ERR_NotDefinedId);
         } else {
-            interp_push_var(interp, id);
+            interp_push_val(interp, *v);
         }
         break;
     }
@@ -80,31 +81,31 @@ static void eval_expr(interp_t *interp, expr_t *e)
     case EXPR_FUNCPROC: interp_set_error(interp, ERR_NotImplemented); break;
     case EXPR_STRING:   interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_MINUS:    eval_expr(interp, ast_expr_lft(e)); interp_neg_stack(interp); break;
-    case EXPR_NEGATE:   eval_expr(interp, ast_expr_lft(e)); interp_not_stack(interp); break;
-    case EXPR_NOT:      eval_expr(interp, ast_expr_lft(e)); interp_logic_not_stack(interp); break;
+    case EXPR_MINUS:    eval_expr(interp, env, ast_expr_lft(e)); interp_neg_stack(interp); break;
+    case EXPR_NEGATE:   eval_expr(interp, env, ast_expr_lft(e)); interp_not_stack(interp); break;
+    case EXPR_NOT:      eval_expr(interp, env, ast_expr_lft(e)); interp_logic_not_stack(interp); break;
     case EXPR_ARRAY:    interp_set_error(interp, ERR_NotImplemented); break;
     case EXPR_DICT:     interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_MUL:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_mul_stack(interp); break;
-    case EXPR_DIV:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_div_stack(interp); break;
-    case EXPR_MOD:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_mod_stack(interp); break;
-    case EXPR_ADD:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_add_stack(interp); break;
-    case EXPR_SUB:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_sub_stack(interp); break;
+    case EXPR_MUL:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_mul_stack(interp); break;
+    case EXPR_DIV:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_div_stack(interp); break;
+    case EXPR_MOD:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_mod_stack(interp); break;
+    case EXPR_ADD:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_add_stack(interp); break;
+    case EXPR_SUB:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_sub_stack(interp); break;
 
-    case EXPR_AAND:     eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_and_stack(interp); break;
-    case EXPR_AOR:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_or_stack(interp); break;
-    case EXPR_AXOR:     eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_xor_stack(interp); break;
+    case EXPR_AAND:     eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_and_stack(interp); break;
+    case EXPR_AOR:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_or_stack(interp); break;
+    case EXPR_AXOR:     eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_xor_stack(interp); break;
 
-    case EXPR_LSHIFT:   eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_lshift_stack(interp); break;
-    case EXPR_RSHIFT:   eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_rshift_stack(interp); break;
+    case EXPR_LSHIFT:   eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_lshift_stack(interp); break;
+    case EXPR_RSHIFT:   eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_rshift_stack(interp); break;
 
-    case EXPR_TEQ:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_teq_stack(interp); break;
-    case EXPR_TNE:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tne_stack(interp); break;
-    case EXPR_TGT:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tgt_stack(interp); break;
-    case EXPR_TGE:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tge_stack(interp); break;
-    case EXPR_TLT:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tlt_stack(interp); break;
-    case EXPR_TLE:      eval_expr(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_tle_stack(interp); break;
+    case EXPR_TEQ:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_teq_stack(interp); break;
+    case EXPR_TNE:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tne_stack(interp); break;
+    case EXPR_TGT:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tgt_stack(interp); break;
+    case EXPR_TGE:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tge_stack(interp); break;
+    case EXPR_TLT:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tlt_stack(interp); break;
+    case EXPR_TLE:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tle_stack(interp); break;
     case EXPR_TIN:      interp_set_error(interp, ERR_NotImplemented); break;
 
     case EXPR_LAND:     interp_set_error(interp, ERR_NotImplemented); break;
@@ -114,34 +115,34 @@ static void eval_expr(interp_t *interp, expr_t *e)
     case EXPR_ELEM:     interp_set_error(interp, ERR_NotImplemented); break;
     case EXPR_ATTR:     interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_ASSIGN:   eval_expr_lft(interp, ast_expr_lft(e)); eval_expr(interp, ast_expr_rht(e)); interp_assign(interp); break;
+    case EXPR_ASSIGN:   eval_expr_lft(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_assign(interp); break;
 
-    case EXPR_TERNARY:
-                        eval_expr(interp, ast_expr_lft(e));
+    case EXPR_COMMA:    eval_expr(interp, env, ast_expr_lft(e)); interp_stack_pop(interp); eval_expr(interp, env, ast_expr_rht(e)); break;
+    case EXPR_TERNARY:  eval_expr(interp, env, ast_expr_lft(e));
                         if (val_is_true(*interp_stack_pop(interp))) {
-                            eval_expr(interp, ast_expr_lft(ast_expr_rht(e)));
+                            eval_expr(interp, env, ast_expr_lft(ast_expr_rht(e)));
                         } else {
-                            eval_expr(interp, ast_expr_rht(ast_expr_rht(e)));
+                            eval_expr(interp, env, ast_expr_rht(ast_expr_rht(e)));
                         }
                         break;
-    default:            interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_FUNCDEF:  interp_set_error(interp, ERR_NotImplemented); break;
+    default:            interp_set_error(interp, ERR_InvalidSyntax); break;
     }
 }
 
-static inline void eval_stmt_expr(interp_t *interp, stmt_t *s) {
-    eval_expr(interp, s->expr);
+static inline void eval_stmt_expr(interp_t *interp, env_t *env, stmt_t *s) {
+    eval_expr(interp, env, s->expr);
 }
 
-static int  eval_var_def(interp_t *interp, expr_t *e)
+static int  eval_var_def(interp_t *interp, env_t *env, expr_t *e)
 {
     if (e->type == EXPR_ID) {
-        return interp_add_symbal(interp, ast_expr_text(e));
+        return env_add_variable(env, ast_expr_text(e));
     }
 
     while(e->type == EXPR_ASSIGN) {
         expr_t *lft = ast_expr_lft(e);
-
-        if (lft->type == EXPR_ID && 0 > interp_add_symbal(interp, ast_expr_text(lft))) {
+        if (lft->type == EXPR_ID && 0 > env_add_variable(env, ast_expr_text(lft))) {
             return -1;
         }
 
@@ -151,46 +152,120 @@ static int  eval_var_def(interp_t *interp, expr_t *e)
     return 0;
 }
 
-static void eval_stmt_var(interp_t *interp, stmt_t *s)
+static void eval_stmt_var(interp_t *interp, env_t *env, stmt_t *s)
 {
     expr_t *e = s->expr;
 
-    while(e) {
+    while (e && interp->error == 0) {
         expr_t *next;
 
         if (e->type == EXPR_COMMA) {
-            e    = ast_expr_lft(e);
             next = ast_expr_rht(e);
+            e    = ast_expr_lft(e);
         } else {
             next = NULL;
         }
 
-        if (0 > eval_var_def(interp, e)) {
+        if (-1 == eval_var_def(interp, env, e)) {
+            interp_set_error(interp, ERR_NotEnoughMemory);
             return;
+        }
+
+        if (e->type == EXPR_ASSIGN) {
+            eval_expr(interp, env, e);
+            interp_stack_pop(interp);
         }
 
         e = next;
     }
-
-    eval_expr(interp, s->expr);
 }
 
-static void eval_stmt(interp_t *interp, stmt_t *s)
+static void eval_stmt(interp_t *interp, env_t *env, stmt_t *s);
+
+static void eval_stmt_if(interp_t *interp, env_t *env, stmt_t *s)
 {
-    switch(s->type) {
-    case STMT_EXPR: eval_stmt_expr(interp, s); break;
-    case STMT_VAR:  eval_stmt_var(interp, s); break;
-    default: interp_set_error(interp, ERR_NotImplemented);
+    stmt_t *curr;
+
+    eval_expr(interp, env, s->expr);
+    if (interp->error) return;
+
+    if (val_is_true(*interp_stack_pop(interp))) {
+        curr = s->block;
+    } else {
+        curr = s->other;
+    }
+
+    while (curr && interp->error == 0) {
+        eval_stmt(interp, env, curr);
+        curr = curr->next;
     }
 }
 
-int eval_string(interp_t *interp, const char *input, val_t **v)
+static void eval_stmt_while(interp_t *interp, env_t *env, stmt_t *s)
+{
+    while (interp->error == 0) {
+        stmt_t *curr;
+
+        eval_expr(interp, env, s->expr);
+        if (!val_is_true(*interp_stack_pop(interp))) {
+            break;
+        }
+        curr = s->block;
+
+        while (curr && interp->error == 0 && interp->skip == 0) {
+            eval_stmt(interp, env, curr);
+            curr = curr->next;
+        }
+
+        if (interp->skip == 1) { // continue
+            interp->skip = 0;
+        } else
+        if (interp->skip == 2) { // break;
+            interp->skip = 0;
+            break;
+        }
+    }
+}
+
+static void eval_stmt_break(interp_t *interp, env_t *env, stmt_t *s)
+{
+    interp->skip = 2;
+}
+
+static void eval_stmt_continue(interp_t *interp, env_t *env, stmt_t *s)
+{
+    interp->skip = 1;
+}
+
+static void eval_stmt_ret(interp_t *interp, env_t *env, stmt_t *s)
+{
+    interp_set_error(interp, ERR_NotImplemented);
+}
+
+static void eval_stmt(interp_t *interp, env_t *env, stmt_t *s)
+{
+    static val_t undefined = TAG_UNDEFINED;
+
+    switch(s->type) {
+    case STMT_PASS: break;
+    case STMT_EXPR: eval_stmt_expr(interp, env, s); interp->result = interp_stack_pop(interp); break;
+    case STMT_VAR:  eval_stmt_var(interp, env, s); interp->result = &undefined; break;
+    case STMT_IF:       eval_stmt_if(interp, env, s); interp->result = &undefined; break;
+    case STMT_WHILE:    eval_stmt_while(interp, env, s); interp->result = &undefined; break;
+    case STMT_RET:      eval_stmt_ret(interp, env, s); interp->result = &undefined; break;
+    case STMT_BREAK:    eval_stmt_break(interp, env, s); interp->result = &undefined; break;
+    case STMT_CONTINUE: eval_stmt_continue(interp, env, s); interp->result = &undefined; break;
+    default: interp_set_error(interp, ERR_InvalidSyntax);
+    }
+}
+
+int eval_string(interp_t *interp, env_t *env, const char *input, val_t **v)
 {
     lexer_t lex_st;
     stmt_t  *stmt;
     intptr_t lex;
 
-    if (!interp || !input || !v) {
+    if (!interp || !input) {
         return -1;
     }
 
@@ -201,19 +276,14 @@ int eval_string(interp_t *interp, const char *input, val_t **v)
     if (!stmt) {
         return -1;
     }
-    eval_stmt(interp, stmt);
+    eval_stmt(interp, env, stmt);
+
+    if (interp->error == 0 && v) {
+        *v = interp->result;
+    }
 
     ast_stmt_release(stmt);
 
-    if (interp->error == 0) {
-        *v = interp_stack_pop(interp);
-    }
-
     return interp->error;
-}
-
-val_t eval_expr_ast(interp_t *interp, expr_t *expr)
-{
-    return val_mk_undefined();
 }
 

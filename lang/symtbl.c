@@ -24,6 +24,10 @@ intptr_t symtbl_add(intptr_t symtbl, const char *sym)
 {
     intptr_t ret;
 
+    if (!symtbl) {
+        return 0;
+    }
+
     if (htbl_lookup(symtbl, (intptr_t)sym, &ret) == 1) {
         return ret;
     }
@@ -31,6 +35,7 @@ intptr_t symtbl_add(intptr_t symtbl, const char *sym)
     ret = (intptr_t) strdup(sym);
     if (ret && 1 != htbl_insert(symtbl, ret)) {
         free((void *)ret);
+        return 0;
     }
 
     return ret;
@@ -43,5 +48,6 @@ intptr_t symtbl_get(intptr_t symtbl, const char *sym)
     if (htbl_lookup(symtbl, (intptr_t)sym, &ret) == 1) {
         return ret;
     }
+
     return 0;
 }

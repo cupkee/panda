@@ -10,29 +10,17 @@
 
 typedef struct interp_t{
     int error;
+    int skip;
+
     int ss;
     int sp;
     val_t *sb;
-
-    // env
-    val_t regs[16];
-    int arg_bgn;
-    int arg_num;
-
-    int var_num;
-    intptr_t var_map[16];
-
-    intptr_t sym_tbl;
+    val_t *result;
 } interp_t;
 
 interp_t *interp_init(interp_t *intrep, val_t *stack_ptr, int stack_size);
 
 int interp_deinit(interp_t *interp);
-
-int interp_add_symbal(interp_t *interp, const char *sym);
-int interp_get_symbal(interp_t *interp, const char *sym);
-int interp_set_symbal_val(interp_t *interp, const char *sym, val_t v);
-int interp_get_symbal_val(interp_t *interp, const char *sym, val_t *p);
 
 static inline void interp_set_error(interp_t *interp, int error) {
     interp->error = error;
@@ -50,12 +38,12 @@ static inline val_t *interp_stack_push(interp_t *interp) {
     return interp->sb + (--interp->sp);
 }
 
-static inline void interp_push_var(interp_t *interp, int id) {
-    *interp_stack_push(interp) = interp->regs[id];
+static inline void interp_push_val(interp_t *interp, val_t v) {
+    *interp_stack_push(interp) = v;
 }
 
-static inline void interp_push_var_ref(interp_t *interp, int id) {
-    val_set_reference(interp_stack_push(interp), interp->regs + id);
+static inline void interp_push_ref(interp_t *interp, val_t *r) {
+    val_set_reference(interp_stack_push(interp), r);
 }
 
 static inline void interp_push_undefined(interp_t *interp) {
