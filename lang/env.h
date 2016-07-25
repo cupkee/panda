@@ -19,6 +19,7 @@ typedef struct env_t {
     scope_t *scope;
 
     intptr_t *var_map;
+
     intptr_t sym_tbl;
 } env_t;
 

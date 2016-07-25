@@ -208,6 +208,14 @@ static inline void val_set_string(val_t *p, intptr_t s) {
     *((uint64_t *)p) = TAG_STRING | s;
 }
 
+static inline void val_set_script(val_t *p, intptr_t s) {
+    *((uint64_t *)p) = TAG_FUNC_SCRIPT | s;
+}
+
+static inline void val_set_native(val_t *p, intptr_t f) {
+    *((uint64_t *)p) = TAG_FUNC_NATIVE | f;
+}
+
 static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
 }

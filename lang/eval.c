@@ -8,6 +8,12 @@
 
 #include "eval.h"
 
+typedef struct func_t {
+    int     variables;
+    int     params;
+    stmt_t *block;
+} func_t;
+
 static const char *string_ptr;
 static int string_pos;
 static int string_end;
@@ -30,6 +36,26 @@ static int get_line_from_string(void *buf, int size)
     string_pos += max;
 
     return max;
+}
+
+/*
+static void eval_funcall(interp_t *interp, env_t *env, expr_t *e)
+{
+    func_t *fn = (func_t *)val_2_intptr(*interp_stack_pop(interp));
+    
+    if (!fn) {
+        interp_set_error(interp, ERR_SysError);
+        return;
+    }
+
+    create_scope();
+    calc_args();
+}
+*/
+
+static intptr_t eval_funcdef(interp_t *interp, env_t *env, expr_t *e)
+{
+    return 0;
 }
 
 static void eval_expr_lft(interp_t *interp, env_t *env, expr_t *e)
@@ -78,7 +104,7 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
     case EXPR_NUM:      interp_push_number(interp, ast_expr_num(e)); break;
     case EXPR_TRUE:     interp_push_boolean(interp, 1); break;
     case EXPR_FALSE:    interp_push_boolean(interp, 0); break;
-    case EXPR_FUNCPROC: interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_FUNCDEF:  interp_push_script(interp, eval_funcdef(interp, env, e)); break;
     case EXPR_STRING:   interp_set_error(interp, ERR_NotImplemented); break;
 
     case EXPR_MINUS:    eval_expr(interp, env, ast_expr_lft(e)); interp_neg_stack(interp); break;
@@ -108,8 +134,18 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
     case EXPR_TLE:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tle_stack(interp); break;
     case EXPR_TIN:      interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_LAND:     interp_set_error(interp, ERR_NotImplemented); break;
-    case EXPR_LOR:      interp_set_error(interp, ERR_NotImplemented); break;
+    case EXPR_LAND:     eval_expr(interp, env, ast_expr_lft(e));
+                        if (val_is_true(*interp_stack_peek(interp))) {
+                            interp_stack_pop(interp);
+                            eval_expr(interp, env, ast_expr_rht(e));
+                        }
+                        break;
+    case EXPR_LOR:      eval_expr(interp, env, ast_expr_lft(e));
+                        if (!val_is_true(*interp_stack_peek(interp))) {
+                            interp_stack_pop(interp);
+                            eval_expr(interp, env, ast_expr_rht(e));
+                        }
+                        break;
 
     case EXPR_CALL:     interp_set_error(interp, ERR_NotImplemented); break;
     case EXPR_ELEM:     interp_set_error(interp, ERR_NotImplemented); break;
@@ -125,7 +161,6 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
                             eval_expr(interp, env, ast_expr_rht(ast_expr_rht(e)));
                         }
                         break;
-    case EXPR_FUNCDEF:  interp_set_error(interp, ERR_NotImplemented); break;
     default:            interp_set_error(interp, ERR_InvalidSyntax); break;
     }
 }

@@ -62,6 +62,10 @@ static inline void interp_push_boolean(interp_t *interp, int b) {
     val_set_boolean(interp_stack_push(interp), b);
 }
 
+static inline void interp_push_script(interp_t *interp, intptr_t p) {
+    val_set_script(interp_stack_push(interp), p);
+}
+
 static inline void interp_neg_stack(interp_t *interp) {
     val_t *s = interp_stack_peek(interp);
 

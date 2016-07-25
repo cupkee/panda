@@ -125,6 +125,55 @@ static void test_eval_compare(void)
     interp_deinit(interp);
 }
 
+static void test_eval_logic(void)
+{
+    interp_t interp_st, *interp;
+    env_t *env = NULL;
+    val_t stack[128];
+    val_t *res;
+
+    interp = interp_init(&interp_st, stack, 128);
+
+    CU_ASSERT(0 == eval_string(interp, env, "false && false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false && true",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true && false",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true && true",   &res) && val_is_boolean(*res) &&  val_is_true(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "false || false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false || true",  &res) && val_is_boolean(*res) &&  val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true || false",  &res) && val_is_boolean(*res) &&  val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true || true",   &res) && val_is_boolean(*res) &&  val_is_true(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "0 && 0", &res) && val_is_number(*res) &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "0 && 1", &res) && val_is_number(*res) &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 && 0", &res) && val_is_number(*res) &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 && 1", &res) && val_is_number(*res) &&  1 == val_2_double(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "0 || 0", &res) && val_is_number(*res) &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "0 || 1", &res) && val_is_number(*res) &&  1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 || 0", &res) && val_is_number(*res) &&  1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 || 1", &res) && val_is_number(*res) &&  1 == val_2_double(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "0 && true",  &res) && val_is_number(*res)  &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "0 && false", &res) && val_is_number(*res)  &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 && true",  &res) && val_is_boolean(*res) &&  val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 && false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false && 0", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false && 1", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true  && 0", &res) && val_is_number(*res)  &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true  && 1", &res) && val_is_number(*res)  &&  1 == val_2_double(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "0 || true", &res)  && val_is_boolean(*res) &&  val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "0 || false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 || true", &res)  && val_is_number(*res)  &&  1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "1 || false", &res) && val_is_number(*res)  &&  1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false || 0", &res) && val_is_number(*res)  &&  0 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "false || 1", &res) && val_is_number(*res)  &&  1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true  || 0", &res) && val_is_boolean(*res) &&  val_is_true(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "true  || 1", &res) && val_is_boolean(*res) &&  val_is_true(*res));
+
+    interp_deinit(interp);
+}
 static void test_eval_symbal(void)
 {
     interp_t interp_st, *interp;
@@ -322,6 +371,35 @@ static void test_eval_while(void)
     env_deinit(env);
     interp_deinit(interp);
 }
+
+static void test_eval_function(void)
+{
+    interp_t interp_st, *interp;
+    env_t env_st, *env = &env_st;
+    val_t stack[128];
+    val_t *res;
+//    val_t *p;
+
+    interp = interp_init(&interp_st, stack, 128);
+    CU_ASSERT_FATAL(0 == env_init(&env_st, 16));
+
+    CU_ASSERT(-1 != env_set_variable(env, "a", val_mk_number(1)));
+    CU_ASSERT(-1 != env_set_variable(env, "b", val_mk_number(2)));
+
+    CU_ASSERT(0 == eval_string(interp, env, "def c(a, b) return a + b", &res) && val_is_function(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "c()", &res) && val_is_nan(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "c(a)", &res) && val_is_nan(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "c(a, b)", &res) && val_is_number(*res) && 3 == val_2_double(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "def d(a = a+b, b = b*2) return a + b", &res) && val_is_function(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "d()", &res) && val_is_number(*res) && 7 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "d(a)", &res) && val_is_number(*res) && 5 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "d(a, b)", &res) && val_is_number(*res) && 3 == val_2_double(*res));
+
+    env_deinit(env);
+    interp_deinit(interp);
+}
+
 CU_pSuite test_lang_eval_entry()
 {
     CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
@@ -330,10 +408,12 @@ CU_pSuite test_lang_eval_entry()
         CU_add_test(suite, "eval simple",       test_eval_simple);
         CU_add_test(suite, "eval calculate",    test_eval_calculate);
         CU_add_test(suite, "eval compare",      test_eval_compare);
+        CU_add_test(suite, "eval logic",        test_eval_logic);
         CU_add_test(suite, "eval symbal",       test_eval_symbal);
         CU_add_test(suite, "eval var stmt",     test_eval_var);
         CU_add_test(suite, "eval if stmt",      test_eval_if);
-        CU_add_test(suite, "eval if while",     test_eval_while);
+        CU_add_test(suite, "eval while stmt",   test_eval_while);
+        CU_add_test(suite, "eval function",     test_eval_function);
     }
 
     return suite;
