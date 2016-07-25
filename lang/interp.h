@@ -7,6 +7,8 @@
 #include "config.h"
 
 #include "val.h"
+#include "env.h"
+#include "compile.h"
 
 typedef struct interp_t{
     int error;
@@ -54,8 +56,9 @@ static inline void interp_push_nan(interp_t *interp) {
     val_set_nan(interp_stack_push(interp));
 }
 
-static inline void interp_push_number(interp_t *interp, int n) {
+static inline void interp_push_number(interp_t *interp, double n) {
     val_set_number(interp_stack_push(interp), n);
+//    printf("push value:  %llx\n",*(interp_stack_peek(interp)));
 }
 
 static inline void interp_push_boolean(interp_t *interp, int b) {
@@ -69,6 +72,7 @@ static inline void interp_push_script(interp_t *interp, intptr_t p) {
 static inline void interp_neg_stack(interp_t *interp) {
     val_t *s = interp_stack_peek(interp);
 
+    //printf("peek value:  %llx\n",*s);
     *s = val_negation(*s);
 }
 
@@ -219,6 +223,8 @@ static inline void interp_assign(interp_t *interp) {
 
     *res = *val_2_reference(*a) = *b;
 }
+
+int interp_run(interp_t *interp, env_t *env, module_t *mod);
 
 #endif /* __LANG_INTERP_INC__ */
 

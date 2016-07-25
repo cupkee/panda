@@ -84,11 +84,11 @@ static expr_t *parse_expr_unary(intptr_t lex, void (*cb)(void *, parse_event_t *
 
     if (tok == '!') {
         lex_match(lex, tok);
-        expr = parse_expr_form_unary(lex, EXPR_NOT, parse_expr_unary(lex, cb, user_data), cb, user_data);
+        expr = parse_expr_form_unary(lex, EXPR_LOGIC_NOT, parse_expr_unary(lex, cb, user_data), cb, user_data);
     } else
     if (tok == '-' || tok == '~') {
         lex_match(lex, tok);
-        expr = parse_expr_form_unary(lex, tok == '-' ? EXPR_MINUS : EXPR_NEGATE,
+        expr = parse_expr_form_unary(lex, tok == '-' ? EXPR_NEG : EXPR_NOT,
                                      parse_expr_unary(lex, cb, user_data), cb, user_data);
     } else {
         expr = parse_expr_primary(lex, cb, user_data);
@@ -151,7 +151,7 @@ static expr_t *parse_expr_aand (intptr_t lex, void (*cb)(void *, parse_event_t *
 
     while (expr && (tok == '&' || tok == '|' || tok == '^')) {
         lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, tok == '&' ? EXPR_AAND : tok == '|' ? EXPR_AOR : EXPR_AXOR,
+        expr = parse_expr_form_binary(lex, tok == '&' ? EXPR_AND : tok == '|' ? EXPR_OR : EXPR_XOR,
                                       expr, parse_expr_shift(lex, cb, user_data), cb, user_data);
         tok = lex_token(lex, NULL);
     }
@@ -193,7 +193,7 @@ static expr_t *parse_expr_logic_and(intptr_t lex, void (*cb)(void *, parse_event
 
     if (expr && (tok == TOK_LOGICAND)) {
         lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_LAND, expr, parse_expr_logic_and(lex, cb, user_data), cb, user_data);
+        expr = parse_expr_form_binary(lex, EXPR_LOGIC_AND, expr, parse_expr_logic_and(lex, cb, user_data), cb, user_data);
     }
 
     return expr;
@@ -206,7 +206,7 @@ static expr_t *parse_expr_logic_or(intptr_t lex, void (*cb)(void *, parse_event_
 
     if (expr && (tok == TOK_LOGICOR)) {
         lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_LOR, expr, parse_expr_logic_or(lex, cb, user_data), cb, user_data);
+        expr = parse_expr_form_binary(lex, EXPR_LOGIC_OR, expr, parse_expr_logic_or(lex, cb, user_data), cb, user_data);
     }
 
     return expr;

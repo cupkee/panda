@@ -77,9 +77,9 @@ static void expr_stringify(void *u, expr_t *e)
         case EXPR_STRING:
             b->pos += snprintf(b->buf + b->pos, b->end - b->pos, "'%s'", ast_expr_text(e)); break;
         // unary expression
-        case EXPR_MINUS: b->buf[b->pos++] = '-'; break;
-        case EXPR_NEGATE: b->buf[b->pos++] = '~'; break;
-        case EXPR_NOT: b->buf[b->pos++] = '!'; break;
+        case EXPR_NEG: b->buf[b->pos++] = '-'; break;
+        case EXPR_NOT: b->buf[b->pos++] = '~'; break;
+        case EXPR_LOGIC_NOT: b->buf[b->pos++] = '!'; break;
         case EXPR_ARRAY: b->buf[b->pos++] = '['; break;
         case EXPR_DICT: b->buf[b->pos++] = '{'; break;
         // binary expression
@@ -90,9 +90,9 @@ static void expr_stringify(void *u, expr_t *e)
         case EXPR_SUB: b->buf[b->pos++] = '-'; break;
         case EXPR_LSHIFT: b->buf[b->pos++] = '<'; b->buf[b->pos++] = '<'; break;
         case EXPR_RSHIFT: b->buf[b->pos++] = '>'; b->buf[b->pos++] = '>'; break;
-        case EXPR_AAND: b->buf[b->pos++] = '&'; break;
-        case EXPR_AOR: b->buf[b->pos++] = '|'; break;
-        case EXPR_AXOR: b->buf[b->pos++] = '^'; break;
+        case EXPR_AND: b->buf[b->pos++] = '&'; break;
+        case EXPR_OR: b->buf[b->pos++] = '|'; break;
+        case EXPR_XOR: b->buf[b->pos++] = '^'; break;
         case EXPR_TNE: b->buf[b->pos++] = '!'; b->buf[b->pos++] = '='; break;
         case EXPR_TEQ: b->buf[b->pos++] = '='; b->buf[b->pos++] = '='; break;
         case EXPR_TGT: b->buf[b->pos++] = '>'; break;
@@ -100,8 +100,8 @@ static void expr_stringify(void *u, expr_t *e)
         case EXPR_TLT: b->buf[b->pos++] = '<'; break;
         case EXPR_TLE: b->buf[b->pos++] = '<'; b->buf[b->pos++] = '='; break;
         case EXPR_TIN: b->buf[b->pos++] = 'i'; b->buf[b->pos++] = 'n'; break;
-        case EXPR_LAND: b->buf[b->pos++] = '&'; b->buf[b->pos++] = '&'; break;
-        case EXPR_LOR:  b->buf[b->pos++] = '|'; b->buf[b->pos++] = '|'; break;
+        case EXPR_LOGIC_AND: b->buf[b->pos++] = '&'; b->buf[b->pos++] = '&'; break;
+        case EXPR_LOGIC_OR:  b->buf[b->pos++] = '|'; b->buf[b->pos++] = '|'; break;
         case EXPR_ASSIGN: b->buf[b->pos++] = '='; break;
         case EXPR_COMMA: b->buf[b->pos++] = ','; break;
         case EXPR_ATTR: b->buf[b->pos++] = '.'; break;

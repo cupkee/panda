@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "parse.h"
 #include "interp.h"
+#include "compile.h"
 
 #include "eval.h"
 
@@ -107,9 +108,9 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
     case EXPR_FUNCDEF:  interp_push_script(interp, eval_funcdef(interp, env, e)); break;
     case EXPR_STRING:   interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_MINUS:    eval_expr(interp, env, ast_expr_lft(e)); interp_neg_stack(interp); break;
-    case EXPR_NEGATE:   eval_expr(interp, env, ast_expr_lft(e)); interp_not_stack(interp); break;
-    case EXPR_NOT:      eval_expr(interp, env, ast_expr_lft(e)); interp_logic_not_stack(interp); break;
+    case EXPR_NEG:      eval_expr(interp, env, ast_expr_lft(e)); interp_neg_stack(interp); break;
+    case EXPR_NOT:      eval_expr(interp, env, ast_expr_lft(e)); interp_not_stack(interp); break;
+    case EXPR_LOGIC_NOT:eval_expr(interp, env, ast_expr_lft(e)); interp_logic_not_stack(interp); break;
     case EXPR_ARRAY:    interp_set_error(interp, ERR_NotImplemented); break;
     case EXPR_DICT:     interp_set_error(interp, ERR_NotImplemented); break;
 
@@ -119,9 +120,9 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
     case EXPR_ADD:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_add_stack(interp); break;
     case EXPR_SUB:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_sub_stack(interp); break;
 
-    case EXPR_AAND:     eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_and_stack(interp); break;
-    case EXPR_AOR:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_or_stack(interp); break;
-    case EXPR_AXOR:     eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_xor_stack(interp); break;
+    case EXPR_AND:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_and_stack(interp); break;
+    case EXPR_OR:       eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_or_stack(interp); break;
+    case EXPR_XOR:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_xor_stack(interp); break;
 
     case EXPR_LSHIFT:   eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_lshift_stack(interp); break;
     case EXPR_RSHIFT:   eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_rshift_stack(interp); break;
@@ -134,13 +135,13 @@ static void eval_expr(interp_t *interp, env_t *env, expr_t *e)
     case EXPR_TLE:      eval_expr(interp, env, ast_expr_lft(e)); eval_expr(interp, env, ast_expr_rht(e)); interp_tle_stack(interp); break;
     case EXPR_TIN:      interp_set_error(interp, ERR_NotImplemented); break;
 
-    case EXPR_LAND:     eval_expr(interp, env, ast_expr_lft(e));
+    case EXPR_LOGIC_AND:eval_expr(interp, env, ast_expr_lft(e));
                         if (val_is_true(*interp_stack_peek(interp))) {
                             interp_stack_pop(interp);
                             eval_expr(interp, env, ast_expr_rht(e));
                         }
                         break;
-    case EXPR_LOR:      eval_expr(interp, env, ast_expr_lft(e));
+    case EXPR_LOGIC_OR: eval_expr(interp, env, ast_expr_lft(e));
                         if (!val_is_true(*interp_stack_peek(interp))) {
                             interp_stack_pop(interp);
                             eval_expr(interp, env, ast_expr_rht(e));
@@ -298,7 +299,10 @@ int eval_string(interp_t *interp, env_t *env, const char *input, val_t **v)
 {
     lexer_t lex_st;
     stmt_t  *stmt;
+    module_t mod;
+    compile_t cpl;
     intptr_t lex;
+    int status = -1;
 
     if (!interp || !input) {
         return -1;
@@ -307,18 +311,30 @@ int eval_string(interp_t *interp, env_t *env, const char *input, val_t **v)
     get_line_init(input);
     lex = lex_init(&lex_st, get_line_from_string);
 
-    stmt = parse_stmt(lex, NULL, NULL);
-    if (!stmt) {
+    if (0 != compile_init(&cpl, 16, 16)) {
         return -1;
     }
-    eval_stmt(interp, env, stmt);
 
-    if (interp->error == 0 && v) {
+    stmt = parse_stmt(lex, NULL, NULL);
+    if (!stmt) {
+        compile_deinit(&cpl);
+        return -1;
+    }
+
+    if (0 == compile_stmt(&cpl, stmt, NULL, NULL)) {
+        compile_build_module(&cpl, &mod);
+    } else {
+        goto DO_END;
+    }
+
+    if (0 == (status = interp_run(interp, env, &mod)) && v) {
         *v = interp->result;
     }
 
+DO_END:
     ast_stmt_release(stmt);
+    compile_deinit(&cpl);
 
-    return interp->error;
+    return status;
 }
 

@@ -26,5 +26,10 @@
 #define LEX_LINE_BUF_SIZE   (128)
 #define LEX_TOK_SIZE        (32)
 
+#define STATIC_NUM_LIMIT    (65535)
+#if STATIC_NUM_LIMIT > 255
+#define NUM_CODE_2
+#endif
+
 #endif /* __CUPKEE_CONFIG__ */
 

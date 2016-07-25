@@ -7,7 +7,9 @@
 #define ERR_InvalidToken    4
 #define ERR_InvalidSyntax   5
 #define ERR_InvalidSementic 6
-#define ERR_NotDefinedId    7
+#define ERR_InvalidByteCode 7
+#define ERR_NotDefinedId    8
+#define ERR_StaticNumberOverrun 9
 
 #endif /* __LANG_ERR_INC__ */
 

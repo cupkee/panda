@@ -60,11 +60,11 @@ typedef union {
 #define VAR_MASK            (~MAKE_TAG(1, 0xF))
 
 static inline double val_2_double(val_t v) {
-    return ((valnum_t)v).d;
+    return ((valnum_t*)&v)->d;
 }
 
 static inline int val_2_integer(val_t v) {
-    return (int) ((valnum_t)v).d;
+    return (int) (((valnum_t*)&v)->d);
 }
 
 static inline char * val_2_string(val_t v) {
@@ -80,7 +80,7 @@ static inline val_t *val_2_reference(val_t v) {
 }
 
 static inline val_t double_2_val(double d) {
-    return ((valnum_t)d).v;
+    return ((valnum_t*)&d)->v;
 }
 
 static inline int val_is_number(val_t v) {

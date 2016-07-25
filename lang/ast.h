@@ -7,32 +7,6 @@
 #include "config.h"
 
 #include "lex.h"
-/*
-enum OP_CODE {
-    OP_EQ,          // ==
-    OP_NE,          // !=
-    OP_GE,          // >=
-    OP_LE,          // <=
-
-    OP_ADDASSIGN,
-    OP_SUBASSIGN,
-    OP_MULASSIGN,
-    OP_DIVASSIGN,
-    OP_MODASSIGN,
-    OP_ANDASSIGN,
-    OP_ORASSIGN,
-    OP_XORASSIGN,
-    OP_NOTASSIGN,
-    OP_LSHIFTASSIGN,
-    OP_RSHIFTASSIGN,
-
-    OP_LSHIFT,      // <<
-    OP_RSHIFT,      // >>
-
-    OP_LAND,        // &&
-    OP_LOR,         // ||
-};
-*/
 
 enum EXPR_TYPE {
     // factor expression
@@ -47,9 +21,9 @@ enum EXPR_TYPE {
     EXPR_STRING,
 
     // unary expression
-    EXPR_MINUS,
-    EXPR_NEGATE,
+    EXPR_NEG,
     EXPR_NOT,
+    EXPR_LOGIC_NOT,
     EXPR_ARRAY,
     EXPR_DICT,
 
@@ -63,9 +37,9 @@ enum EXPR_TYPE {
     EXPR_LSHIFT,
     EXPR_RSHIFT,
 
-    EXPR_AAND,
-    EXPR_AOR,
-    EXPR_AXOR,
+    EXPR_AND,
+    EXPR_OR,
+    EXPR_XOR,
 
     EXPR_TNE,
     EXPR_TEQ,
@@ -75,8 +49,8 @@ enum EXPR_TYPE {
     EXPR_TLE,
     EXPR_TIN,
 
-    EXPR_LAND,
-    EXPR_LOR,
+    EXPR_LOGIC_AND,
+    EXPR_LOGIC_OR,
 
     EXPR_ASSIGN,
     EXPR_COMMA,

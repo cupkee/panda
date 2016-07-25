@@ -183,23 +183,23 @@ static void test_expr_unary(void)
     CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_MINUS);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NEG);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_NEGATE);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("b", TEXT(L_(expr))));
     ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("c", TEXT(L_(expr))));
     ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
-    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NOT);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_NOT);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_LOGIC_NOT);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID
                 && !strcmp("d", TEXT(L_(L_(expr)))));
     ast_expr_release(expr);
@@ -376,9 +376,9 @@ static void test_expr_logic(void)
     CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_LOR);
-    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_LAND);
-    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_LAND);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_OR);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_LOGIC_AND);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_LOGIC_AND);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID);
     CU_ASSERT(L_(L_(expr)) && 0 == strcmp(TEXT(L_(L_(expr))), "a"));
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID);
