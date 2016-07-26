@@ -179,32 +179,88 @@ static void compile_expr_binary(compile_t *cpl, expr_t *e, uint8_t code, void (*
     }
 }
 
-static void compile_true_jmp(compile_t *cpl, int pos, int len)
+static void compile_jmp(compile_t *cpl, int from, int to)
 {
-    if (!cpl->error && 0 == compile_code_insert(cpl, pos, len > 127 ? 4 : 3)) {
-        if (len > 127) {
-            cpl->code_buf[pos++] = BC_JMP_T;
-            cpl->code_buf[pos++] = len >> 8;
+    int step = to - from;
+
+    //printf("jmp %d, from %d\n", len, pos);
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 3 : 2)) {
+        if (step > 127) {
+            cpl->code_buf[from++] = BC_JMP;
+            cpl->code_buf[from++] = step >> 8;
         } else {
-            cpl->code_buf[pos++] = BC_SJMP_T;
+            cpl->code_buf[from++] = BC_SJMP;
         }
-        cpl->code_buf[pos++] = len;
-        cpl->code_buf[pos++] = BC_POP;
+        cpl->code_buf[from++] = step;
     }
 }
 
-static void compile_false_jmp(compile_t *cpl, int pos, int len)
+static void compile_tt_jmp_pop(compile_t *cpl, int from, int to)
 {
-    if (!cpl->error && 0 == compile_code_insert(cpl, pos, len > 127 ? 4 : 3)) {
-        if (len > 127) {
-            cpl->code_buf[pos++] = BC_JMP_F;
-            cpl->code_buf[pos++] = len >> 8;
+    int step = to - from + 1; // one POP instruction
+
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 4 : 3)) {
+        if (step > 127) {
+            cpl->code_buf[from++] = BC_JMP_T;
+            cpl->code_buf[from++] = step >> 8;
         } else {
-            cpl->code_buf[pos++] = BC_SJMP_F;
+            cpl->code_buf[from++] = BC_SJMP_T;
         }
-        cpl->code_buf[pos++] = len;
-        cpl->code_buf[pos++] = BC_POP;
+        cpl->code_buf[from++] = step;
+        cpl->code_buf[from++] = BC_POP;
     }
+}
+
+static void compile_nt_jmp_pop(compile_t *cpl, int from, int to)
+{
+    int step = to - from + 1; // one POP instruction
+
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 4 : 3)) {
+        if (step > 127) {
+            cpl->code_buf[from++] = BC_JMP_F;
+            cpl->code_buf[from++] = step >> 8;
+        } else {
+            cpl->code_buf[from++] = BC_SJMP_F;
+        }
+        cpl->code_buf[from++] = step;
+        cpl->code_buf[from++] = BC_POP;
+    }
+}
+
+static void compile_pop_nt_jmp(compile_t *cpl, int from, int to)
+{
+    int step = to - from;
+
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 3 : 2)) {
+        if (step > 127) {
+            cpl->code_buf[from++] = BC_JMP_F_POP;
+            cpl->code_buf[from++] = step >> 8;
+        } else {
+            cpl->code_buf[from++] = BC_SJMP_F_POP;
+        }
+        cpl->code_buf[from++] = step;
+    }
+}
+
+static void compile_expr_logic_and(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+{
+    int pos;
+    compile_expr(cpl, ast_expr_lft(e), cb, u); pos = cpl->code_pos;
+    compile_expr(cpl, ast_expr_rht(e), cb, u);
+    compile_nt_jmp_pop(cpl, pos, cpl->code_pos);
+}
+
+static void compile_expr_logic_or(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+{
+    int pos;
+    compile_expr(cpl, ast_expr_lft(e), cb, u); pos = cpl->code_pos;
+    compile_expr(cpl, ast_expr_rht(e), cb, u);
+    compile_tt_jmp_pop(cpl, pos, cpl->code_pos);
+}
+
+static void compile_expr_lft(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+{
+    cpl->error = ERR_NotImplemented;
 }
 
 static void compile_expr(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
@@ -250,31 +306,28 @@ static void compile_expr(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), 
     case EXPR_TLE:      compile_expr_binary(cpl, e, BC_TLE, cb, u); break;
     case EXPR_TIN:      compile_expr_binary(cpl, e, BC_TIN, cb, u); break;
 
-    case EXPR_LOGIC_AND:{
-                        int pos, len;
-                        compile_expr(cpl, ast_expr_lft(e), cb, u); pos = cpl->code_pos;
-                        compile_expr(cpl, ast_expr_rht(e), cb, u); len = cpl->code_pos - pos + 1;
-                        compile_false_jmp(cpl, pos, len);
-                        }
-                        break;
-
-    case EXPR_LOGIC_OR: {
-                        int pos, len;
-                        compile_expr(cpl, ast_expr_lft(e), cb, u); pos = cpl->code_pos;
-                        compile_expr(cpl, ast_expr_rht(e), cb, u); len = cpl->code_pos - pos + 1;
-                        compile_true_jmp(cpl, pos, len);
-                        }
-                        break;
+    case EXPR_LOGIC_AND:compile_expr_logic_and(cpl, e, cb, u); break;
+    case EXPR_LOGIC_OR: compile_expr_logic_or(cpl, e, cb, u); break;
 
     case EXPR_CALL:     cpl->error = ERR_NotImplemented; break;
     case EXPR_ELEM:     cpl->error = ERR_NotImplemented; break;
     case EXPR_ATTR:     cpl->error = ERR_NotImplemented; break;
 
-    case EXPR_ASSIGN:   cpl->error = ERR_NotImplemented; break;
+    case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e), cb, u);
+                        compile_expr(cpl, ast_expr_rht(e), cb, u);
+                        compile_code_append(cpl, BC_ASSIGN);
 
-    case EXPR_COMMA:    cpl->error = ERR_NotImplemented; break;
-    case EXPR_TERNARY:  cpl->error = ERR_NotImplemented; break;
-
+    case EXPR_COMMA:    compile_expr(cpl, ast_expr_lft(e), cb, u); compile_code_append(cpl, BC_POP);
+                        compile_expr(cpl, ast_expr_rht(e), cb, u); break;
+    case EXPR_TERNARY:  {
+                            int pos1, pos2, end;
+                            compile_expr(cpl, ast_expr_lft(e), cb, u); pos1 = cpl->code_pos;
+                            compile_expr(cpl, ast_expr_lft(ast_expr_rht(e)), cb, u); pos2 = cpl->code_pos;
+                            compile_expr(cpl, ast_expr_rht(ast_expr_rht(e)), cb, u); end = cpl->code_pos;
+                            compile_jmp(cpl, pos2, end);
+                            compile_pop_nt_jmp(cpl, pos1, pos2 + (cpl->code_pos - end));
+                        }
+                        break;
     default:            cpl->error = ERR_NotImplemented; break;
     }
 }
@@ -303,6 +356,8 @@ int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void 
     }
 
     compile_code_append(cpl, BC_STOP);
+
+    //printf("Code size: %d\n", cpl->code_pos);
 
     return -cpl->error;
 }

@@ -324,6 +324,7 @@ int eval_string(interp_t *interp, env_t *env, const char *input, val_t **v)
     if (0 == compile_stmt(&cpl, stmt, NULL, NULL)) {
         compile_build_module(&cpl, &mod);
     } else {
+        printf("compile fail\n");
         goto DO_END;
     }
 

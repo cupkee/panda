@@ -36,6 +36,8 @@ typedef enum bcode_t {
     BC_POP_RESULT,
     BC_POP_VARIABLE,
 
+    BC_ASSIGN,
+
     BC_NEG,
     BC_NOT,
     BC_LOGIC_NOT,
@@ -50,8 +52,6 @@ typedef enum bcode_t {
     BC_AAND,
     BC_AOR,
     BC_AXOR,
-    BC_LAND,
-    BC_LOR,
 
     BC_TEQ,
     BC_TNE,
@@ -61,7 +61,6 @@ typedef enum bcode_t {
     BC_TLE,
     BC_TIN,
 } bcode_t;
-
 
 #endif /* __LANG_BCODE_INC__ */
 

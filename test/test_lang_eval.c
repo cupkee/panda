@@ -117,13 +117,10 @@ static void test_eval_compare(void)
     CU_ASSERT(0 == eval_string(interp, env, "0 <= 1", &res) && val_is_boolean(*res) &&  val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "1 <= 1", &res) && val_is_boolean(*res) &&  val_is_true(*res));
 
-    /*
     CU_ASSERT(0 == eval_string(interp, env, "0 > 1 ? 0 : 1", &res) && val_is_number(*res) &&  1 == val_2_double(*res));
     CU_ASSERT(0 == eval_string(interp, env, "0 < 1 ? 0 : 1", &res) && val_is_number(*res) &&  0 == val_2_double(*res));
-
     CU_ASSERT(0 == eval_string(interp, env, "0 > 1 ? 0 ? 10: 20 : 1 ? 30: 40", &res) && val_is_number(*res) &&  30 == val_2_double(*res));
     CU_ASSERT(0 == eval_string(interp, env, "0 < 1 ? 0 ? 10: 20 : 1 ? 30: 40", &res) && val_is_number(*res) &&  20 == val_2_double(*res));
-    */
 
     interp_deinit(interp);
 }
@@ -138,6 +135,7 @@ static void test_eval_logic(void)
     interp = interp_init(&interp_st, stack, 128);
 
     CU_ASSERT(0 == eval_string(interp, env, "false && false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
+    //printf("---------------------------\n");
     CU_ASSERT(0 == eval_string(interp, env, "false && true",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true && false",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true && true",   &res) && val_is_boolean(*res) &&  val_is_true(*res));
@@ -174,8 +172,8 @@ static void test_eval_logic(void)
     CU_ASSERT(0 == eval_string(interp, env, "false || 1", &res) && val_is_number(*res)  &&  1 == val_2_double(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true  || 0", &res) && val_is_boolean(*res) &&  val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true  || 1", &res) && val_is_boolean(*res) &&  val_is_true(*res));
-    if (0) {
-    }
+    /*
+    */
 
     interp_deinit(interp);
 }
