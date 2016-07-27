@@ -339,6 +339,7 @@ static inline val_t val_rshift(val_t a, val_t b) {
 static inline int val_teq(val_t a, val_t b) {
     if (val_is_number(a)) {
         if (val_is_number(b))
+            //printf("%f eq %f\n", val_2_double(a) , val_2_double(b));
             return (val_2_double(a) == val_2_double(b));
     } else
     if ((a & TAG_MASK) == (b & TAG_MASK)) {

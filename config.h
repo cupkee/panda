@@ -26,6 +26,10 @@
 #define LEX_LINE_BUF_SIZE   (128)
 #define LEX_TOK_SIZE        (32)
 
+#define DEF_FUNC_SIZE       (4)
+#define DEF_VMAP_SIZE       (8)
+#define DEF_CODE_SIZE       (32)
+#define DEF_STATIC_NUM_SIZE (32)
 #define STATIC_NUM_LIMIT    (65535)
 #if STATIC_NUM_LIMIT > 255
 #define NUM_CODE_2

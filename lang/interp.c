@@ -6,8 +6,8 @@
 #include "interp.h"
 #include "bcode.h"
 
-//#define SHOW(...) printf(__VA_ARGS__)
-#define SHOW(...) //
+#define SHOW(...) printf(__VA_ARGS__)
+//#define SHOW(...) //
 
 interp_t *interp_init(interp_t *interp, val_t *stack_ptr, int stack_size)
 {
@@ -17,7 +17,6 @@ interp_t *interp_init(interp_t *interp, val_t *stack_ptr, int stack_size)
         interp->sp = stack_size;
 
         interp->error = 0;
-        interp->skip  = 0;
 
         interp->result = NULL;
     }
@@ -96,7 +95,7 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                             }
                             break;
         case BC_JMP_F_POP:  index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            SHOW("JMP_F_POP: %d\n", index);
+                            SHOW("JMP_F_POP: %d(%.4x)\n", index, index);
                             if (!val_is_true(*interp_stack_pop(interp))) {
                                 pc += index;
                             }
@@ -107,14 +106,14 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
         case BC_PUSH_TRUE:  SHOW("PUSH_TRUE\n"); interp_push_boolean(interp, 1); break;
         case BC_PUSH_FALSE: SHOW("PUSH_FALSE\n"); interp_push_boolean(interp, 0); break;
         case BC_PUSH_ZERO:  SHOW("PUSH_NUM 0\n"); interp_push_number(interp, 0); break;
-
-#ifdef NUM_CODE_2
         case BC_PUSH_NUM:   index = code[pc++]; index = (index << 8) + code[pc++];
-#else
-        case BC_PUSH_NUM:   index = code[pc++];
-#endif
                             SHOW("PUSH_NUM %f\n", static_num[index]);
                             interp_push_number(interp, static_num[index]); break;
+        case BC_PUSH_VAR:   index = code[pc++]; SHOW("PUSH_VAR %d\n", index);
+                            *(interp_stack_push(interp)) = env->scope->variables[index]; break;
+        case BC_PUSH_VAR_REF:
+                            index = code[pc++]; SHOW("PUSH_VAR_REF %d\n", index);
+                            val_set_reference(interp_stack_push(interp), env->scope->variables + index); break;
 
         case BC_POP:        SHOW("POP\n"); interp_stack_pop(interp); break;
         case BC_POP_RESULT: SHOW("POP_RESULT\n"); interp->result = interp_stack_pop(interp); break;
@@ -144,6 +143,8 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
         case BC_TLE:        SHOW("TLE\n"); interp_tle_stack(interp); break;
 
         case BC_TIN:        SHOW("TIN\n"); interp_set_error(interp, ERR_InvalidByteCode); break;
+
+        case BC_ASSIGN:     SHOW("ASSING\n"); interp_assign(interp); break;
 
         default:            interp_set_error(interp, ERR_InvalidByteCode);
         }

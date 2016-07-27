@@ -14,23 +14,58 @@ typedef struct module_t {
     uint8_t *code;
 } module_t;
 
-typedef struct compile_t {
-    int error;
+typedef struct compile_func_t {
+    int owner;
+    int var_size;
+    int var_num;
+    int arg_num;
     int code_size;
     int code_pos;
+    uint8_t  *code_buf;
+    intptr_t *vars_map;
+} compile_func_t;
+
+typedef struct compile_t {
+    int error;
     int nums_size;
     int nums_pos;
     double  *nums_buf;
-    uint8_t *code_buf;
+
+    int bgn_pos;   // for loop continue
+    int skip_pos;  // for loop break
+
+    int func_size;
+    int func_num;
+    int func_cur;
+    compile_func_t *func_buf;
+    intptr_t sym_tbl;
 } compile_t;
 
-int compile_init(compile_t *cpl, int code_size, int nums_size);
+int compile_init(compile_t *cpl, intptr_t sym_tbl);
 int compile_deinit(compile_t *cpl);
 
+intptr_t compile_sym_add(compile_t *cpl, const char *sym);
+int compile_var_add(compile_t *cpl, intptr_t sym_id);
+int compile_var_get(compile_t *cpl, intptr_t sym_id);
+static inline void compile_code_clean(compile_t *cpl) {
+    if (cpl && cpl->func_buf && cpl->func_num)
+        cpl->func_buf[cpl->func_cur].code_pos = 0;
+}
+
+static inline int compile_var_num(compile_t *cpl) {
+    return (cpl && cpl->func_buf && cpl->func_num) ?
+            cpl->func_buf[cpl->func_cur].var_num : 0;
+}
+static inline int compile_arg_num(compile_t *cpl) {
+    return (cpl && cpl->func_buf && cpl->func_num) ?
+            cpl->func_buf[cpl->func_cur].arg_num : 0;
+}
+
 int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
 
 static inline int compile_build_module(compile_t *cpl, module_t *mod) {
-    mod->code = cpl->code_buf;
+    mod->code = cpl->func_buf[0].code_buf;
     mod->nums = cpl->nums_buf;
 
     return 0;

@@ -31,6 +31,8 @@ typedef enum bcode_t {
     BC_PUSH_FALSE,
     BC_PUSH_NUM,
     BC_PUSH_STR,
+    BC_PUSH_VAR,
+    BC_PUSH_VAR_REF,
 
     BC_POP,
     BC_POP_RESULT,
