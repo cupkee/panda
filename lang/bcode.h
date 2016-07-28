@@ -9,6 +9,9 @@ typedef enum bcode_t {
     BC_STOP = 0,
     BC_PASS = 1,
 
+    BC_RET,
+    BC_RET0,
+
     BC_JMP,
     BC_SJMP,
     BC_JMP_POP,
@@ -33,12 +36,15 @@ typedef enum bcode_t {
     BC_PUSH_STR,
     BC_PUSH_VAR,
     BC_PUSH_VAR_REF,
+    BC_PUSH_SCRIPT,
+    BC_PUSH_NATIVE,
 
     BC_POP,
     BC_POP_RESULT,
     BC_POP_VARIABLE,
 
     BC_ASSIGN,
+    BC_FUNC_CALL,
 
     BC_NEG,
     BC_NOT,

@@ -10,6 +10,7 @@
 #define ERR_InvalidByteCode 7
 #define ERR_NotDefinedId    8
 #define ERR_StaticNumberOverrun 9
+#define ERR_StackOverflow   10
 
 #endif /* __LANG_ERR_INC__ */
 
