@@ -140,7 +140,6 @@ static void test_eval_logic(void)
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st));
 
     CU_ASSERT(0 == eval_string(interp, env, "false && false", &res) && val_is_boolean(*res) &&  !val_is_true(*res));
-    //printf("---------------------------\n");
     CU_ASSERT(0 == eval_string(interp, env, "false && true",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true && false",  &res) && val_is_boolean(*res) &&  !val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "true && true",   &res) && val_is_boolean(*res) &&  val_is_true(*res));
@@ -246,7 +245,6 @@ static void test_eval_symbal(void)
     CU_ASSERT(0 == eval_string(interp, env, "a - b < 10", &res) && val_is_boolean(*res) &&  val_is_true(*res));
     CU_ASSERT(0 == eval_string(interp, env, "a * b == 10", &res) && val_is_boolean(*res) &&  val_is_true(*res));
 
-    //printf("---------------------------\n");
     eval_env_deinit(env);
     interp_deinit(interp);
 }
@@ -262,7 +260,6 @@ static void test_eval_var(void)
     interp = interp_init(&interp_st, stack, 128);
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st));
 
-    //printf("---------------------------\n");
     CU_ASSERT(0 == eval_string(interp, env, "var a;", &res) && val_is_undefined(*res));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_undefined(*p));
     CU_ASSERT(0 == eval_string(interp, env, "a;", &res) && val_is_undefined(*res));
@@ -278,7 +275,7 @@ static void test_eval_var(void)
     CU_ASSERT(-1 != eval_env_get_var(env, "f", &p) && val_is_undefined(*p));
 
     // redefine f
-    CU_ASSERT(0 == eval_string(interp, env, "var f, g, h, k = 0;", &res) && val_is_undefined(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "var f, g, h, k = 0, j, s, m;", &res) && val_is_undefined(*res));
     CU_ASSERT(-1 != eval_env_get_var(env, "f", &p) && val_is_undefined(*p));
     CU_ASSERT(-1 != eval_env_get_var(env, "g", &p) && val_is_undefined(*p));
     CU_ASSERT(-1 != eval_env_get_var(env, "h", &p) && val_is_undefined(*p));
@@ -443,6 +440,10 @@ static void test_eval_function(void)
     CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(1)));
     CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(3)));
 
+    CU_ASSERT(0 == eval_string(interp, env, "def zero() return 0", &res) && val_is_function(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "b = a + zero() + 2", &res) && val_is_number(*res) && 3 == val_2_double(*res));
+    CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(*p) &&  3 == val_2_double(*p));
+
     CU_ASSERT(0 == eval_string(interp, env, "def fn(a, b) return a + b", &res) && val_is_function(*res));
     CU_ASSERT(-1 != eval_env_get_var(env, "fn", &p) && val_is_function(*p));
     CU_ASSERT(0 == eval_string(interp, env, "a = b = fn(a, b)", &res) && val_is_number(*res) && 4 == val_2_double(*res));
@@ -456,13 +457,41 @@ static void test_eval_function(void)
     // CU_ASSERT(0 == eval_string(interp, env, fff, &res) && val_is_function(*res));
     // CU_ASSERT(0 == eval_string(interp, env, "a = fff(10)", &res) && val_is_number(*res) && 362880 == val_2_double(*res));
 
+
     eval_env_deinit(env);
     interp_deinit(interp);
 }
 
-static val_t test_native_1(interp_t *interp, env_t *env, int ac, val_t *av)
+val_t test_native_one(interp_t *interp, env_t *env, int ac, val_t *av)
 {
-    return val_mk_number(99);
+    return val_mk_number(1);
+}
+
+val_t test_native_add(interp_t *interp, env_t *env, int ac, val_t *av)
+{
+    printf("native add be called!\n");
+    if (ac == 0)
+        return val_mk_nan();
+    if (ac == 1)
+        return av[0];
+    return val_add(av[0], av[1]);
+}
+
+val_t test_native_fib(interp_t *interp, env_t *env, int ac, val_t *av)
+{
+    int a, b, c, max;
+
+    if (ac < 1 || !val_is_number(av[0])) {
+        return val_mk_nan();
+    }
+    max = val_2_integer(av[0]);
+    a = b = 1;
+
+    while(b < max) {
+        c = b; b = a + b; a = c;
+    }
+
+    return val_mk_number(b);
 }
 
 static void test_eval_native(void)
@@ -473,20 +502,36 @@ static void test_eval_native(void)
     val_t *res;
     val_t *p;
 
-
     interp = interp_init(&interp_st, stack, 128);
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(1)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "fa", val_mk_native(test_native_1)));
+    CU_ASSERT(0 <= eval_env_add_native(env, "add", test_native_add));
+    CU_ASSERT(0 <= eval_env_add_native(env, "fib", test_native_fib));
 
-    CU_ASSERT(0 == eval_string(interp, env, "a = a + fa(1, 2, 3)", &res) && val_is_number(*res) && 100 == val_2_double(*res));
-    CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(*p) &&  100 == val_2_double(*p));
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(1)));
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(1)));
+    CU_ASSERT(-1 != eval_env_add_var(env, "one", val_mk_native(test_native_one)));
+
+    CU_ASSERT(0 == eval_string(interp, env, "b = a + one()", &res) && val_is_number(*res) && 2 == val_2_double(*res));
+    CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(*p) &&  2 == val_2_double(*p));
+
+    CU_ASSERT(0 == eval_string(interp, env, "a = b + add(a, b);", &res) && val_is_number(*res) && 5 == val_2_double(*res));
+    CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(*p) &&  5 == val_2_double(*p));
+
+    CU_ASSERT(0 == eval_string(interp, env, "a = one()", &res) && val_is_number(*res) && 1 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "b = 999", &res) && val_is_number(*res) && 999 == val_2_double(*res));
+    CU_ASSERT(0 == eval_string(interp, env, "fib(add(a, b))", &res) && val_is_number(*res) && 1597 == val_2_double(*res));
+
+    CU_ASSERT(0 == eval_string(interp, env, "a = (0 + add(b, one())) * 1;", &res) && val_is_number(*res) && 1000 == val_2_double(*res));
+    CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(*p) &&  1000 == val_2_double(*p));
 
     eval_env_deinit(env);
     interp_deinit(interp);
 }
 
+static void test_eval_native_call_script(void)
+{
+}
 
 CU_pSuite test_lang_eval_entry()
 {
@@ -503,6 +548,7 @@ CU_pSuite test_lang_eval_entry()
         CU_add_test(suite, "eval while stmt",   test_eval_while);
         CU_add_test(suite, "eval function",     test_eval_function);
         CU_add_test(suite, "eval native",       test_eval_native);
+        CU_add_test(suite, "eval native call",  test_eval_native_call_script);
         if (0) {
         }
     }

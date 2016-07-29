@@ -519,6 +519,45 @@ static void test_expr_funcdef(void)
     ast_expr_release(expr);
 }
 
+static void test_expr_funcall(void)
+{
+    lexer_t  lex_st;
+    intptr_t lex;
+    expr_t   *expr;
+
+    test_clr_line();
+    test_set_line("a()\n");
+    test_set_line("a ()\n");
+    test_set_line("a (b)\n");
+    test_set_line("a (b, c)\n");
+
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) == NULL);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) == NULL);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+    ast_expr_release(expr);
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_COMMA);
+    ast_expr_release(expr);
+}
+
 static void test_stmt_simple(void)
 {
     lexer_t  lex_st;
@@ -640,6 +679,7 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse expression assign",   test_expr_assign);
         CU_add_test(suite, "parse expression comma",    test_expr_comma);
         CU_add_test(suite, "parse expression funcdef",  test_expr_funcdef);
+        CU_add_test(suite, "parse expression funcall",  test_expr_funcall);
 
         CU_add_test(suite, "parse statements simple",   test_stmt_simple);
         CU_add_test(suite, "parse statements if",       test_stmt_if);

@@ -415,9 +415,11 @@ static expr_t *parse_expr_form_call(intptr_t lex, expr_t *lft, void (*cb)(void *
 
     lex_match(lex, '(');
 
-    expr = parse_expr_form_binary(lex, EXPR_CALL, lft, parse_expr_comma(lex, cb, user_data), cb, user_data);
-    if (expr) {
-        if (!lex_match(lex, ')')) {
+    if (lex_match(lex, ')')) {
+        expr = parse_expr_form_unary(lex, EXPR_CALL, lft, cb, user_data);
+    } else {
+        expr = parse_expr_form_binary(lex, EXPR_CALL, lft, parse_expr_comma(lex, cb, user_data), cb, user_data);
+        if (expr && ! lex_match(lex, ')')) {
             ast_expr_release(expr);
             if (cb) cb(user_data, NULL); // ERR_InvalidToken
             return NULL;

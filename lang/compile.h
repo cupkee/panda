@@ -8,22 +8,9 @@
 #include "env.h"
 #include "ast.h"
 #include "symtbl.h"
-
-typedef struct fn_template_t {
-    uint8_t var_num;
-    uint8_t arg_num;
-    int     size;
-    uint8_t *code;
-} fn_template_t;
-
-typedef struct module_t {
-    double  *nums;
-    intptr_t*natives;
-
-    int entry;
-    fn_template_t ft[4];
-} module_t;
-
+#include "interp.h"
+#include "module.h"
+#include "function.h"
 
 typedef struct compile_func_t {
     int owner;
@@ -37,10 +24,16 @@ typedef struct compile_func_t {
 } compile_func_t;
 
 typedef struct compile_t {
-    int error;
+    int error;     //
+
     int nums_size;
     int nums_pos;
     double  *nums_buf;
+
+    int native_size;
+    int native_num;
+    intptr_t *native_buf;
+    intptr_t *native_map;
 
     int bgn_pos;   // for loop continue
     int skip_pos;  // for loop break
@@ -56,9 +49,19 @@ int compile_init(compile_t *cpl, intptr_t sym_tbl);
 int compile_deinit(compile_t *cpl);
 
 intptr_t compile_sym_add(compile_t *cpl, const char *sym);
+
 int compile_arg_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_get(compile_t *cpl, intptr_t sym_id);
+
+int compile_native_add(compile_t *cpl, const char *name,
+                       val_t (*native)(interp_t *, env_t *, int ac, val_t *av));
+
+int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
+
+int compile_build_module(compile_t *cpl, module_t *mod);
+
 static inline void compile_code_clean(compile_t *cpl) {
     if (cpl && cpl->func_buf && cpl->func_num)
         cpl->func_buf[cpl->func_cur].code_pos = 0;
@@ -73,23 +76,6 @@ static inline int compile_arg_num(compile_t *cpl) {
             cpl->func_buf[cpl->func_cur].arg_num : 0;
 }
 
-int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
-int compile_one_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
-
-static inline void compile_build_module(compile_t *cpl, module_t *mod)
-{
-    int i;
-
-    mod->nums = cpl->nums_buf;
-    mod->entry = 0;
-
-    for (i = 0; i < cpl->func_num; i++) {
-        mod->ft[i].var_num = cpl->func_buf[i].var_num;
-        mod->ft[i].arg_num = cpl->func_buf[i].arg_num;
-        mod->ft[i].size = cpl->func_buf[i].code_size;
-        mod->ft[i].code = cpl->func_buf[i].code_buf;
-    }
-}
 
 #endif /* __LANG_COMPILE_INC__ */
 

@@ -8,7 +8,7 @@
 
 #include "val.h"
 #include "env.h"
-#include "compile.h"
+#include "module.h"
 
 #define FRAME_SIZE (sizeof(interp_frame_t) / sizeof(val_t))
 
@@ -35,6 +35,7 @@ int interp_deinit(interp_t *interp);
 
 void interp_frame_setup(interp_t *interp, uint8_t *pc, scope_t *scope);
 void interp_frame_restore(interp_t *interp, uint8_t **pc, scope_t **scope);
+
 int interp_run(interp_t *interp, env_t *env, module_t *mod);
 
 static inline void interp_stack_alloc(interp_t *interp, int n) {

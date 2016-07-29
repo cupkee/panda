@@ -51,10 +51,13 @@ static inline void interp_push_script(interp_t *interp, intptr_t p) {
     val_set_script(interp_stack_push(interp), p);
 }
 
+static inline void interp_push_native(interp_t *interp, intptr_t p) {
+    val_set_native(interp_stack_push(interp), p);
+}
+
 static inline void interp_neg_stack(interp_t *interp) {
     val_t *s = interp_stack_peek(interp);
 
-    //printf("peek value:  %llx\n",*s);
     *s = val_negation(*s);
 }
 
@@ -377,8 +380,8 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                             SHOW("PUSH_SCRIPT %d\n", index);
                             break;
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_push_script(interp, (intptr_t) mod->natives[index]);
-                            SHOW("PUSH_SCRIPT %d\n", index);
+                            interp_push_native(interp, (intptr_t) mod->natives[index]);
+                            SHOW("PUSH_NATIVE %d\n", index);
                             break;
 
         case BC_POP:        SHOW("POP\n"); interp_stack_pop(interp); break;
@@ -416,11 +419,14 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                                 val_t fn = *interp_stack_pop(interp);
                                 val_t *av = interp_stack_peek(interp);
 
+                                printf("wawa!        !\n");
                                 interp_stack_release(interp, index);
                                 if (val_is_script(fn)) {
+                                    printf("^_^\n");
                                     function_call(val_2_intptr(fn), interp, env, index, av, &pc);
                                 } else
                                 if (val_is_native(fn)) {
+                                    printf("call native: %lx\n", val_2_intptr(fn));
                                     function_native_call(val_2_intptr(fn), interp, env, index, av, &pc);
                                 } else {
                                     interp_set_error(interp, ERR_SysError);
