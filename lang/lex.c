@@ -294,3 +294,16 @@ int lex_match(intptr_t l, int tok)
     }
 }
 
+int lex_position(intptr_t l, int *line, int *col)
+{
+    lexer_t *lex = (lexer_t *)l;
+
+    if (lex) {
+        if (line) *line = lex->line;
+        if (col) *col = lex->col;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+

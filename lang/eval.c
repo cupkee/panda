@@ -106,6 +106,19 @@ int eval_env_add_native(eval_env_t *env, const char *name, function_native_t nat
     return compile_native_add(&env->cpl, name, native);
 }
 
+static void eval_parse_callback(void *u, parse_event_t *e)
+{
+    int *done = (int *)u;
+
+    if (e->type == PARSE_EOF) {
+        //printf("Parse end\n");
+    } else
+    if (e->type == PARSE_FAIL) {
+        *done = -3;
+        printf("Parse fail: %d\n", e->error.code);
+    }
+}
+
 int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
 {
     lexer_t lex_st;
@@ -122,13 +135,14 @@ int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
     get_line_init(input);
     lex = lex_init(&lex_st, get_line_from_string);
 
+    int stmt_cnt = 0;
     while (!done) {
-        stmt = parse_stmt(lex, NULL, NULL);
+        stmt = parse_stmt(lex, eval_parse_callback, &done);
         if (!stmt) break;
+        stmt_cnt++;
 
         compile_code_clean(&env->cpl);
-        if (0 == compile_one_stmt(&env->cpl, stmt, NULL, NULL) && 0 == eval_env_adjust(env)) {
-            compile_build_module(&env->cpl, &mod);
+        if (0 == compile_one_stmt(&env->cpl, stmt, &mod) && 0 == eval_env_adjust(env)) {
             if (0 != interp_run(interp, (env_t *)env, &mod) && v) {
                 printf("execute fail: %d\n", interp->error);
                 done = -2;

@@ -79,6 +79,7 @@ int lex_destroy();
 
 int lex_token(intptr_t lex, token_t *tok);
 int lex_match(intptr_t lex, int tok);
+int lex_position(intptr_t lex, int *line, int *col);
 
 
 #endif /* __LANG_LEX_INC__ */

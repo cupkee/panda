@@ -452,7 +452,7 @@ static inline int compile_code_append_call(compile_t *cpl, int ac)
     return 0;
 }
 
-static void compile_expr(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u);
+static void compile_expr(compile_t *cpl, expr_t *e);
 
 static void compile_code_set_jmp(compile_t *cpl, int pos, uint8_t jmp, int step)
 {
@@ -558,30 +558,30 @@ static void compile_pop_nt_jmp(compile_t *cpl, int from, int to)
     }
 }
 
-static void compile_expr_binary(compile_t *cpl, expr_t *e, uint8_t code, void (*cb)(void *, void *), void *u)
+static void compile_expr_binary(compile_t *cpl, expr_t *e, uint8_t code)
 {
-    compile_expr(cpl, ast_expr_lft(e), cb, u);
-    compile_expr(cpl, ast_expr_rht(e), cb, u);
+    compile_expr(cpl, ast_expr_lft(e));
+    compile_expr(cpl, ast_expr_rht(e));
     compile_code_append(cpl, code);
 }
 
-static void compile_expr_logic_and(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_expr_logic_and(compile_t *cpl, expr_t *e)
 {
     int pos;
-    compile_expr(cpl, ast_expr_lft(e), cb, u); pos = compile_code_pos(cpl);
-    compile_expr(cpl, ast_expr_rht(e), cb, u);
+    compile_expr(cpl, ast_expr_lft(e)); pos = compile_code_pos(cpl);
+    compile_expr(cpl, ast_expr_rht(e));
     compile_nt_jmp_pop(cpl, pos, compile_code_pos(cpl));
 }
 
-static void compile_expr_logic_or(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
 {
     int pos;
-    compile_expr(cpl, ast_expr_lft(e), cb, u); pos = compile_code_pos(cpl);
-    compile_expr(cpl, ast_expr_rht(e), cb, u);
+    compile_expr(cpl, ast_expr_lft(e)); pos = compile_code_pos(cpl);
+    compile_expr(cpl, ast_expr_rht(e));
     compile_tt_jmp_pop(cpl, pos, compile_code_pos(cpl));
 }
 
-void compile_expr_id(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+void compile_expr_id(compile_t *cpl, expr_t *e)
 {
     int id = compile_varmap_lookup_name(cpl, ast_expr_text(e));
 
@@ -598,7 +598,7 @@ void compile_expr_id(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void
     }
 }
 
-static void compile_expr_lft(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_expr_lft(compile_t *cpl, expr_t *e)
 {
     switch (e->type) {
     case EXPR_ID: {
@@ -637,7 +637,7 @@ static int compile_var_def(compile_t *cpl, expr_t *e)
     return 0;
 }
 
-static int compile_arg_def(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static int compile_arg_def(compile_t *cpl, expr_t *e)
 {
     if (e->type == EXPR_ID) {
         return compile_arg_add_name(cpl, ast_expr_text(e));
@@ -656,7 +656,7 @@ static int compile_arg_def(compile_t *cpl, expr_t *e, void (*cb)(void *, void *)
     return -1;
 }
 
-static void compile_arg_def_list(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_arg_def_list(compile_t *cpl, expr_t *e)
 {
     while (!cpl->error && e) {
         expr_t *next;
@@ -667,7 +667,7 @@ static void compile_arg_def_list(compile_t *cpl, expr_t *e, void (*cb)(void *, v
             next = NULL;
         }
 
-        if (0 > compile_arg_def(cpl, e, cb, u)) {
+        if (0 > compile_arg_def(cpl, e)) {
             break;
         }
 
@@ -680,7 +680,7 @@ static void compile_arg_list(compile_t *cpl, expr_t *e, int *ac)
     if(!cpl->error && e) {
         if (e->type != EXPR_COMMA) {
             *ac += 1;
-            compile_expr(cpl, e, NULL, NULL);
+            compile_expr(cpl, e);
         } else {
             compile_arg_list(cpl, ast_expr_rht(e), ac);
             compile_arg_list(cpl, ast_expr_lft(e), ac);
@@ -688,15 +688,15 @@ static void compile_arg_list(compile_t *cpl, expr_t *e, int *ac)
     }
 }
 
-static void compile_stmt_block(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_block(compile_t *cpl, stmt_t *s)
 {
     while(s && !cpl->error) {
-        compile_stmt(cpl, s, cb, u);
+        compile_stmt(cpl, s);
         s = s->next;
     }
 }
 
-static void compile_func_def(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_func_def(compile_t *cpl, expr_t *e)
 {
     int owner, curr, func_id;
     expr_t *args, *name;
@@ -713,14 +713,14 @@ static void compile_func_def(compile_t *cpl, expr_t *e, void (*cb)(void *, void 
     }
     cpl->func_cur = curr;
 
-    compile_arg_def_list(cpl, args, cb, u);
-    compile_stmt_block(cpl, block, cb, u);
+    compile_arg_def_list(cpl, args);
+    compile_stmt_block(cpl, block);
 
     func_id = curr; // + cpl->func_id_base;
     cpl->func_cur = owner;
     if (name) {
         compile_var_def(cpl, name);
-        compile_expr_lft(cpl, name, cb, u);
+        compile_expr_lft(cpl, name);
         compile_code_append_func(cpl, func_id);
         compile_code_append(cpl, BC_ASSIGN);
     } else {
@@ -728,7 +728,7 @@ static void compile_func_def(compile_t *cpl, expr_t *e, void (*cb)(void *, void 
     }
 }
 
-static void compile_func_call(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_func_call(compile_t *cpl, expr_t *e)
 {
     int argc = 0;
     expr_t *args, *func;
@@ -737,71 +737,71 @@ static void compile_func_call(compile_t *cpl, expr_t *e, void (*cb)(void *, void
     args = ast_expr_rht(e);
 
     compile_arg_list(cpl, args, &argc);
-    compile_expr(cpl, func, cb, u);
+    compile_expr(cpl, func);
     compile_code_append_call(cpl, argc);
 }
 
-static void compile_expr(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), void *u)
+static void compile_expr(compile_t *cpl, expr_t *e)
 {
     if (cpl->error) {
         return;
     }
 
     switch (e->type) {
-    case EXPR_ID:       compile_expr_id(cpl, e, cb, u); break;
+    case EXPR_ID:       compile_expr_id(cpl, e); break;
     case EXPR_NAN:      compile_code_append(cpl, BC_PUSH_NAN); break;
     case EXPR_UND:      compile_code_append(cpl, BC_PUSH_UND); break;
     case EXPR_NUM:      compile_code_append_num(cpl, ast_expr_num(e)); break;
     case EXPR_TRUE:     compile_code_append(cpl, BC_PUSH_TRUE); break;
     case EXPR_FALSE:    compile_code_append(cpl, BC_PUSH_FALSE); break;
-    case EXPR_FUNCDEF:  compile_func_def(cpl, e, cb, u); break;
+    case EXPR_FUNCDEF:  compile_func_def(cpl, e); break;
     case EXPR_STRING:   cpl->error = ERR_NotImplemented; break;
 
-    case EXPR_NEG:      compile_expr(cpl, ast_expr_lft(e), cb, u); compile_code_append(cpl, BC_NEG); break;
-    case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e), cb, u); compile_code_append(cpl, BC_NOT); break;
-    case EXPR_LOGIC_NOT:compile_expr(cpl, ast_expr_lft(e), cb, u); compile_code_append(cpl, BC_LOGIC_NOT); break;
+    case EXPR_NEG:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NEG); break;
+    case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NOT); break;
+    case EXPR_LOGIC_NOT:compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_LOGIC_NOT); break;
     case EXPR_ARRAY:    cpl->error = ERR_NotImplemented; break;
     case EXPR_DICT:     cpl->error = ERR_NotImplemented; break;
 
-    case EXPR_MUL:      compile_expr_binary(cpl, e, BC_MUL, cb, u); break;
-    case EXPR_DIV:      compile_expr_binary(cpl, e, BC_DIV, cb, u); break;
-    case EXPR_MOD:      compile_expr_binary(cpl, e, BC_MOD, cb, u); break;
-    case EXPR_ADD:      compile_expr_binary(cpl, e, BC_ADD, cb, u); break;
-    case EXPR_SUB:      compile_expr_binary(cpl, e, BC_SUB, cb, u); break;
+    case EXPR_MUL:      compile_expr_binary(cpl, e, BC_MUL); break;
+    case EXPR_DIV:      compile_expr_binary(cpl, e, BC_DIV); break;
+    case EXPR_MOD:      compile_expr_binary(cpl, e, BC_MOD); break;
+    case EXPR_ADD:      compile_expr_binary(cpl, e, BC_ADD); break;
+    case EXPR_SUB:      compile_expr_binary(cpl, e, BC_SUB); break;
 
-    case EXPR_AND:      compile_expr_binary(cpl, e, BC_AAND, cb, u); break;
-    case EXPR_OR:       compile_expr_binary(cpl, e, BC_AOR, cb, u); break;
-    case EXPR_XOR:      compile_expr_binary(cpl, e, BC_AXOR, cb, u); break;
+    case EXPR_AND:      compile_expr_binary(cpl, e, BC_AAND); break;
+    case EXPR_OR:       compile_expr_binary(cpl, e, BC_AOR); break;
+    case EXPR_XOR:      compile_expr_binary(cpl, e, BC_AXOR); break;
 
-    case EXPR_LSHIFT:   compile_expr_binary(cpl, e, BC_LSHIFT, cb, u); break;
-    case EXPR_RSHIFT:   compile_expr_binary(cpl, e, BC_RSHIFT, cb, u); break;
+    case EXPR_LSHIFT:   compile_expr_binary(cpl, e, BC_LSHIFT); break;
+    case EXPR_RSHIFT:   compile_expr_binary(cpl, e, BC_RSHIFT); break;
 
-    case EXPR_TEQ:      compile_expr_binary(cpl, e, BC_TEQ, cb, u); break;
-    case EXPR_TNE:      compile_expr_binary(cpl, e, BC_TNE, cb, u); break;
-    case EXPR_TGT:      compile_expr_binary(cpl, e, BC_TGT, cb, u); break;
-    case EXPR_TGE:      compile_expr_binary(cpl, e, BC_TGE, cb, u); break;
-    case EXPR_TLT:      compile_expr_binary(cpl, e, BC_TLT, cb, u); break;
-    case EXPR_TLE:      compile_expr_binary(cpl, e, BC_TLE, cb, u); break;
-    case EXPR_TIN:      compile_expr_binary(cpl, e, BC_TIN, cb, u); break;
+    case EXPR_TEQ:      compile_expr_binary(cpl, e, BC_TEQ); break;
+    case EXPR_TNE:      compile_expr_binary(cpl, e, BC_TNE); break;
+    case EXPR_TGT:      compile_expr_binary(cpl, e, BC_TGT); break;
+    case EXPR_TGE:      compile_expr_binary(cpl, e, BC_TGE); break;
+    case EXPR_TLT:      compile_expr_binary(cpl, e, BC_TLT); break;
+    case EXPR_TLE:      compile_expr_binary(cpl, e, BC_TLE); break;
+    case EXPR_TIN:      compile_expr_binary(cpl, e, BC_TIN); break;
 
-    case EXPR_LOGIC_AND:compile_expr_logic_and(cpl, e, cb, u); break;
-    case EXPR_LOGIC_OR: compile_expr_logic_or(cpl, e, cb, u); break;
+    case EXPR_LOGIC_AND:compile_expr_logic_and(cpl, e); break;
+    case EXPR_LOGIC_OR: compile_expr_logic_or(cpl, e); break;
 
-    case EXPR_CALL:     compile_func_call(cpl, e, cb, u); break;
+    case EXPR_CALL:     compile_func_call(cpl, e); break;
     case EXPR_ELEM:     cpl->error = ERR_NotImplemented; break;
     case EXPR_ATTR:     cpl->error = ERR_NotImplemented; break;
 
-    case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e), cb, u);
-                        compile_expr(cpl, ast_expr_rht(e), cb, u);
+    case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e));
+                        compile_expr(cpl, ast_expr_rht(e));
                         compile_code_append(cpl, BC_ASSIGN); break;
 
-    case EXPR_COMMA:    compile_expr(cpl, ast_expr_lft(e), cb, u); compile_code_append(cpl, BC_POP);
-                        compile_expr(cpl, ast_expr_rht(e), cb, u); break;
+    case EXPR_COMMA:    compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_POP);
+                        compile_expr(cpl, ast_expr_rht(e)); break;
     case EXPR_TERNARY:  {
                             int pos1, pos2, end;
-                            compile_expr(cpl, ast_expr_lft(e), cb, u); pos1 = compile_code_pos(cpl);
-                            compile_expr(cpl, ast_expr_lft(ast_expr_rht(e)), cb, u); pos2 = compile_code_pos(cpl);
-                            compile_expr(cpl, ast_expr_rht(ast_expr_rht(e)), cb, u); end = compile_code_pos(cpl);
+                            compile_expr(cpl, ast_expr_lft(e)); pos1 = compile_code_pos(cpl);
+                            compile_expr(cpl, ast_expr_lft(ast_expr_rht(e))); pos2 = compile_code_pos(cpl);
+                            compile_expr(cpl, ast_expr_rht(ast_expr_rht(e))); end = compile_code_pos(cpl);
 
                             compile_code_insert_jmp_to(cpl, pos2, end);
                             compile_pop_nt_jmp(cpl, pos1, pos2 + (compile_code_pos(cpl) - end));
@@ -811,23 +811,23 @@ static void compile_expr(compile_t *cpl, expr_t *e, void (*cb)(void *, void *), 
     }
 }
 
-static void compile_stmt_expr(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_expr(compile_t *cpl, stmt_t *s)
 {
-    compile_expr(cpl, s->expr, cb, u);
+    compile_expr(cpl, s->expr);
     compile_code_append(cpl, BC_POP_RESULT);
 }
 
-static void compile_stmt_return(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_return(compile_t *cpl, stmt_t *s)
 {
     if (s->expr) {
-        compile_expr(cpl, s->expr, cb, u);
+        compile_expr(cpl, s->expr);
         compile_code_append(cpl, BC_RET);
     } else {
         compile_code_append(cpl, BC_RET0);
     }
 }
 
-static void compile_stmt_var(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_var(compile_t *cpl, stmt_t *s)
 {
     expr_t *e = s->expr;
 
@@ -847,7 +847,7 @@ static void compile_stmt_var(compile_t *cpl, stmt_t *s, void (*cb)(void *, void 
         }
 
         if (e->type == EXPR_ASSIGN) {
-            compile_expr(cpl, e, cb, u);
+            compile_expr(cpl, e);
             compile_code_append(cpl, BC_POP);
         }
 
@@ -873,17 +873,17 @@ static void compile_stmt_var(compile_t *cpl, stmt_t *s, void (*cb)(void *, void 
  *              |            |    |
  * End:         + ---------- +<---+
  ***************************************************************/
-static void compile_stmt_cond(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_cond(compile_t *cpl, stmt_t *s)
 {
     int test_pos, skip_pos, block, other;
 
-    compile_expr(cpl, s->expr, cb, u);
+    compile_expr(cpl, s->expr);
     test_pos = compile_code_pos(cpl);
 
     compile_code_extend(cpl, 3);
     block = compile_code_pos(cpl);
 
-    compile_stmt_block(cpl, s->block, cb, u);
+    compile_stmt_block(cpl, s->block);
     other = compile_code_pos(cpl);
 
     if (s->other) {
@@ -891,7 +891,7 @@ static void compile_stmt_cond(compile_t *cpl, stmt_t *s, void (*cb)(void *, void
         compile_code_extend(cpl, 3);
 
         other = compile_code_pos(cpl);
-        compile_stmt_block(cpl, s->other, cb, u);
+        compile_stmt_block(cpl, s->other);
 
         compile_code_set_jmp(cpl, skip_pos, BC_JMP, compile_code_pos(cpl) - other);
     }
@@ -919,13 +919,13 @@ static void compile_stmt_cond(compile_t *cpl, stmt_t *s, void (*cb)(void *, void
  *         |    | JMP Begin  | ----------------------+      |   |
  * LoopEnd +--> +------------+                           <--+---+
  ***************************************************************/
-static void compile_stmt_while(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_while(compile_t *cpl, stmt_t *s)
 {
     int bgn, skip, end, total, block, bgn_bk, skip_bk;
     uint8_t code[2] = {BC_SJMP_T_POP, 3};
 
     bgn = compile_code_pos(cpl);
-    compile_expr(cpl, s->expr, cb, u);
+    compile_expr(cpl, s->expr);
     compile_code_appends(cpl, 2, code);
 
     skip = compile_code_pos(cpl);
@@ -936,7 +936,7 @@ static void compile_stmt_while(compile_t *cpl, stmt_t *s, void (*cb)(void *, voi
     bgn_bk = cpl->bgn_pos; skip_bk = cpl->skip_pos;
     cpl->bgn_pos = bgn;    cpl->skip_pos = skip;
 
-    compile_stmt_block(cpl, s->block, cb, u); if (cpl->error) return;
+    compile_stmt_block(cpl, s->block); if (cpl->error) return;
 
     // Restore the begin and skip position
     cpl->bgn_pos = bgn_bk;
@@ -950,7 +950,7 @@ static void compile_stmt_while(compile_t *cpl, stmt_t *s, void (*cb)(void *, voi
     compile_code_set_jmp(cpl, skip, BC_JMP, block);
 }
 
-static void compile_stmt_break(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_break(compile_t *cpl, stmt_t *s)
 {
     int bgn, end, total;
 
@@ -961,7 +961,7 @@ static void compile_stmt_break(compile_t *cpl, stmt_t *s, void (*cb)(void *, voi
     compile_code_append_jmp(cpl, BC_JMP, -total);
 }
 
-static void compile_stmt_continue(compile_t *cpl, stmt_t *s, void (*cb)(void *, void *), void *u)
+static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
 {
     int bgn, end, total;
 
@@ -1080,7 +1080,7 @@ int compile_native_add(compile_t *cpl, const char *name, function_native_t nativ
            compile_native_append(cpl, compile_sym_add(cpl, name), (intptr_t) native);
 }
 
-int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *u)
+int compile_stmt(compile_t *cpl, stmt_t *stmt)
 {
     if (!cpl || !stmt) {
         return -1;
@@ -1092,25 +1092,27 @@ int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void 
 
     switch(stmt->type) {
     case STMT_PASS: break;
-    case STMT_EXPR: compile_stmt_expr(cpl, stmt, cb, u); break;
-    case STMT_VAR:  compile_stmt_var(cpl, stmt, cb, u); break;
-    case STMT_IF:   compile_stmt_cond(cpl, stmt, cb, u); break;
-    case STMT_WHILE:    compile_stmt_while(cpl, stmt, cb, u); break;
-    case STMT_BREAK:    compile_stmt_break(cpl, stmt, cb, u); break;
-    case STMT_CONTINUE: compile_stmt_continue(cpl, stmt, cb, u); break;
-    case STMT_RET:  compile_stmt_return(cpl, stmt, cb, u); break;
+    case STMT_EXPR: compile_stmt_expr(cpl, stmt); break;
+    case STMT_VAR:  compile_stmt_var(cpl, stmt); break;
+    case STMT_IF:   compile_stmt_cond(cpl, stmt); break;
+    case STMT_WHILE:    compile_stmt_while(cpl, stmt); break;
+    case STMT_BREAK:    compile_stmt_break(cpl, stmt); break;
+    case STMT_CONTINUE: compile_stmt_continue(cpl, stmt); break;
+    case STMT_RET:  compile_stmt_return(cpl, stmt); break;
     default: cpl->error = ERR_NotImplemented;
     }
 
     return -cpl->error;
 }
 
-int compile_one_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *u)
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt, module_t *mod)
 {
-    int ret = compile_stmt(cpl, stmt, cb, u);
+    int ret = compile_stmt(cpl, stmt);
 
-    if (ret == 0)
+    if (ret == 0) {
         compile_code_append(cpl, BC_STOP);
+        return compile_build_module(cpl, mod);
+    }
 
     return ret;
 }
@@ -1119,7 +1121,7 @@ int compile_build_module(compile_t *cpl, module_t *mod)
 {
     int i;
 
-    if (!cpl || !mod) {
+    if (!cpl || cpl->error || !mod) {
         return -1;
     }
 

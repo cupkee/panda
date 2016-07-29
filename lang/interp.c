@@ -7,8 +7,8 @@
 #include "function.h"
 #include "bcode.h"
 
-#define SHOW(...) printf(__VA_ARGS__)
-//#define SHOW(...) //
+//#define SHOW(...) printf(__VA_ARGS__)
+#define SHOW(...) //
 
 static inline void interp_set_error(interp_t *interp, int error) {
     interp->error = error;
@@ -419,14 +419,11 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                                 val_t fn = *interp_stack_pop(interp);
                                 val_t *av = interp_stack_peek(interp);
 
-                                printf("wawa!        !\n");
                                 interp_stack_release(interp, index);
                                 if (val_is_script(fn)) {
-                                    printf("^_^\n");
                                     function_call(val_2_intptr(fn), interp, env, index, av, &pc);
                                 } else
                                 if (val_is_native(fn)) {
-                                    printf("call native: %lx\n", val_2_intptr(fn));
                                     function_native_call(val_2_intptr(fn), interp, env, index, av, &pc);
                                 } else {
                                     interp_set_error(interp, ERR_SysError);

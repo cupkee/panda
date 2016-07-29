@@ -469,7 +469,7 @@ val_t test_native_one(interp_t *interp, env_t *env, int ac, val_t *av)
 
 val_t test_native_add(interp_t *interp, env_t *env, int ac, val_t *av)
 {
-    printf("native add be called!\n");
+    //printf("native add be called!\n");
     if (ac == 0)
         return val_mk_nan();
     if (ac == 1)

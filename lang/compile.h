@@ -57,8 +57,8 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id);
 int compile_native_add(compile_t *cpl, const char *name,
                        val_t (*native)(interp_t *, env_t *, int ac, val_t *av));
 
-int compile_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
-int compile_one_stmt(compile_t *cpl, stmt_t *stmt, void (*cb)(void *, void *), void *user_data);
+int compile_stmt(compile_t *cpl, stmt_t *stmt);
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt, module_t *mod);
 
 int compile_build_module(compile_t *cpl, module_t *mod);
 
