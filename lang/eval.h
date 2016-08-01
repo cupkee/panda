@@ -16,6 +16,7 @@
 typedef struct eval_env_t {
     scope_t *scope;
 
+    int error;
     intptr_t sym_tbl;
     compile_t cpl;
 } eval_env_t;

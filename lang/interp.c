@@ -2,10 +2,11 @@
 #include "err.h"
 #include "val.h"
 #include "lex.h"
+#include "bcode.h"
 #include "parse.h"
 #include "interp.h"
 #include "function.h"
-#include "bcode.h"
+#include "string.h"
 
 //#define SHOW(...) printf(__VA_ARGS__)
 #define SHOW(...) //
@@ -40,7 +41,10 @@ static inline void interp_push_nan(interp_t *interp) {
 
 static inline void interp_push_number(interp_t *interp, double n) {
     val_set_number(interp_stack_push(interp), n);
-//    printf("push value:  %llx\n",*(interp_stack_peek(interp)));
+}
+
+static inline void interp_push_string(interp_t *interp, intptr_t s) {
+    val_set_string(interp_stack_push(interp), s);
 }
 
 static inline void interp_push_boolean(interp_t *interp, int b) {
@@ -56,21 +60,29 @@ static inline void interp_push_native(interp_t *interp, intptr_t p) {
 }
 
 static inline void interp_neg_stack(interp_t *interp) {
-    val_t *s = interp_stack_peek(interp);
+    val_t *v = interp_stack_peek(interp);
 
-    *s = val_negation(*s);
+    if (val_is_number(v)) {
+        return val_set_number(v, -val_2_double(v));
+    } else {
+        return val_set_nan(v);
+    }
 }
 
 static inline void interp_not_stack(interp_t *interp) {
-    val_t *s = interp_stack_peek(interp);
+    val_t *v = interp_stack_peek(interp);
 
-    *s = val_not(*s);
+    if (val_is_number(v)) {
+        return val_set_number(v, ~val_2_integer(v));
+    } else {
+        return val_set_nan(v);
+    }
 }
 
 static inline void interp_logic_not_stack(interp_t *interp) {
-    val_t *s = interp_stack_peek(interp);
+    val_t *v = interp_stack_peek(interp);
 
-    *s = val_logic_not(*s);
+    val_set_boolean(v, !val_is_true(v));
 }
 
 static inline void interp_mul_stack(interp_t *interp) {
@@ -78,7 +90,16 @@ static inline void interp_mul_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mul(*a, *b);
+    if (val_is_number(b)) {
+        if (val_is_number(a)) {
+            val_set_number(res, val_2_double(a) * val_2_double(b));
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        val_set_nan(res);
+    }
+
 }
 
 static inline void interp_div_stack(interp_t *interp) {
@@ -86,7 +107,15 @@ static inline void interp_div_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_div(*a, *b);
+    if (val_is_number(b) && val_2_double(b)) {
+        if (val_is_number(a)) {
+            val_set_number(res, val_2_double(a) / val_2_double(b));
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_mod_stack(interp_t *interp) {
@@ -94,15 +123,34 @@ static inline void interp_mod_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mod(*a, *b);
+    if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
+        val_set_number(res, val_2_integer(a) % val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
 }
 
-static inline void interp_add_stack(interp_t *interp) {
+static inline void interp_add_stack(interp_t *interp, env_t *env) {
     val_t *b = interp_stack_pop(interp);
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_add(*a, *b);
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_number(res, val_2_double(a) + val_2_double(b));
+        } else {
+            val_set_nan(res);
+        }
+    } else
+    if (val_is_string(a)){
+        if (val_is_string(b)) {
+            *res = string_concat(env, a, b);
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_sub_stack(interp_t *interp) {
@@ -110,7 +158,15 @@ static inline void interp_sub_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_sub(*a, *b);
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_number(res, val_2_double(a) - val_2_double(b));
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_and_stack(interp_t *interp) {
@@ -118,7 +174,11 @@ static inline void interp_and_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_and(*a, *b);
+    if (val_is_number(a) && val_is_number(b)) {
+        val_set_number(res, val_2_integer(a) & val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_or_stack(interp_t *interp) {
@@ -126,7 +186,11 @@ static inline void interp_or_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_or(*a, *b);
+    if (val_is_number(a) && val_is_number(b)) {
+        val_set_number(res, val_2_integer(a) | val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_xor_stack(interp_t *interp) {
@@ -134,7 +198,11 @@ static inline void interp_xor_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_xor(*a, *b);
+    if (val_is_number(a) && val_is_number(b)) {
+        val_set_number(res, val_2_integer(a) ^ val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_lshift_stack(interp_t *interp) {
@@ -142,7 +210,11 @@ static inline void interp_lshift_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_lshift(*a, *b);
+    if (val_is_number(a) && val_is_number(b)) {
+        val_set_number(res, val_2_integer(a) << val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
 }
 
 static inline void interp_rshift_stack(interp_t *interp) {
@@ -150,7 +222,23 @@ static inline void interp_rshift_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_rshift(*a, *b);
+    if (val_is_number(a) && val_is_number(b)) {
+        val_set_number(res, val_2_integer(a) >> val_2_integer(b));
+    } else {
+        val_set_nan(res);
+    }
+}
+
+static inline int interp_test_equal(val_t *a, val_t *b) {
+    if (*a == *b) {
+        return !(val_is_nan(a) || val_is_undefined(a));
+    } else {
+        if (val_is_string(a)) {
+            return string_compare(a, b) == 0;
+        } else {
+            return 0;
+        }
+    }
 }
 
 static inline void interp_teq_stack(interp_t *interp) {
@@ -158,7 +246,7 @@ static inline void interp_teq_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(val_teq(*a, *b));
+    val_set_boolean(res, interp_test_equal(a, b));
 }
 
 static inline void interp_tne_stack(interp_t *interp) {
@@ -166,7 +254,7 @@ static inline void interp_tne_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(!val_teq(*a, *b));
+    val_set_boolean(res, !interp_test_equal(a, b));
 }
 
 static inline void interp_tgt_stack(interp_t *interp) {
@@ -174,7 +262,19 @@ static inline void interp_tgt_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(val_tgt(*a, *b));
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_boolean(res, val_2_double(a) - val_2_double(b) > 0);
+            return;
+        }
+    } else
+    if (val_is_string(a)) {
+        if (val_is_string(b)) {
+            val_set_boolean(res, string_compare(a, b) > 0);
+            return;
+        }
+    }
+    val_set_boolean(res, 0);
 }
 
 static inline void interp_tge_stack(interp_t *interp) {
@@ -182,7 +282,19 @@ static inline void interp_tge_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(val_tge(*a, *b));
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_boolean(res, val_2_double(a) - val_2_double(b) >= 0);
+            return;
+        }
+    } else
+    if (val_is_string(a)) {
+        if (val_is_string(b)) {
+            val_set_boolean(res, string_compare(a, b) >= 0);
+            return;
+        }
+    }
+    val_set_boolean(res, 0);
 }
 
 static inline void interp_tlt_stack(interp_t *interp) {
@@ -190,7 +302,19 @@ static inline void interp_tlt_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(val_tlt(*a, *b));
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_boolean(res, val_2_double(a) - val_2_double(b) < 0);
+            return;
+        }
+    } else
+    if (val_is_string(a)) {
+        if (val_is_string(b)) {
+            val_set_boolean(res, string_compare(a, b) < 0);
+            return;
+        }
+    }
+    val_set_boolean(res, 0);
 }
 
 static inline void interp_tle_stack(interp_t *interp) {
@@ -198,7 +322,19 @@ static inline void interp_tle_stack(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = val_mk_boolean(val_tle(*a, *b));
+    if (val_is_number(a)) {
+        if (val_is_number(b)) {
+            val_set_boolean(res, val_2_double(a) - val_2_double(b) <= 0);
+            return;
+        }
+    } else
+    if (val_is_string(a)) {
+        if (val_is_string(b)) {
+            val_set_boolean(res, string_compare(a, b) <= 0);
+            return;
+        }
+    }
+    val_set_boolean(res, 0);
 }
 
 static inline void interp_assign(interp_t *interp) {
@@ -206,8 +342,9 @@ static inline void interp_assign(interp_t *interp) {
     val_t *a = interp_stack_peek(interp);
     val_t *res = a;
 
-    *res = *val_2_reference(*a) = *b;
+    *res = *val_2_reference(a) = *b;
 }
+
 interp_t *interp_init(interp_t *interp, val_t *stack_ptr, int stack_size)
 {
     if (interp) {
@@ -268,7 +405,10 @@ void interp_frame_restore(interp_t *interp, uint8_t **pc, scope_t **scope)
 
 int interp_run(interp_t *interp, env_t *env, module_t *mod)
 {
-    double  *static_num = mod->nums;
+    double   *numbers = mod->numbers;
+    intptr_t *natives = mod->natives;
+    intptr_t *strings = mod->strings;
+
     uint8_t *base = mod->ft[mod->entry].code;
     uint8_t *pc = base;
 
@@ -302,51 +442,51 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                             SHOW("JMP: %d\n", index); break;
 
         case BC_SJMP_T:     index = (int8_t) (*pc++);
-                            if (val_is_true(*interp_stack_peek(interp))) {
+                            if (val_is_true(interp_stack_peek(interp))) {
                                 pc += index;
                             }
                             SHOW("SJMP_T: %d\n", index); break;
 
         case BC_SJMP_F:     index = (int8_t) (*pc++);
                             SHOW("SJMP_F: %d\n", index);
-                            if (!val_is_true(*interp_stack_peek(interp))) {
+                            if (!val_is_true(interp_stack_peek(interp))) {
                                 pc += index;
                             }
                             break;
 
         case BC_JMP_T:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             SHOW("JMP_T: %d\n", index);
-                            if (val_is_true(*interp_stack_peek(interp))) {
+                            if (val_is_true(interp_stack_peek(interp))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             SHOW("JMP_F: %d\n", index);
-                            if (!val_is_true(*interp_stack_peek(interp))) {
+                            if (!val_is_true(interp_stack_peek(interp))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_T_POP: index = (int8_t) (*pc++);
                             SHOW("SJMP_T_POP: %d\n", index);
-                            if (val_is_true(*interp_stack_pop(interp))) {
+                            if (val_is_true(interp_stack_pop(interp))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_F_POP: index = (int8_t) (*pc++);
                             SHOW("SJMP_F_POP: %d\n", index);
-                            if (!val_is_true(*interp_stack_pop(interp))) {
+                            if (!val_is_true(interp_stack_pop(interp))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_T_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             SHOW("JMP_T_POP: %d\n", index);
-                            if (val_is_true(*interp_stack_pop(interp))) {
+                            if (val_is_true(interp_stack_pop(interp))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             SHOW("JMP_F_POP: %d(%.4x)\n", index, index);
-                            if (!val_is_true(*interp_stack_pop(interp))) {
+                            if (!val_is_true(interp_stack_pop(interp))) {
                                 pc += index;
                             }
                             break;
@@ -357,8 +497,11 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
         case BC_PUSH_FALSE: SHOW("PUSH_FALSE\n"); interp_push_boolean(interp, 0); break;
         case BC_PUSH_ZERO:  SHOW("PUSH_NUM 0\n"); interp_push_number(interp, 0); break;
         case BC_PUSH_NUM:   index = (*pc++); index = (index << 8) + (*pc++);
-                            SHOW("PUSH_NUM %f\n", static_num[index]);
-                            interp_push_number(interp, static_num[index]); break;
+                            SHOW("PUSH_NUM %f\n", numbers[index]);
+                            interp_push_number(interp, numbers[index]); break;
+        case BC_PUSH_STR:   index = (*pc++); index = (index << 8) + (*pc++);
+                            SHOW("PUSH_STR %s\n", (const char *)strings[index]);
+                            interp_push_string(interp, strings[index]); break;
 
         case BC_PUSH_VAR:   index = (*pc++); SHOW("PUSH_VAR %d\n", index);
                             *(interp_stack_push(interp)) = env->scope->variables[index]; break;
@@ -380,7 +523,7 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
                             SHOW("PUSH_SCRIPT %d\n", index);
                             break;
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_push_native(interp, (intptr_t) mod->natives[index]);
+                            interp_push_native(interp, (intptr_t) natives[index]);
                             SHOW("PUSH_NATIVE %d\n", index);
                             break;
 
@@ -394,7 +537,7 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
         case BC_MUL:        SHOW("MUL\n"); interp_mul_stack(interp); break;
         case BC_DIV:        SHOW("DIV\n"); interp_div_stack(interp); break;
         case BC_MOD:        SHOW("MOD\n"); interp_mod_stack(interp); break;
-        case BC_ADD:        SHOW("ADD\n"); interp_add_stack(interp); break;
+        case BC_ADD:        SHOW("ADD\n"); interp_add_stack(interp, env); break;
         case BC_SUB:        SHOW("SUB\n"); interp_sub_stack(interp); break;
 
         case BC_AAND:       SHOW("LOGIC_AND\n"); interp_and_stack(interp); break;
@@ -416,7 +559,7 @@ int interp_run(interp_t *interp, env_t *env, module_t *mod)
         case BC_ASSIGN:     SHOW("ASSING\n"); interp_assign(interp); break;
         case BC_FUNC_CALL:  index = *pc++;
                             {
-                                val_t fn = *interp_stack_pop(interp);
+                                val_t *fn = interp_stack_pop(interp);
                                 val_t *av = interp_stack_peek(interp);
 
                                 interp_stack_release(interp, index);

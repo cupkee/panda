@@ -17,14 +17,6 @@ static inline int compile_code_pos(compile_t *cpl) {
     return cpl->func_buf[cpl->func_cur].code_pos;
 }
 
-static intptr_t compile_symbal_find_add(compile_t *cpl, const char *sym)
-{
-    if (cpl->sym_tbl) {
-        return symtbl_get(cpl->sym_tbl, sym);
-    }
-    return 0;
-}
-
 static int compile_extend_size(compile_t *cpl, int size, int used, int extend, int limit, int def)
 {
     int res;
@@ -52,7 +44,7 @@ static int compile_number_check_extend(compile_t *cpl, int space)
 {
     int size;
 
-    if (0 < (size = compile_extend_size(cpl, cpl->nums_size, cpl->nums_pos, space,
+    if (0 < (size = compile_extend_size(cpl, cpl->number_size, cpl->number_pos, space,
                                 LIMIT_STATIC_NUM_SIZE, DEF_STATIC_NUM_SIZE))) {
         double *ptr;
 
@@ -61,13 +53,13 @@ static int compile_number_check_extend(compile_t *cpl, int space)
             return -1;
         }
 
-        if (cpl->nums_buf) {
-            memcpy(ptr, cpl->nums_buf, sizeof(double) * cpl->nums_pos);
-            free(cpl->nums_buf);
+        if (cpl->number_buf) {
+            memcpy(ptr, cpl->number_buf, sizeof(double) * cpl->number_pos);
+            free(cpl->number_buf);
         }
 
-        cpl->nums_buf = ptr;
-        cpl->nums_size = size;
+        cpl->number_buf = ptr;
+        cpl->number_size = size;
     }
     return size;
 }
@@ -76,14 +68,60 @@ static int compile_number_find_add(compile_t *cpl, double n)
 {
     int i;
 
-    for (i = 0; i < cpl->nums_pos; i++) {
-        if (cpl->nums_buf[i] == n) {
+    for (i = 0; i < cpl->number_pos; i++) {
+        if (cpl->number_buf[i] == n) {
             return i;
         }
     }
 
     if (compile_number_check_extend(cpl, 1) >= 0) {
-        cpl->nums_buf[cpl->nums_pos++] = n;
+        cpl->number_buf[cpl->number_pos++] = n;
+        return i;
+    } else {
+        return -1;
+    }
+}
+
+static int compile_string_check_extend(compile_t *cpl, int space)
+{
+    int size;
+
+    if (0 < (size = compile_extend_size(cpl, cpl->string_size, cpl->string_num, space,
+                                LIMIT_STATIC_STR_SIZE, DEF_STATIC_STR_SIZE))) {
+        intptr_t *ptr;
+
+        if (NULL == (ptr = (intptr_t*)malloc(size * sizeof(intptr_t)))) {
+            cpl->error = ERR_NotEnoughMemory;
+            return -1;
+        }
+
+        if (cpl->number_buf) {
+            memcpy(ptr, cpl->string_buf, sizeof(intptr_t) * cpl->number_pos);
+            free(cpl->number_buf);
+        }
+
+        cpl->string_buf = ptr;
+        cpl->string_size = size;
+    }
+    return size;
+}
+
+static int compile_string_find_add(compile_t *cpl, intptr_t s)
+{
+    int i;
+
+    if (s == 0) {
+        return -1;
+    }
+
+    for (i = 0; i < cpl->string_num; i++) {
+        if (cpl->string_buf[i] == s) {
+            return i;
+        }
+    }
+
+    if (compile_string_check_extend(cpl, 1) >= 0) {
+        cpl->string_buf[cpl->string_num++] = s;
         return i;
     } else {
         return -1;
@@ -145,9 +183,8 @@ static inline int compile_native_append(compile_t *cpl, intptr_t sym_id, intptr_
     return cpl->native_num++;
 }
 
-static int compile_native_lookup(compile_t *cpl, const char *name)
+static int compile_native_lookup(compile_t *cpl, intptr_t sym_id)
 {
-    intptr_t sym_id = compile_symbal_find_add(cpl, name);
     int i;
 
     if (0 == sym_id) return -1;
@@ -274,7 +311,7 @@ static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id)
 }
 
 static inline int compile_varmap_lookup_name(compile_t *cpl, const char *name) {
-    return compile_varmap_lookup(cpl, compile_symbal_find_add(cpl, name));
+    return compile_varmap_lookup(cpl, compile_sym_find(cpl, name));
 }
 
 static inline int compile_var_add_name(compile_t *cpl, const char *name) {
@@ -382,10 +419,25 @@ static void compile_code_append_num(compile_t *cpl, double n)
     }
 
     if (0 > (id = compile_number_find_add(cpl, n))) {
+        cpl->error = ERR_SysError;
         return;
     }
 
     compile_code_append(cpl, BC_PUSH_NUM);
+    compile_code_append(cpl, id >> 8);
+    compile_code_append(cpl, id);
+}
+
+static void compile_code_append_str(compile_t *cpl, const char *s)
+{
+    int id;
+
+    if (0 > (id = compile_string_find_add(cpl, compile_sym_add(cpl, s)))) {
+        cpl->error = ERR_SysError;
+        return;
+    }
+
+    compile_code_append(cpl, BC_PUSH_STR);
     compile_code_append(cpl, id >> 8);
     compile_code_append(cpl, id);
 }
@@ -583,12 +635,13 @@ static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
 
 void compile_expr_id(compile_t *cpl, expr_t *e)
 {
-    int id = compile_varmap_lookup_name(cpl, ast_expr_text(e));
+    intptr_t sym_id = compile_sym_add(cpl, ast_expr_text(e));
+    int id = compile_varmap_lookup(cpl, sym_id);
 
     if (id >= 0) {
         compile_code_append_var(cpl, id);
     } else {
-        id = compile_native_lookup(cpl, ast_expr_text(e));
+        id = compile_native_lookup(cpl, sym_id);
 
         if (id >= 0) {
             compile_code_append_native(cpl, id);
@@ -755,7 +808,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_TRUE:     compile_code_append(cpl, BC_PUSH_TRUE); break;
     case EXPR_FALSE:    compile_code_append(cpl, BC_PUSH_FALSE); break;
     case EXPR_FUNCDEF:  compile_func_def(cpl, e); break;
-    case EXPR_STRING:   cpl->error = ERR_NotImplemented; break;
+    case EXPR_STRING:   compile_code_append_str(cpl, ast_expr_text(e)); break;
 
     case EXPR_NEG:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NEG); break;
     case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NOT); break;
@@ -975,9 +1028,13 @@ int compile_init(compile_t *cpl, intptr_t sym_tbl)
 {
     cpl->error = 0;
 
-    cpl->nums_size = 0;
-    cpl->nums_pos = 0;
-    cpl->nums_buf = NULL;
+    cpl->number_size = 0;
+    cpl->number_pos = 0;
+    cpl->number_buf = NULL;
+
+    cpl->string_size = 0;
+    cpl->string_num = 0;
+    cpl->string_buf = NULL;
 
     cpl->native_size = 0;
     cpl->native_num = 0;
@@ -998,8 +1055,9 @@ int compile_deinit(compile_t *cpl)
     if (cpl) {
         int i;
 
-        if (cpl->nums_buf) free(cpl->nums_buf);
+        if (cpl->number_buf) free(cpl->number_buf);
         if (cpl->native_buf) free(cpl->native_buf);
+        if (cpl->string_buf) free(cpl->string_buf);
 
         if (cpl->func_buf) {
             for (i = 0; i < cpl->func_num; i++) {
@@ -1023,6 +1081,14 @@ intptr_t compile_sym_add(compile_t *cpl, const char *sym)
     }
 
     return symtbl_add(cpl->sym_tbl, sym);
+}
+
+intptr_t compile_sym_find(compile_t *cpl, const char *sym)
+{
+    if (cpl->sym_tbl) {
+        return symtbl_get(cpl->sym_tbl, sym);
+    }
+    return 0;
 }
 
 int compile_arg_add(compile_t *cpl, intptr_t sym_id)
@@ -1125,8 +1191,9 @@ int compile_build_module(compile_t *cpl, module_t *mod)
         return -1;
     }
 
-    mod->nums = cpl->nums_buf;
+    mod->numbers = cpl->number_buf;
     mod->natives = cpl->native_buf;
+    mod->strings = cpl->string_buf;
     mod->entry = 0;
 
     for (i = 0; i < 4 && i < cpl->func_num; i++) {
@@ -1203,6 +1270,9 @@ void compile_code_dump(compile_t *cpl)
         case BC_PUSH_ZERO:  printf("[%.3d] ", pos); printf("PUSH_NUM 0\n"); break;
         case BC_PUSH_NUM:   index = code[pc++]; index = (index << 8) + code[pc++];
                             printf("[%.3d] ", pos); printf("PUSH_NUM %d\n", index);
+                            break;
+        case BC_PUSH_STR:   index = code[pc++]; index = (index << 8) + code[pc++];
+                            printf("[%.3d] ", pos); printf("PUSH_STR %d\n", index);
                             break;
         case BC_PUSH_VAR:   index = code[pc++]; printf("[%.3d] ", pos); printf("PUSH_VAR %d\n", index); break;
         case BC_PUSH_VAR_REF:

@@ -18,12 +18,28 @@ typedef struct scope_t {
 typedef struct env_t {
     scope_t *scope;
 
+    int error;
+
     intptr_t *var_map;
     intptr_t sym_tbl;
 } env_t;
 
 int env_init(env_t *env, int scope_size, scope_t *super);
 int env_deinit(env_t *env);
+
+static inline void env_set_error(env_t *env, int error) {
+    if (env) env->error = error;
+}
+
+static inline void *env_heap_alloc(env_t *env, int size) {
+    return env ? malloc(size) : NULL;
+}
+
+static inline void env_heap_free(env_t *env, void *mem) {
+    if (env && mem) free(mem);
+}
+
+int env_heap_gc(env_t *env, int level);
 
 scope_t *env_scope_create(int size, scope_t *super);
 int env_scope_destroy(scope_t *scope);

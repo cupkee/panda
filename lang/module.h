@@ -14,8 +14,9 @@ typedef struct fn_template_t {
 } fn_template_t;
 
 typedef struct module_t {
-    double      *nums;
+    double      *numbers;
     intptr_t    *natives;
+    intptr_t    *strings;
 
     int entry;
     fn_template_t ft[4];

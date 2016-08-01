@@ -26,9 +26,13 @@ typedef struct compile_func_t {
 typedef struct compile_t {
     int error;     //
 
-    int nums_size;
-    int nums_pos;
-    double  *nums_buf;
+    int number_size;
+    int number_pos;
+    double  *number_buf;
+
+    int string_size;
+    int string_num;
+    intptr_t *string_buf;
 
     int native_size;
     int native_num;
@@ -49,8 +53,10 @@ int compile_init(compile_t *cpl, intptr_t sym_tbl);
 int compile_deinit(compile_t *cpl);
 
 intptr_t compile_sym_add(compile_t *cpl, const char *sym);
+intptr_t compile_sym_find(compile_t *cpl, const char *sym);
 
 int compile_arg_add(compile_t *cpl, intptr_t sym_id);
+
 int compile_var_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_get(compile_t *cpl, intptr_t sym_id);
 
