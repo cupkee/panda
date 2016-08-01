@@ -8,7 +8,6 @@ int string_compare(val_t *a, val_t *b)
     const char *s2 = val_2_cstring(b);
 
     if (s1 && s2) {
-        printf("compare: '%s'%lu - '%s'%lu\n", s1, strlen(s1), s2, strlen(s2));
         return strcmp(s1, s2);
     } else {
         return 1;

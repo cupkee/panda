@@ -38,7 +38,7 @@ static int eval_env_adjust(eval_env_t *env)
     return env_scope_extend_to(env->scope, compile_var_num(&env->cpl));
 }
 
-int eval_env_init(eval_env_t *env)
+int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size)
 {
     int size = 16;
     scope_t *scope = env_scope_create(size, NULL);
@@ -52,6 +52,14 @@ int eval_env_init(eval_env_t *env)
 
     env->scope = scope;
     env->sym_tbl = sym_tbl;
+
+    env->sb = stack_ptr;
+    env->ss = stack_size;
+    env->sp = stack_size;
+    env->fp = stack_size;
+
+    env->error = 0;
+    env->result = NULL;
 
     return compile_init(&env->cpl, sym_tbl);
 }
@@ -119,7 +127,7 @@ static void eval_parse_callback(void *u, parse_event_t *e)
     }
 }
 
-int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
+int eval_string(eval_env_t *env, const char *input, val_t **v)
 {
     lexer_t lex_st;
     stmt_t  *stmt;
@@ -128,7 +136,7 @@ int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
     static val_t undefined = TAG_UNDEFINED;
     int done = 0, last_type = 0;
 
-    if (!interp || !env || !input) {
+    if (!env || !input) {
         return -1;
     }
 
@@ -143,8 +151,8 @@ int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
 
         compile_code_clean(&env->cpl);
         if (0 == compile_one_stmt(&env->cpl, stmt, &mod) && 0 == eval_env_adjust(env)) {
-            if (0 != interp_run(interp, (env_t *)env, &mod) && v) {
-                printf("execute fail: %d\n", interp->error);
+            if (0 != interp_run((env_t *)env, &mod) && v) {
+                printf("execute fail: %d\n", env->error);
                 done = -2;
             }
         } else {
@@ -158,7 +166,7 @@ int eval_string(interp_t *interp, eval_env_t *env, const char *input, val_t **v)
 
     if (!done && v) {
         if (last_type == STMT_EXPR) {
-            *v = interp->result;
+            *v = env->result;
         } else {
             *v = &undefined;
         }

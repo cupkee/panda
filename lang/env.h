@@ -20,6 +20,12 @@ typedef struct env_t {
 
     int error;
 
+    int fp;
+    int ss;
+    int sp;
+    val_t *sb;
+    val_t *result;
+
     intptr_t *var_map;
     intptr_t sym_tbl;
 } env_t;

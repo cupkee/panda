@@ -30,7 +30,7 @@ int function_destroy(intptr_t fn)
     return 0;
 }
 
-int function_call(intptr_t fv, interp_t *interp, env_t *env, int ac, val_t *av, uint8_t **pc)
+int function_call(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
 {
     function_t *fn = (function_t *) fv;
     scope_t *scope;
@@ -40,7 +40,7 @@ int function_call(intptr_t fv, interp_t *interp, env_t *env, int ac, val_t *av, 
     }
 
     if (fn->size == 0) { // empty script
-        interp_result_set(interp, val_mk_undefined());
+        interp_result_set(env, val_mk_undefined());
         return 0;
     }
 
@@ -56,18 +56,18 @@ int function_call(intptr_t fv, interp_t *interp, env_t *env, int ac, val_t *av, 
         }
     }
 
-    interp_frame_setup(interp, *pc, env->scope);
+    interp_frame_setup(env, *pc, env->scope);
 
     *pc = fn->code;
     env->scope = scope;
     return 0;
 }
 
-int function_native_call(intptr_t fv, interp_t *interp, env_t *env, int ac, val_t *av, uint8_t **pc)
+int function_call_native(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
 {
     function_native_t fn = (function_native_t) fv;
 
-    interp_result_set(interp, fn(interp, env, ac, av));
+    interp_result_set(env, fn(env, ac, av));
 
     return 0;
 }
