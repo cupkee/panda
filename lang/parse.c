@@ -81,7 +81,6 @@ static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
             expr = parse_expr_form_elem(lex, expr, cb, ud);
         } else {
             if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
-                printf("Look here        ,,,,\n");
                 break;
             }
             expr = parse_expr_form_call(lex, expr, cb, ud);

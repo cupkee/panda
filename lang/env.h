@@ -30,7 +30,7 @@ typedef struct env_t {
     intptr_t sym_tbl;
 } env_t;
 
-int env_init(env_t *env, int scope_size, scope_t *super);
+int env_init(env_t *env, val_t *stack_ptr, int stack_size);
 int env_deinit(env_t *env);
 
 static inline void env_set_error(env_t *env, int error) {
@@ -47,42 +47,17 @@ static inline void env_heap_free(env_t *env, void *mem) {
 
 int env_heap_gc(env_t *env, int level);
 
-scope_t *env_scope_create(int size, scope_t *super);
-int env_scope_destroy(scope_t *scope);
-int env_scope_extend(scope_t *scope, val_t v);
-int env_scope_extend_to(scope_t *scope, int size);
-static inline void __env_scope_set(scope_t *scope, int id, val_t v) {
-    scope->variables[id] = v;
-}
-static inline void __env_scope_get(scope_t *scope, int id, val_t **v) {
-    *v = scope->variables + id;
-}
-static inline int env_scope_set(scope_t *scope, int id, val_t v) {
-    if (scope && id >= 0 && id < scope->num) {
-        scope->variables[id] = v;
-        return 0;
-    }
-    return -1;
-}
-static inline int env_scope_get(scope_t *scope, int id, val_t **v) {
-    if (scope && id >= 0 && id < scope->num) {
-        *v = scope->variables + id;
-        return 0;
-    }
-    return -1;
-}
+int env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
+int env_scope_extend(env_t *env, val_t *v);
+int env_scope_extend_to(env_t *env, int size);
+int env_scope_get(env_t *env, int id, val_t **v);
+int env_scope_set(env_t *env, int id, val_t *v);
 
-static inline intptr_t env_add_symbal(env_t *env, const char *sym) {
-    return symtbl_add(env->sym_tbl, sym);
-}
+intptr_t env_symbal_add(env_t *env, const char *name);
+intptr_t env_symbal_get(env_t *env, const char *name);
 
-static inline intptr_t env_get_symbal(env_t *env, const char *sym) {
-    return symtbl_get(env->sym_tbl, sym);
-}
-
-int env_add_variable(env_t *env, const char *sym);
-int env_set_variable(env_t *env, const char *sym, val_t v);
-int env_get_variable(env_t *env, const char *sym, val_t **p);
+int  env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av);
+void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
 
 #endif /* __LANG_ENV_INC__ */
 

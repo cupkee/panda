@@ -96,15 +96,15 @@ static void object_get_prop(object_t *obj, intptr_t symbal, val_t *prop) {
 
 int objects_env_init(env_t *env)
 {
-    object_props[0].key = env_add_symbal(env, "toString");
+    object_props[0].key = env_symbal_add(env, "toString");
     object_props[0].val = val_mk_native((intptr_t) object_to_string);
 
-    string_props[0].key = env_add_symbal(env, "length");
+    string_props[0].key = env_symbal_add(env, "length");
     string_props[0].val = val_mk_native((intptr_t) string_length);
-    string_props[1].key = env_add_symbal(env, "indexOf");
+    string_props[1].key = env_symbal_add(env, "indexOf");
     string_props[1].val = val_mk_native((intptr_t) string_index_of);
 
-    number_props[0].key = env_add_symbal(env, "length");
+    number_props[0].key = env_symbal_add(env, "length");
     number_props[0].val = val_mk_native((intptr_t) string_length);
 
     Object    = &object_proto;
@@ -173,7 +173,7 @@ int object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
     }
 
     if (obj) {
-        object_get_prop(obj, env_get_symbal(env, name), prop);
+        object_get_prop(obj, env_symbal_get(env, name), prop);
     } else {
         val_set_undefined(prop);
         env_set_error(env, ERR_SysError);

@@ -382,45 +382,6 @@ static inline void interp_elem_call(env_t *env) {
     }
 }
 
-void interp_frame_setup(env_t *env, uint8_t *pc, scope_t *scope)
-{
-    int fp;
-    interp_frame_t *frame;
-
-    if (env->sp < FRAME_SIZE) {
-        env->error = ERR_SysError;
-        return;
-    }
-
-    fp = env->sp - FRAME_SIZE;
-    frame = (interp_frame_t *)(env->sb + fp);
-
-    //printf ("############  resave sp: %d, fp: %d\n", env->sp, env->fp);
-    frame->fp = env->fp;
-    frame->sp = env->sp;
-    frame->pc = (intptr_t) pc;
-    frame->scope = (intptr_t) scope;
-
-    env->fp = fp;
-    env->sp = fp;
-}
-
-void interp_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
-{
-    if (env->fp != env->ss) {
-        interp_frame_t *frame = (interp_frame_t *)(env->sb + env->fp);
-
-        //printf ("$$$$$$$$$$$$$$ restore sp: %d, fp: %d\n", frame->sp, frame->fp);
-        env->sp = frame->sp;
-        env->fp = frame->fp;
-        *pc = (uint8_t *) frame->pc;
-        *scope = (scope_t *) frame->scope;
-    } else {
-        *pc = NULL;
-        *scope = NULL;
-    }
-}
-
 int interp_run(env_t *env, module_t *mod)
 {
     double   *numbers = mod->numbers;
@@ -439,13 +400,13 @@ int interp_run(env_t *env, module_t *mod)
         case BC_STOP:       SHOW("STOP\n"); goto DO_END;
         case BC_PASS:       SHOW("PASS\n"); break;
 
-        case BC_RET0:       interp_frame_restore(env, &pc, &env->scope);
+        case BC_RET0:       env_frame_restore(env, &pc, &env->scope);
                             interp_push_undefined(env);
                             SHOW("RET0\n"); break;
 
         case BC_RET:        {
                                 val_t *res = interp_stack_peek(env);
-                                interp_frame_restore(env, &pc, &env->scope);
+                                env_frame_restore(env, &pc, &env->scope);
                                 *interp_stack_push(env) = *res;
                             }
                             SHOW("RET\n"); break;
@@ -518,11 +479,13 @@ int interp_run(env_t *env, module_t *mod)
                             SHOW("PUSH_NUM %f\n", numbers[index]);
                             interp_push_number(env, numbers[index]); break;
         case BC_PUSH_STR:   index = (*pc++); index = (index << 8) + (*pc++);
-                            SHOW("PUSH_STR %s\n", (const char *)strings[index]);
-                            interp_push_string(env, strings[index]); break;
+                            interp_push_string(env, strings[index]);
+                            SHOW("PUSH_STR %s\n", (const char *)strings[index]); break;
 
-        case BC_PUSH_VAR:   index = (*pc++); SHOW("PUSH_VAR %d\n", index);
-                            *(interp_stack_push(env)) = env->scope->variables[index]; break;
+        case BC_PUSH_VAR:   index = (*pc++);
+                            *(interp_stack_push(env)) = env->scope->variables[index];
+                            SHOW("PUSH_VAR %d\n", index);
+                            break;
 
         case BC_PUSH_VAR_REF:
                             index = (*pc++); SHOW("PUSH_VAR_REF %d\n", index);

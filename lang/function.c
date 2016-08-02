@@ -33,7 +33,6 @@ int function_destroy(intptr_t fn)
 int function_call(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
 {
     function_t *fn = (function_t *) fv;
-    scope_t *scope;
 
     if (!fn) {
         return -1;
@@ -44,22 +43,11 @@ int function_call(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
         return 0;
     }
 
-    if (NULL == (scope = env_scope_create(fn->var_num, fn->super))) {
+    if (0 != env_frame_setup(env, *pc, fn->super, fn->var_num, ac, av)) {
         return -1;
-    } else {
-        int i;
-        for (i = 0; i < ac; i++) {
-            scope->variables[i] = av[i];
-        }
-        for (; i < fn->var_num; i++) {
-            scope->variables[i] = val_mk_undefined();
-        }
     }
 
-    interp_frame_setup(env, *pc, env->scope);
-
     *pc = fn->code;
-    env->scope = scope;
     return 0;
 }
 

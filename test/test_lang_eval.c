@@ -178,20 +178,23 @@ static void test_eval_symbal(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p, v;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
     CU_ASSERT(eval_env_get_var(env, "a", &p) < 0);
     CU_ASSERT(eval_env_get_var(env, "b", &p) < 0);
-    CU_ASSERT(eval_env_add_var(env, "a", val_mk_undefined()) >= 0);
-    CU_ASSERT(eval_env_add_var(env, "b", val_mk_undefined()) >= 0);
+    v = val_mk_undefined();
+    CU_ASSERT(eval_env_add_var(env, "a", &v) >= 0);
+    CU_ASSERT(eval_env_add_var(env, "b", &v) >= 0);
 
     CU_ASSERT(eval_env_get_var(env, "a", &p) >= 0 && val_is_undefined(p));
     CU_ASSERT(eval_env_get_var(env, "b", &p) >= 0 && val_is_undefined(p));
 
-    CU_ASSERT(-1 != eval_env_set_var(env, "a", val_mk_number(5)));
-    CU_ASSERT(-1 != eval_env_set_var(env, "b", val_mk_number(2)));
+    v = val_mk_number(5);
+    CU_ASSERT(-1 != eval_env_set_var(env, "a", &v));
+    v = val_mk_number(2);
+    CU_ASSERT(-1 != eval_env_set_var(env, "b", &v));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  5 == val_2_double(p));
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  2 == val_2_double(p));
 
@@ -278,14 +281,16 @@ static void test_eval_if(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p,v;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(0)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(1)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "c", val_mk_number(2)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "d", val_mk_number(0)));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
+    CU_ASSERT(-1 != eval_env_add_var(env, "d", &v));
+    v = val_mk_number(1);
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", &v));
+    CU_ASSERT(-1 != eval_env_add_var(env, "c", &v));
 
     CU_ASSERT(0 == eval_string(env, "if (a == 0) d = 3", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "d", &p) && val_is_number(p) &&  3 == val_2_double(p));
@@ -341,12 +346,14 @@ static void test_eval_while(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p,v;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(0)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(9)));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
+    v = val_mk_number(9);
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", &v));
 
     CU_ASSERT(0 == eval_string(env, "while(a) {a = 1}", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  0 == val_2_double(p));
@@ -361,14 +368,17 @@ static void test_eval_while(void)
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  10 == val_2_double(p));
 
     // nest
-    CU_ASSERT(-1 != eval_env_set_var(env, "a", val_mk_number(9)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "c", val_mk_number(0)));
+    v = val_mk_number(9);
+    CU_ASSERT(-1 != eval_env_set_var(env, "a", &v));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_add_var(env, "c", &v));
     CU_ASSERT(0 == eval_string(env, "while (a) {a=a-1; b=9; while(b){b=b-1;c=c+1;}}", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "c", &p) && val_is_number(p) && 81 == val_2_double(p));
 
     // continue
-    CU_ASSERT(-1 != eval_env_set_var(env, "a", val_mk_number(0)));
-    CU_ASSERT(-1 != eval_env_set_var(env, "b", val_mk_number(0)));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_set_var(env, "a", &v)); 
+    CU_ASSERT(-1 != eval_env_set_var(env, "b", &v));
     CU_ASSERT(0 == eval_string(env, "while (b < 10) {b = b + 1; if (b == 5) continue; a = a + 1}", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  10 == val_2_double(p));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  9 == val_2_double(p));
@@ -378,9 +388,11 @@ static void test_eval_while(void)
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  5 == val_2_double(p));
 
     // compose
-    CU_ASSERT(-1 != eval_env_set_var(env, "a", val_mk_number(9)));
-    CU_ASSERT(-1 != eval_env_set_var(env, "b", val_mk_number(9)));
-    CU_ASSERT(-1 != eval_env_set_var(env, "c", val_mk_number(0)));
+    v = val_mk_number(9);
+    CU_ASSERT(-1 != eval_env_set_var(env, "a", &v));
+    CU_ASSERT(-1 != eval_env_set_var(env, "b", &v));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_set_var(env, "c", &v));
     CU_ASSERT(0 == eval_string(env, "while (a) {b=a; while(b){b=b-1;if(2*b==a){ c=c+1; break;}}; if(a+b==6)break; a=a-1;}", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  4 == val_2_double(p));
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  2 == val_2_double(p));
@@ -394,7 +406,7 @@ static void test_eval_function(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p,v;
 
     char *fib = "def fib(max) {     \
                    var a = 1, b = 1;\
@@ -415,8 +427,13 @@ static void test_eval_function(void)
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(1)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(3)));
+    v = val_mk_number(1);
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
+    v = val_mk_number(0);
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", &v));
+
+    CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  1 == val_2_double(p));
+    CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  0 == val_2_double(p));
 
     CU_ASSERT(0 == eval_string(env, "def zero() return 0", &res) && val_is_function(res));
     CU_ASSERT(0 == eval_string(env, "b = a + zero() + 2", &res) && val_is_number(res) && 3 == val_2_double(res));
@@ -424,7 +441,8 @@ static void test_eval_function(void)
 
     CU_ASSERT(0 == eval_string(env, "def fn(a, b) return a + b", &res) && val_is_function(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "fn", &p) && val_is_function(p));
-    CU_ASSERT(0 == eval_string(env, "a = b = fn(a, b)", &res) && val_is_number(res) && 4 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, "fn(1, 3)", &res) && val_is_number(res) && 4 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, "a = b = fn(1, 3)", &res) && val_is_number(res) && 4 == val_2_double(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_number(p) &&  4 == val_2_double(p));
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  4 == val_2_double(p));
 
@@ -478,16 +496,18 @@ static void test_eval_native(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p,v;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
     CU_ASSERT(0 <= eval_env_add_native(env, "add", test_native_add));
     CU_ASSERT(0 <= eval_env_add_native(env, "fib", test_native_fib));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_number(1)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_number(1)));
-    CU_ASSERT(-1 != eval_env_add_var(env, "one", val_mk_native((intptr_t)test_native_one)));
+    v = val_mk_number(1);
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", &v));
+    v = val_mk_native((intptr_t)test_native_one);
+    CU_ASSERT(-1 != eval_env_add_var(env, "one", &v));
 
     CU_ASSERT(0 == eval_string(env, "b = a + one()", &res) && val_is_number(res) && 2 == val_2_double(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "b", &p) && val_is_number(p) &&  2 == val_2_double(p));
@@ -514,13 +534,15 @@ static void test_eval_string(void)
     eval_env_t env_st, *env = &env_st;
     val_t stack[128];
     val_t *res;
-    val_t *p;
+    val_t *p,v;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
 
-    CU_ASSERT(-1 != eval_env_add_var(env, "a", val_mk_undefined()));
-    CU_ASSERT(-1 != eval_env_add_var(env, "b", val_mk_static_string((intptr_t) "world")));
-    CU_ASSERT(-1 != eval_env_add_var(env, "c", val_mk_undefined()));
+    v = val_mk_undefined();
+    CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
+    CU_ASSERT(-1 != eval_env_add_var(env, "c", &v));
+    v = val_mk_static_string((intptr_t) "world");
+    CU_ASSERT(-1 != eval_env_add_var(env, "b", &v));
 
     CU_ASSERT(0 == eval_string(env, "\"hello\"", &res) && val_is_string(res));
     CU_ASSERT(0 == eval_string(env, "a = \"hello\"", &res) && val_is_string(res));
