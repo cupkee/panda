@@ -14,7 +14,7 @@ int string_compare(val_t *a, val_t *b)
     }
 }
 
-val_t string_concat(env_t *env, val_t *a, val_t *b)
+val_t string_add(env_t *env, val_t *a, val_t *b)
 {
     const char *s1 = val_2_cstring(a);
     const char *s2 = val_2_cstring(b);
@@ -33,3 +33,36 @@ val_t string_concat(env_t *env, val_t *a, val_t *b)
         return val_mk_undefined();
     }
 }
+
+val_t string_length(env_t *env, int ac, val_t *av)
+{
+    const char *s;
+
+    if (ac < 1 || NULL == (s = val_2_cstring(av))) {
+        env_set_error(env, ERR_InvalidInput);
+        return val_mk_undefined();
+    } else {
+        return val_mk_number(strlen(s));
+    }
+}
+
+val_t string_index_of(env_t *env, int ac, val_t *av)
+{
+    const char *s, *f;
+
+    if (ac < 2 || NULL == (s = val_2_cstring(av))) {
+        env_set_error(env, ERR_InvalidInput);
+        return val_mk_undefined();
+    } else
+    if (NULL == (f = val_2_cstring(av+1))) {
+        return val_mk_number(-1);
+    } else {
+        char *pos = strstr(s, f);
+        if (pos)  {
+            return val_mk_number(pos - s);
+        } else {
+            return val_mk_number(-1);
+        }
+    }
+}
+

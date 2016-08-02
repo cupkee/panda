@@ -613,7 +613,15 @@ static void compile_pop_nt_jmp(compile_t *cpl, int from, int to)
 static void compile_expr_binary(compile_t *cpl, expr_t *e, uint8_t code)
 {
     compile_expr(cpl, ast_expr_lft(e));
-    compile_expr(cpl, ast_expr_rht(e));
+    if (e->type == EXPR_ATTR) {
+        if (ast_expr_rht(e)->type == EXPR_ID) {
+            compile_code_append_str(cpl, ast_expr_text(ast_expr_rht(e)));
+        } else {
+            cpl->error = ERR_InvalidSyntax;
+        }
+    } else {
+        compile_expr(cpl, ast_expr_rht(e));
+    }
     compile_code_append(cpl, code);
 }
 
@@ -646,6 +654,7 @@ void compile_expr_id(compile_t *cpl, expr_t *e)
         if (id >= 0) {
             compile_code_append_native(cpl, id);
         } else {
+            printf("Id not defined: %s\n", ast_expr_text(e));
             cpl->error = ERR_NotDefinedId;
         }
     }
@@ -781,6 +790,21 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     }
 }
 
+static void compile_callor(compile_t *cpl, expr_t *e, int argc)
+{
+    if (e->type == EXPR_ATTR) {
+        compile_expr_binary(cpl, e, BC_PROP_METH);
+        argc += 1; // insert sefl at first of arguments
+    } else
+    if (e->type == EXPR_ELEM) {
+        compile_expr_binary(cpl, e, BC_ELEM_METH);
+        argc += 1; // insert sefl at first of arguments
+    } else {
+        compile_expr(cpl, e);
+    }
+    compile_code_append_call(cpl, argc);
+}
+
 static void compile_func_call(compile_t *cpl, expr_t *e)
 {
     int argc = 0;
@@ -790,8 +814,7 @@ static void compile_func_call(compile_t *cpl, expr_t *e)
     args = ast_expr_rht(e);
 
     compile_arg_list(cpl, args, &argc);
-    compile_expr(cpl, func);
-    compile_code_append_call(cpl, argc);
+    compile_callor(cpl, func, argc);
 }
 
 static void compile_expr(compile_t *cpl, expr_t *e)
@@ -841,8 +864,8 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_LOGIC_OR: compile_expr_logic_or(cpl, e); break;
 
     case EXPR_CALL:     compile_func_call(cpl, e); break;
-    case EXPR_ELEM:     cpl->error = ERR_NotImplemented; break;
-    case EXPR_ATTR:     cpl->error = ERR_NotImplemented; break;
+    case EXPR_ATTR:     compile_expr_binary(cpl, e, BC_PROP); break;
+    case EXPR_ELEM:     compile_expr_binary(cpl, e, BC_ELEM); break;
 
     case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e));
                         compile_expr(cpl, ast_expr_rht(e));
@@ -1311,6 +1334,12 @@ void compile_code_dump(compile_t *cpl)
         case BC_TIN:        printf("[%.3d] ", pos); printf("TIN\n"); break;
         case BC_ASSIGN:     printf("[%.3d] ", pos); printf("ASSING\n"); break;
         case BC_FUNC_CALL:  index = code[pc++]; printf("[%.3d] ", pos); printf("CALL %d\n", index); break;
+
+        case BC_PROP:       printf("[%.3d] ", pos); printf("PROP\n"); break;
+        case BC_PROP_METH:  printf("[%.3d] ", pos); printf("PROP_CALL\n"); break;
+
+        case BC_ELEM:       printf("[%.3d] ", pos); printf("ELEM\n"); break;
+        case BC_ELEM_METH:  printf("[%.3d] ", pos); printf("ELEM_CALL\n"); break;
 
         default:            printf("[%.3d] ", pos); printf("Unknown: %.2x", c);
         }

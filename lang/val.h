@@ -52,8 +52,7 @@ typedef union {
 
 #define TAG_OBJECT          MAKE_TAG(1, 9)
 #define TAG_ARRAY           MAKE_TAG(1, 0xA)
-#define TAG_DICTIONARY      MAKE_TAG(1, 0xB)
-#define TAG_BUFFER          MAKE_TAG(1, 0xC)
+#define TAG_BUFFER          MAKE_TAG(1, 0xB)
 
 #define TAG_REFERENCE       MAKE_TAG(1, 0xE)
 
@@ -149,20 +148,15 @@ static inline int val_is_array(val_t *v) {
     return (*v & TAG_MASK) == TAG_ARRAY;
 }
 
-static inline int val_is_dictionary(val_t *v) {
-    return (*v & TAG_MASK) == TAG_DICTIONARY;
-}
-
 static inline int val_is_true(val_t *v) {
     if (val_is_reference(v)) v = val_2_reference(v);
 
     return val_is_boolean(v) ? val_2_intptr(v) :
-           val_is_number(v) ? val_2_double(v) != 0 :
-           //val_is_string(v) ? string_is_true(val_2_string(v)) :
-           //val_is_array(v) ? array_is_true(val_2_intptr(v)) :
-           //val_is_dictionary(v) ? dictionary_is_true(val_2_intptr(v)) :
-           //val_is_object(v) ? object_is_true(val_2_intptr(v)) :
+           val_is_number(v)  ? val_2_double(v) != 0 :
+           val_is_string(v)  ? *val_2_cstring(v) :
            //val_is_function ? function_is_true(val_2_intptr(v)) :
+           //val_is_array(v) ? array_is_true(val_2_intptr(v)) :
+           //val_is_object(v) ? object_is_true(val_2_intptr(v)) :
            0; // "undefined" and "nan", always be false.
 }
 
@@ -206,10 +200,6 @@ static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (val_t) ptr;
 }
 
-static inline val_t val_mk_dictionary(void *ptr) {
-    return TAG_DICTIONARY | (val_t) ptr;
-}
-
 static inline void val_set_nan(val_t *p) {
     *((uint64_t *)p) = TAG_NAN;
 }
@@ -244,10 +234,6 @@ static inline void val_set_native(val_t *p, intptr_t f) {
 
 static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
-}
-
-static inline void val_set_dictionary(val_t *p, intptr_t d) {
-    *((uint64_t *)p) = TAG_DICTIONARY | d;
 }
 
 static inline void val_set_object(val_t *p, intptr_t o) {

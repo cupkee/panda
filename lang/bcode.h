@@ -68,6 +68,12 @@ typedef enum bcode_t {
     BC_TLT,
     BC_TLE,
     BC_TIN,
+
+    BC_PROP,
+    BC_PROP_METH,
+
+    BC_ELEM,
+    BC_ELEM_METH,
 } bcode_t;
 
 #endif /* __LANG_BCODE_INC__ */

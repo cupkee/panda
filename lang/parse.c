@@ -69,10 +69,9 @@ static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
     expr_t *expr = parse_expr_factor(lex, cb, ud);
     int tok = lex_token(lex, NULL);
 
-    // the head of a primary expression should be a ID
-    if (expr && expr->type != EXPR_ID) {
-        return expr;
-    }
+    //if (expr && expr->type != EXPR_ID) {
+    //    return expr;
+    //}
 
     while (expr && (tok == '.' || tok == '[' || tok == '(')) {
         if (tok == '.') {
@@ -80,8 +79,11 @@ static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
         } else
         if (tok == '[') {
             expr = parse_expr_form_elem(lex, expr, cb, ud);
-        } else
-        if (tok == '(') {
+        } else {
+            if (expr->type != EXPR_ID && expr->type != EXPR_ATTR && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
+                printf("Look here        ,,,,\n");
+                break;
+            }
             expr = parse_expr_form_call(lex, expr, cb, ud);
         }
         tok = lex_token(lex, NULL);

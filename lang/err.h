@@ -9,10 +9,13 @@
 #define ERR_InvalidLeftValue    6
 #define ERR_InvalidSementic     7
 #define ERR_InvalidByteCode     8
-#define ERR_NotDefinedId        9
-#define ERR_StaticNumberOverrun 10
-#define ERR_StackOverflow       11
-#define ERR_ResourceOutLimit    12
+#define ERR_InvalidInput        9
+#define ERR_InvalidCallor       10
+#define ERR_NotDefinedId        11
+#define ERR_NotDefinedProp      12
+#define ERR_StaticNumberOverrun 13
+#define ERR_StackOverflow       14
+#define ERR_ResourceOutLimit    15
 
 #endif /* __LANG_ERR_INC__ */
 

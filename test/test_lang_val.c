@@ -28,7 +28,6 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
     CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(!val_is_nan(&v));
     CU_ASSERT(!val_is_true(&v));
@@ -40,7 +39,6 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
     CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(val_is_nan(&v));
     CU_ASSERT(!val_is_true(&v));
@@ -53,7 +51,6 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
     CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(val_is_true(&v));
 
@@ -67,7 +64,6 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
     CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(!val_is_nan(&v));
     CU_ASSERT(1 == val_2_integer(&v));

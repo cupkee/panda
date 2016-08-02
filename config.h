@@ -28,6 +28,7 @@
 
 // lang compile resource default and limit
 #define DEF_STATIC_NUM_SIZE     (32)
+#define DEF_STATIC_STR_SIZE     (32)
 #define DEF_NATIVE_FUNC_SIZE    (16)
 #define DEF_FUNC_SIZE           (4)
 #define DEF_VMAP_SIZE           (8)
@@ -38,6 +39,7 @@
 #define LIMIT_VMAP_SIZE         (255)
 #define LIMIT_FUNC_CODE_SIZE    (32767)
 #define LIMIT_STATIC_NUM_SIZE   (1024)
+#define LIMIT_STATIC_STR_SIZE   (1024)
 
 #endif /* __CUPKEE_CONFIG__ */
 

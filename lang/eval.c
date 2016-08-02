@@ -6,6 +6,7 @@
 #include "parse.h"
 #include "interp.h"
 #include "compile.h"
+#include "object.h"
 
 #include "eval.h"
 
@@ -44,22 +45,29 @@ int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size)
     scope_t *scope = env_scope_create(size, NULL);
     intptr_t sym_tbl  = symtbl_create();
 
+    env->error = 0;
+    env->scope = scope;
+    env->sym_tbl = sym_tbl;
+
     if (!scope || !sym_tbl) {
         if (scope) env_scope_destroy(scope);
         if (sym_tbl) symtbl_destroy(sym_tbl);
         return -1;
     }
 
-    env->scope = scope;
-    env->sym_tbl = sym_tbl;
 
     env->sb = stack_ptr;
     env->ss = stack_size;
     env->sp = stack_size;
     env->fp = stack_size;
 
-    env->error = 0;
     env->result = NULL;
+
+    if (0 != objects_env_init((env_t *)env)) {
+        if (scope) env_scope_destroy(scope);
+        if (sym_tbl) symtbl_destroy(sym_tbl);
+        return -1;
+    }
 
     return compile_init(&env->cpl, sym_tbl);
 }

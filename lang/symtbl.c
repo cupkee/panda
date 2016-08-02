@@ -45,7 +45,7 @@ intptr_t symtbl_get(intptr_t symtbl, const char *sym)
 {
     intptr_t ret;
 
-    if (htbl_lookup(symtbl, (intptr_t)sym, &ret) == 1) {
+    if (symtbl && htbl_lookup(symtbl, (intptr_t)sym, &ret) == 1) {
         return ret;
     }
 

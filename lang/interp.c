@@ -5,6 +5,7 @@
 #include "bcode.h"
 #include "parse.h"
 #include "interp.h"
+#include "object.h"
 #include "function.h"
 #include "string.h"
 
@@ -90,12 +91,8 @@ static inline void interp_mul_stack(env_t *env) {
     val_t *a = interp_stack_peek(env);
     val_t *res = a;
 
-    if (val_is_number(b)) {
-        if (val_is_number(a)) {
-            val_set_number(res, val_2_double(a) * val_2_double(b));
-        } else {
-            val_set_nan(res);
-        }
+    if (val_is_number(b) && val_is_number(a)) {
+        val_set_number(res, val_2_double(a) * val_2_double(b));
     } else {
         val_set_nan(res);
     }
@@ -107,12 +104,8 @@ static inline void interp_div_stack(env_t *env) {
     val_t *a = interp_stack_peek(env);
     val_t *res = a;
 
-    if (val_is_number(b) && val_2_double(b)) {
-        if (val_is_number(a)) {
-            val_set_number(res, val_2_double(a) / val_2_double(b));
-        } else {
-            val_set_nan(res);
-        }
+    if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
+        val_set_number(res, val_2_double(a) / val_2_double(b));
     } else {
         val_set_nan(res);
     }
@@ -144,7 +137,7 @@ static inline void interp_add_stack(env_t *env) {
     } else
     if (val_is_string(a)){
         if (val_is_string(b)) {
-            *res = string_concat(env, a, b);
+            *res = string_add(env, a, b);
         } else {
             val_set_nan(res);
         }
@@ -343,6 +336,50 @@ static inline void interp_assign(env_t *env) {
     val_t *res = a;
 
     *res = *val_2_reference(a) = *b;
+}
+
+static inline void interp_prop_get(env_t *env) {
+    val_t *key = interp_stack_pop(env);
+    val_t *obj = interp_stack_peek(env);
+    val_t *prop = obj;
+    int err = object_prop_get(env, obj, key, prop);
+
+    if (err) {
+        interp_set_error(env, err);
+    }
+}
+
+static inline void interp_prop_call(env_t *env) {
+    val_t *key = interp_stack_pop(env);
+    val_t *obj = interp_stack_peek(env); // a as the first argument: self
+    val_t *prop = interp_stack_push(env);
+    int err = object_prop_get(env, obj, key, prop);
+
+    if (err) {
+        interp_set_error(env, err);
+    }
+}
+
+static inline void interp_elem_get(env_t *env) {
+    val_t *key = interp_stack_pop(env);
+    val_t *obj = interp_stack_peek(env);
+    val_t *prop = obj;
+    int err = object_elem_get(env, obj, key, prop);
+
+    if (err) {
+        interp_set_error(env, err);
+    }
+}
+
+static inline void interp_elem_call(env_t *env) {
+    val_t *key = interp_stack_pop(env);
+    val_t *obj = interp_stack_peek(env); // a as the first argument: self
+    val_t *prop = interp_stack_push(env);
+    int err = object_elem_get(env, obj, key, prop);
+
+    if (err) {
+        interp_set_error(env, err);
+    }
 }
 
 void interp_frame_setup(env_t *env, uint8_t *pc, scope_t *scope)
@@ -550,10 +587,16 @@ int interp_run(env_t *env, module_t *mod)
                                 if (val_is_native(fn)) {
                                     function_call_native(val_2_intptr(fn), env, index, av, &pc);
                                 } else {
-                                    interp_set_error(env, ERR_SysError);
+                                    interp_set_error(env, ERR_InvalidCallor);
                                 }
                             }
                             SHOW("CALL %d\n", index); break;
+
+        case BC_PROP:       interp_prop_get(env); SHOW("PROP\n"); break;
+        case BC_PROP_METH:  interp_prop_call(env); SHOW("PROP_METH\n"); break;
+
+        case BC_ELEM:       interp_elem_get(env); SHOW("ELEM\n"); break;
+        case BC_ELEM_METH:  interp_elem_call(env); SHOW("ELEM_METH\n"); break;
 
         default:            interp_set_error(env, ERR_InvalidByteCode);
         }

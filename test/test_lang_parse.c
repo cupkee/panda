@@ -33,14 +33,22 @@ static void test_expr_factor(void)
     expr_t   *expr;
 
     test_clr_line();
+    test_set_line(" [a, b] \n");
     test_set_line("true false\n");
     test_set_line("undefined null NaN\n");
     test_set_line("'null' hello 12345\n");
     test_set_line(" (a + b) \n");
-    test_set_line(" [a, b] \n");
     test_set_line(" {a: 1, b: 2} \n");
 
+
     CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_COMMA);
+    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_((expr)))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
+    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_((expr)))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
+    ast_expr_release(expr);
 
     CU_ASSERT(0 != (expr = parse_expr(lex, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TRUE);
@@ -78,13 +86,6 @@ static void test_expr_factor(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
-    ast_expr_release(expr);
-
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));
-    CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
-    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_COMMA);
-    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_((expr)))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
-    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_((expr)))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
     ast_expr_release(expr);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(lex, NULL, NULL)));

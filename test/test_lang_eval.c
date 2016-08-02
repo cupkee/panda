@@ -538,6 +538,16 @@ static void test_eval_string(void)
     CU_ASSERT(0 == eval_string(env, "c = a + ' ' + b", &res) && val_is_string(res));
     CU_ASSERT(0 == eval_string(env, "c == 'hello world'", &res) && val_is_true(res));
 
+    CU_ASSERT(0 == eval_string(env, "c ? true : false", &res) && val_is_true(res));
+    CU_ASSERT(0 == eval_string(env, "'' ? true : false", &res) && !val_is_true(res));
+
+    CU_ASSERT(0 == eval_string(env, "a.length", &res) && val_is_function(res));
+    CU_ASSERT(0 == eval_string(env, "a.length()", &res) && val_is_number(res) && 5 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, "c.indexOf", &res) && val_is_function(res));
+    CU_ASSERT(0 == eval_string(env, "c.indexOf(a)", &res) && val_is_number(res) && 0 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, "c.indexOf(b)", &res) && val_is_number(res) && 6 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, "true.toString().length()", &res) && val_is_number(res) && 4 == val_2_double(res));
+
     eval_env_deinit(env);
 }
 

@@ -9,7 +9,11 @@
 
 int string_compare(val_t *a, val_t *b);
 
-val_t string_concat(env_t *env, val_t *a, val_t *b);
+val_t string_add(env_t *env, val_t *a, val_t *b);
+val_t string_mul(env_t *env, val_t *s, val_t *n);
+val_t string_length(env_t *env, int ac, val_t *av);
+val_t string_index_of(env_t *env, int ac, val_t *av);
+
 
 #endif /* __LANG_STRING_INC__ */
 
