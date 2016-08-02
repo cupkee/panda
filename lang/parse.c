@@ -80,7 +80,7 @@ static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
         if (tok == '[') {
             expr = parse_expr_form_elem(lex, expr, cb, ud);
         } else {
-            if (expr->type != EXPR_ID && expr->type != EXPR_ATTR && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
+            if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
                 printf("Look here        ,,,,\n");
                 break;
             }
@@ -246,7 +246,7 @@ static expr_t *parse_expr_assign(intptr_t lex, parse_callback_t cb, void *ud)
     int tok = lex_token(lex, NULL);
 
     if (expr && tok == '=') {
-        if (expr->type != EXPR_ID && expr->type != EXPR_ATTR && expr->type != EXPR_ELEM) {
+        if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM) {
             parse_fail(lex, ERR_InvalidLeftValue, cb, ud);
             ast_expr_release(expr);
             return NULL;
@@ -403,7 +403,7 @@ static expr_t *parse_expr_form_attr(intptr_t lex, expr_t *lft, parse_callback_t 
         return NULL;
     }
 
-    return parse_expr_form_binary(lex, EXPR_ATTR, lft, parse_expr_factor(lex, cb, ud), cb, ud);
+    return parse_expr_form_binary(lex, EXPR_PROP, lft, parse_expr_factor(lex, cb, ud), cb, ud);
 }
 
 static expr_t *parse_expr_form_elem(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud)

@@ -12,10 +12,11 @@ factor ::= id | number | string | 'true' | 'false' | 'und' | enclosure | funcdef
 	  vardef_list ::= vardef [ ',' vardef ]*
       vardef ::= id [ '=' expr ]
 
-primary ::= factor | attr_form | elem_form | call_form
-  attr_form ::= primary | attr_form '.' id
-  elem_form ::= primary | elem_form '[' ternary ']'
-  call_form ::= primary | call_form '(' comma ')'
+primary ::= factor | prop_form | elem_form | call_form
+  prop_form ::= primary | prop_form '.' id
+  elem_form ::= primary | elem_form '[' expr ']'
+  call_form ::= callor  | call_form '(' comma ')'
+    callor :: id | prop_form | elem_form
 
 # unary  ::= primary | ( '-' |'~' ) unary | 'new' funcall
 unary  ::= primary | ( '-' | '~' | '!') unary
@@ -41,6 +42,7 @@ ternary ::= or_test [ '?' pair ]
 assign ::= ternary [ '=' assign]    # right with
 comma   ::= assign [ ',' comma ]	# right with
 
+[first]
 expr ::= comma
 
 # statement syntax
@@ -56,11 +58,11 @@ ret_stmt :: 'return' [ expr ] [ ';' ]
 break_stmt :: 'break' [ ';' ]
 continue_stmt :: 'continue' [ ';' ]
 
-if_stmt :: 'if' expr block
+if_stmt :: 'if' '(' expr ')' block
            [ 'else' block ]
-    block: statement | '{' statement*'}'
+    block: statement | '{' stmt_list '}'
 
-while_stmt :: 'while' expr block
+while_stmt :: 'while' '(' expr ')' block
 
 # First
 stmt_list :: statement*

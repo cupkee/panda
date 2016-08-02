@@ -104,7 +104,7 @@ static void expr_stringify(void *u, expr_t *e)
         case EXPR_LOGIC_OR:  b->buf[b->pos++] = '|'; b->buf[b->pos++] = '|'; break;
         case EXPR_ASSIGN: b->buf[b->pos++] = '='; break;
         case EXPR_COMMA: b->buf[b->pos++] = ','; break;
-        case EXPR_ATTR: b->buf[b->pos++] = '.'; break;
+        case EXPR_PROP: b->buf[b->pos++] = '.'; break;
         case EXPR_ELEM: b->buf[b->pos++] = '['; b->buf[b->pos++] = ']'; break;
         case EXPR_CALL: b->buf[b->pos++] = '('; break;
         case EXPR_PAIR: b->buf[b->pos++] = ':'; break;

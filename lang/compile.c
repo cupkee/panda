@@ -613,7 +613,7 @@ static void compile_pop_nt_jmp(compile_t *cpl, int from, int to)
 static void compile_expr_binary(compile_t *cpl, expr_t *e, uint8_t code)
 {
     compile_expr(cpl, ast_expr_lft(e));
-    if (e->type == EXPR_ATTR) {
+    if (e->type == EXPR_PROP) {
         if (ast_expr_rht(e)->type == EXPR_ID) {
             compile_code_append_str(cpl, ast_expr_text(ast_expr_rht(e)));
         } else {
@@ -675,7 +675,7 @@ static void compile_expr_lft(compile_t *cpl, expr_t *e)
                     }
                   }
                   break;
-    case EXPR_ATTR: cpl->error = ERR_NotImplemented; break;
+    case EXPR_PROP: cpl->error = ERR_NotImplemented; break;
     case EXPR_ELEM: cpl->error = ERR_NotImplemented; break;
     default:        cpl->error = ERR_InvalidSyntax;
     }
@@ -792,7 +792,7 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
 
 static void compile_callor(compile_t *cpl, expr_t *e, int argc)
 {
-    if (e->type == EXPR_ATTR) {
+    if (e->type == EXPR_PROP) {
         compile_expr_binary(cpl, e, BC_PROP_METH);
         argc += 1; // insert sefl at first of arguments
     } else
@@ -864,7 +864,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_LOGIC_OR: compile_expr_logic_or(cpl, e); break;
 
     case EXPR_CALL:     compile_func_call(cpl, e); break;
-    case EXPR_ATTR:     compile_expr_binary(cpl, e, BC_PROP); break;
+    case EXPR_PROP:     compile_expr_binary(cpl, e, BC_PROP); break;
     case EXPR_ELEM:     compile_expr_binary(cpl, e, BC_ELEM); break;
 
     case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e));

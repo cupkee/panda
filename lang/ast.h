@@ -55,7 +55,7 @@ enum EXPR_TYPE {
     EXPR_ASSIGN,
     EXPR_COMMA,
 
-    EXPR_ATTR,
+    EXPR_PROP,
     EXPR_ELEM,
     EXPR_CALL,
 
