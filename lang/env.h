@@ -7,13 +7,15 @@
 #include "config.h"
 
 #include "val.h"
+#include "heap.h"
 #include "symtbl.h"
 
 typedef struct scope_t {
-    struct scope_t *super;
+    uint8_t type;
     uint8_t size;
     uint8_t num;
-    val_t   *variables;
+    val_t   *var_buf;
+    struct scope_t *super;
 } scope_t;
 
 typedef struct env_t {
@@ -27,25 +29,22 @@ typedef struct env_t {
     val_t *sb;
     val_t *result;
 
+    heap_t *heap;
+    heap_t heap_top;
+    heap_t heap_bot;
+
     intptr_t sym_tbl;
 } env_t;
 
-int env_init(env_t *env, val_t *stack_ptr, int stack_size);
+int env_init(env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size);
 int env_deinit(env_t *env);
 
 static inline void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
 }
 
-static inline void *env_heap_alloc(env_t *env, int size) {
-    return env ? malloc(size) : NULL;
-}
-
-static inline void env_heap_free(env_t *env, void *mem) {
-    if (env && mem) free(mem);
-}
-
-int env_heap_gc(env_t *env, int level);
+void *env_heap_alloc(env_t *env, int size);
+void env_heap_gc(env_t *env, int level);
 
 int env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
 int env_scope_extend(env_t *env, val_t *v);

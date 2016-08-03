@@ -104,28 +104,6 @@ typedef struct expr_t {
     } body;
 } expr_t;
 
-expr_t *ast_expr_alloc_str(int type, const char *text);
-expr_t *ast_expr_alloc_num(int type, const char *text);
-static inline expr_t *ast_expr_alloc_proc(stmt_t * s) {
-    expr_t *e = (expr_t *) calloc(1, sizeof(expr_t));
-
-    if (e) {
-        e->type = EXPR_FUNCPROC;
-        e->body.data.proc = s;
-    }
-
-    return e;
-}
-static inline expr_t *ast_expr_alloc_type(int type) {
-    expr_t *e = (expr_t *) calloc(1, sizeof(expr_t));
-
-    if (e)
-        e->type = type;
-
-    return e;
-}
-
-void ast_expr_release(expr_t *e);
 
 static inline const char * ast_expr_text(expr_t *e) {
     return e->body.data.str;
@@ -159,54 +137,7 @@ static inline void ast_expr_set_rht(expr_t *e, expr_t *rht) {
     e->body.child.rht = rht;
 }
 
-void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *user_data);
-
-static inline stmt_t *ast_stmt_alloc_0(int type) {
-    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
-
-    if (s)
-        s->type = type;
-
-    return s;
-}
-
-static inline stmt_t *ast_stmt_alloc_1(int t, expr_t *e) {
-    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
-
-    if (s) {
-        s->type = t;
-        s->expr = e;
-    }
-
-    return s;
-}
-
-static inline stmt_t *ast_stmt_alloc_2(int t, expr_t *e, stmt_t *block) {
-    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
-
-    if (s) {
-        s->type = t;
-        s->expr = e;
-        s->block = block;
-    }
-
-    return s;
-}
-
-static inline stmt_t *ast_stmt_alloc_3(int t, expr_t *e, stmt_t *block, stmt_t *other) {
-    stmt_t *s = (stmt_t *) calloc(1, sizeof(stmt_t));
-
-    if (s) {
-        s->type = t;
-        s->expr = e;
-        s->block = block;
-        s->other = other;
-    }
-
-    return s;
-}
-
-void ast_stmt_release(stmt_t *s);
+void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *ud);
 
 #endif /* __LANG_AST_INC__ */
 

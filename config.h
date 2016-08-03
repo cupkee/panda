@@ -14,13 +14,18 @@
 
 #define CHAR_T char
 
+#define SIZE_ALIGN_8(x)     (((x) + 7)  & ~0x07)
+#define SIZE_ALIGN_16(x)    (((x) + 15) & ~0x0F)
+#define SIZE_ALIGN_32(x)    (((x) + 31) & ~0x1F)
+#define SIZE_ALIGN_64(x)    (((x) + 63) & ~0x3F)
+#define SIZE_ALIGN_64(x)    (((x) + 63) & ~0x3F)
+
+#define SIZE_ALIGN    SIZE_ALIGN_64
+
 // esbl profile
 #define DEF_VECT_SIZE       (16)
 #define DEF_HTBL_SIZE       (16)
 
-#define SIZE_ALIGN_16(x)    (((x) + 15) & 0xfffffff0u)
-#define SIZE_ALIGN_32(x)    (((x) + 31) & 0xffffffe0u)
-#define SIZE_ALIGN_64(x)    (((x) + 63) & 0xffffffc0u)
 
 // lang profile
 #define LEX_LINE_BUF_SIZE       (128)

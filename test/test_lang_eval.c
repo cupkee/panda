@@ -7,6 +7,8 @@
 
 #include "lang/eval.h"
 
+uint8_t heap_buf[8192];
+
 static int test_setup()
 {
     return 0;
@@ -23,7 +25,7 @@ static void test_eval_simple(void)
     val_t stack[128];
     val_t *res;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 == eval_string(env, "NaN", &res) && val_is_nan(res));
     CU_ASSERT(0 == eval_string(env, "undefined", &res) && val_is_undefined(res));
@@ -44,7 +46,7 @@ static void test_eval_calculate(void)
     val_t stack[128];
     val_t *res;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 == eval_string(env, "-1", &res) && val_is_number(res) && -1 == val_2_double(res));
     CU_ASSERT(0 == eval_string(env, "~0", &res) && val_is_number(res) && -1 == val_2_integer(res));
@@ -104,7 +106,7 @@ static void test_eval_compare(void)
     val_t stack[128];
     val_t *res;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 == eval_string(env, "1 != 0", &res) && val_is_boolean(res) &&  val_is_true(res));
     CU_ASSERT(0 == eval_string(env, "1 == 0", &res) && val_is_boolean(res) && !val_is_true(res));
@@ -129,7 +131,7 @@ static void test_eval_logic(void)
     val_t stack[128];
     val_t *res;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 == eval_string(env, "false && false", &res) && val_is_boolean(res) &&  !val_is_true(res));
     CU_ASSERT(0 == eval_string(env, "false && true",  &res) && val_is_boolean(res) &&  !val_is_true(res));
@@ -180,7 +182,7 @@ static void test_eval_symbal(void)
     val_t *res;
     val_t *p, v;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(eval_env_get_var(env, "a", &p) < 0);
     CU_ASSERT(eval_env_get_var(env, "b", &p) < 0);
@@ -248,7 +250,7 @@ static void test_eval_var(void)
     val_t *res;
     val_t *p;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 == eval_string(env, "var a;", &res) && val_is_undefined(res));
     CU_ASSERT(-1 != eval_env_get_var(env, "a", &p) && val_is_undefined(p));
@@ -283,7 +285,7 @@ static void test_eval_if(void)
     val_t *res;
     val_t *p,v;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     v = val_mk_number(0);
     CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
@@ -348,7 +350,7 @@ static void test_eval_while(void)
     val_t *res;
     val_t *p,v;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     v = val_mk_number(0);
     CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
@@ -425,7 +427,7 @@ static void test_eval_function(void)
                   }";
 */
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     v = val_mk_number(1);
     CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));
@@ -498,7 +500,7 @@ static void test_eval_native(void)
     val_t *res;
     val_t *p,v;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     CU_ASSERT(0 <= eval_env_add_native(env, "add", test_native_add));
     CU_ASSERT(0 <= eval_env_add_native(env, "fib", test_native_fib));
@@ -536,7 +538,7 @@ static void test_eval_string(void)
     val_t *res;
     val_t *p,v;
 
-    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128));
+    CU_ASSERT_FATAL(0 == eval_env_init(&env_st, stack, 128, heap_buf, 8192));
 
     v = val_mk_undefined();
     CU_ASSERT(-1 != eval_env_add_var(env, "a", &v));

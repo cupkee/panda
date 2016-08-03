@@ -18,6 +18,8 @@ static int test_clean()
     return 0;
 }
 
+static uint8_t memory[8192];
+
 static void test_common(void)
 {
     lexer_t lex_st;
@@ -36,7 +38,7 @@ static void test_common(void)
     test_set_line("abc a12 _11 a_b _a_ $1 $_a \n");
     test_set_line("undefined null NaN true false var def return while break continue in if elif else\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, test_get_line)));
+    CU_ASSERT(0 != (lex = lex_init(&lex_st, memory, 8192, test_get_line)));
 
     CU_ASSERT(lex_match(lex, '+'));
     CU_ASSERT(lex_match(lex, '-'));

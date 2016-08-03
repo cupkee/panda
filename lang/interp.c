@@ -483,13 +483,13 @@ int interp_run(env_t *env, module_t *mod)
                             SHOW("PUSH_STR %s\n", (const char *)strings[index]); break;
 
         case BC_PUSH_VAR:   index = (*pc++);
-                            *(interp_stack_push(env)) = env->scope->variables[index];
+                            *(interp_stack_push(env)) = env->scope->var_buf[index];
                             SHOW("PUSH_VAR %d\n", index);
                             break;
 
         case BC_PUSH_VAR_REF:
                             index = (*pc++); SHOW("PUSH_VAR_REF %d\n", index);
-                            interp_push_ref(env, env->scope->variables + index); break;
+                            interp_push_ref(env, env->scope->var_buf + index); break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             {

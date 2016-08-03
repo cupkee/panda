@@ -39,13 +39,18 @@ static int eval_env_adjust(eval_env_t *env)
     return env_scope_extend_to(&env->env, compile_var_num(&env->cpl));
 }
 
-int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size)
+int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size)
 {
-    if (0 == env_init((env_t *)env, stack_ptr, stack_size)) {
+    if (0 == env_init((env_t *)env, stack_ptr, stack_size, heap_ptr, heap_size)) {
         return compile_init(&env->cpl, env->env.sym_tbl);
     } else {
         return -1;
     }
+}
+
+int eval_env_init2(eval_env_t *eval_env, env_t *env)
+{
+    return -1;
 }
 
 int eval_env_deinit(eval_env_t *env)
@@ -119,6 +124,7 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
     stmt_t  *stmt;
     module_t mod;
     intptr_t lex;
+    uint8_t  lex_memory[8192];
     static val_t undefined = TAG_UNDEFINED;
     int done = 0, last_type = 0;
 
@@ -127,7 +133,7 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
     }
 
     get_line_init(input);
-    lex = lex_init(&lex_st, get_line_from_string);
+    lex = lex_init(&lex_st, lex_memory, 8192, get_line_from_string);
 
     int stmt_cnt = 0;
     while (!done) {
@@ -147,7 +153,6 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
         }
 
         last_type = stmt->type;
-        ast_stmt_release(stmt);
     }
 
     if (!done && v) {

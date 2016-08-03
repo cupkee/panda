@@ -18,7 +18,7 @@ typedef struct eval_env_t {
     compile_t cpl;
 } eval_env_t;
 
-int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size);
+int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size);
 int eval_env_deinit(eval_env_t *env);
 
 int eval_env_add_var(eval_env_t *env, const char *name, val_t *value);

@@ -12,109 +12,55 @@ typedef struct frame_t {
     intptr_t scope;
 } frame_t;
 
-static scope_t *scope_create(int size, scope_t *super)
+static int env_scope_expand(env_t *env, scope_t *scope, int size)
 {
-    scope_t *scope;
+    val_t *buf = (val_t *) env_heap_alloc(env, sizeof(val_t) * size);
 
-    scope = (scope_t *) malloc(sizeof(scope_t));
-    if (scope) {
-        val_t *buf = (val_t *) malloc(sizeof(val_t) * size);
-        if (buf) {
-            scope->num = 0;
-            scope->size = size;
-            scope->super = super;
-            scope->variables = buf;
-        } else {
-            free(scope);
-            scope = NULL;
-        }
+    if (!buf) {
+        env_set_error(env, ERR_NotEnoughMemory);
+        return -1;
     }
-    return scope;
-}
 
-static int scope_destroy(scope_t *scope)
-{
-    if (scope) {
-        free(scope->variables);
-        free(scope);
-    }
-    return 0;
-}
-
-static int scope_expand(scope_t *scope, int size)
-{
-    val_t *buf = (val_t *) malloc(sizeof(val_t) * size);
-
-    if (!buf) return -1;
-
-    memcpy(buf, scope->variables, scope->num * sizeof(val_t));
-    free(scope->variables);
-
-    scope->variables = buf;
+    memcpy(buf, scope->var_buf, scope->num * sizeof(val_t));
+    scope->var_buf = buf;
     scope->size = size;
 
     return 0;
 }
 
-static int scope_extend(scope_t *scope, val_t *v)
+int env_init(env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size)
 {
-    if (!scope) {
-        return -1;
-    }
-
-    if (scope->num >= scope->size && 0 != scope_expand(scope, scope->size * 2)) {
-        return -1;
-    }
-    scope->variables[scope->num++] = *v;
-
-    return scope->num;
-}
-
-static int scope_extend_to(scope_t *scope, int size)
-{
-    int i;
-
-    if (!scope) {
-        return -1;
-    }
-
-    if (size > scope->size && 0 != scope_expand(scope, size)) {
-        return -1;
-    }
-    i = scope->num;
-    while(i < size) {
-        scope->variables[i++] = val_mk_undefined();
-    }
-    scope->num = i;
-
-    return 0;
-}
-
-
-int env_init(env_t *env, val_t *stack_ptr, int stack_size)
-{
-    scope_t *scope = scope_create(16, NULL);
     intptr_t sym_tbl  = symtbl_create();
 
-    if (!scope || !sym_tbl) {
-        if (scope)   scope_destroy(scope);
-        if (sym_tbl) symtbl_destroy(sym_tbl);
-        return -1;
-    }
-
     env->error = 0;
-    env->scope = scope;
     env->sym_tbl = sym_tbl;
 
+    // stack init
     env->sb = stack_ptr;
     env->ss = stack_size;
     env->sp = stack_size;
     env->fp = stack_size;
 
+    // heap init
+    if (heap_size % 16) {
+        return -1;
+    }
+    int half_size = heap_size / 2;
+    heap_init(&env->heap_top, heap_ptr, half_size);
+    heap_init(&env->heap_bot, heap_ptr + half_size, half_size);
+    env->heap = &env->heap_top;
+
     env->result = NULL;
 
+    if (!(env->sym_tbl = symtbl_create())) {
+        return -1;
+    }
+
+    if (0 != env_scope_create(env, NULL, 16, 0, NULL)) {
+        return -1;
+    }
+
     if (0 != objects_env_init((env_t *)env)) {
-        if (scope)   scope_destroy(scope);
         if (sym_tbl) symtbl_destroy(sym_tbl);
         return -1;
     } else {
@@ -128,7 +74,6 @@ int env_deinit(env_t *env)
         return -1;
     }
 
-    if (env->scope) scope_destroy(env->scope);
     if (env->sym_tbl) symtbl_destroy(env->sym_tbl);
 
     return 0;
@@ -136,50 +81,84 @@ int env_deinit(env_t *env)
 
 int env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av)
 {
-    if (env) {
-        scope_t *scope = scope_create(vc, super);
-        int i;
+    scope_t *scope;
+    val_t   *buf;
+    int      i;
 
-        if (!scope) {
-            env_set_error(env, ERR_SysError);
-            return -1;
-        }
-
-        for (i = 0; i < ac; i++) {
-            scope->variables[i] = av[i];
-        }
-        for (; i < vc; i++) {
-            scope->variables[i] = val_mk_undefined();
-        }
-
-        env->scope = scope;
-        return 0;
+    if (!env) {
+        return -1;
     }
 
-    return -1;
+    if (!(scope = (scope_t *) env_heap_alloc(env, sizeof(scope_t)))) {
+        env_set_error(env, ERR_NotEnoughMemory);
+        return -1;
+    }
+
+    if (!(buf = (val_t *) env_heap_alloc(env, sizeof(val_t) * vc))) {
+        env_set_error(env, ERR_NotEnoughMemory);
+        return -1;
+    }
+
+    for (i = 0; i < ac; i++) {
+        buf[i] = av[i];
+    }
+
+    for (; i < vc; i++) {
+        buf[i] = val_mk_undefined();
+    }
+
+    scope->type = 0x19;
+    scope->num = 0;
+    scope->size = vc;
+    scope->super = super;
+    scope->var_buf = buf;
+    env->scope = scope;
+
+    return 0;
 }
 
 int env_scope_extend(env_t *env, val_t *v)
 {
-    if (env) {
-        return scope_extend(env->scope, v);
-    } else {
+    scope_t *scope;
+
+    if (!env || !env->scope) {
         return -1;
     }
+
+    scope = env->scope;
+    if (scope->num >= scope->size && 0 != env_scope_expand(env, scope, scope->size * 2)) {
+        return -1;
+    }
+    scope->var_buf[scope->num++] = *v;
+
+    return scope->num;
 }
 
 int env_scope_extend_to(env_t *env, int size)
 {
-    if (env) {
-        return scope_extend_to(env->scope, size);
-    } else {
+    scope_t *scope;
+    int i;
+
+    if (!env || !env->scope) {
         return -1;
     }
+
+    scope = env->scope;
+    if (size > scope->size && 0 != env_scope_expand(env, scope, size)) {
+        return -1;
+    }
+    i = scope->num;
+    while(i < size) {
+        scope->var_buf[i++] = val_mk_undefined();
+    }
+    scope->num = i;
+
+    return 0;
 }
 
 int env_scope_set(env_t *env, int id, val_t *v) {
     if (env && env->scope && id >= 0 && id < env->scope->num) {
-        env->scope->variables[id] = *v;
+        env->scope->var_buf[id] = *v;
         return 0;
     }
     return -1;
@@ -187,7 +166,7 @@ int env_scope_set(env_t *env, int id, val_t *v) {
 
 int env_scope_get(env_t *env, int id, val_t **v) {
     if (env && env->scope && id >= 0 && id < env->scope->num) {
-        *v = env->scope->variables + id;
+        *v = env->scope->var_buf + id;
         return 0;
     }
     return -1;
@@ -253,5 +232,22 @@ void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
         *pc = NULL;
         *scope = NULL;
     }
+}
+
+void *env_heap_alloc(env_t *env, int size)
+{
+    void *ptr = heap_alloc(env->heap, size);
+
+    if (!ptr) {
+        env_heap_gc(env, 0);
+        return heap_alloc(env->heap, size);
+    }
+
+    return ptr;
+}
+
+void env_heap_gc(env_t *env, int level)
+{
+    env_set_error(env, ERR_NotImplemented);
 }
 

@@ -19,7 +19,7 @@ static int to_number(const char *s, int len)
 static void lex_get_next_ch(lexer_t *lex)
 {
     if (lex->line_pos >= lex->line_end) {
-        int len = lex->getline(lex->line_buf, LEX_LINE_BUF_SIZE);
+        int len = lex->getline(lex->line_buf, lex->line_buf_size);
 
         if (len <= 0) {
             len = 1;
@@ -27,9 +27,6 @@ static void lex_get_next_ch(lexer_t *lex)
         }
         lex->line_end = len;
         lex->line_pos = 0;
-        // for debug
-        // lex->line_buf[len] = 0;
-        // printf("get line(%d): %s\n", len, lex->line_buf);
     }
 
     if (lex->curr_ch == '\n') {
@@ -41,8 +38,6 @@ static void lex_get_next_ch(lexer_t *lex)
 
     lex->curr_ch = lex->next_ch;
     lex->next_ch = lex->line_buf[lex->line_pos ++];
-
-    // printf("get a char: %c\n", lex->curr_ch);
 }
 
 static int lex_chk_token_type(const char *str, int len)
@@ -103,15 +98,15 @@ static void lex_get_id_token(lexer_t *lex)
     int len  = 0;
 
     do {
-        if (len < LEX_TOK_SIZE) {
-            lex->token_str_buf[len++] = CURR_CH;
+        if (len + 1 < lex->token_buf_size) {
+            lex->token_buf[len++] = CURR_CH;
         }
         lex_get_next_ch(lex);
     } while (isalnum(CURR_CH) || '_' == CURR_CH || '$' == CURR_CH);
 
-    lex->token_str_buf[len] = 0;
-    lex->token_str_len = len;
-    lex->curr_tok = lex_chk_token_type(lex->token_str_buf, len);
+    lex->token_buf[len] = 0;
+    lex->token_len = len;
+    lex->curr_tok = lex_chk_token_type(lex->token_buf, len);
 }
 
 static void lex_get_str_token(lexer_t *lex)
@@ -123,8 +118,8 @@ static void lex_get_str_token(lexer_t *lex)
     lex_get_next_ch(lex);
 
     while (CURR_CH != term) {
-        if (len < LEX_TOK_SIZE) {
-            lex->token_str_buf[len++] = CURR_CH;
+        if (len + 1 < lex->token_buf_size) {
+            lex->token_buf[len++] = CURR_CH;
         }
         lex_get_next_ch(lex);
     }
@@ -132,8 +127,8 @@ static void lex_get_str_token(lexer_t *lex)
     // Eat the tail ' Or "
     lex_get_next_ch(lex);
 
-    lex->token_str_buf[len] = 0;
-    lex->token_str_len = len;
+    lex->token_buf[len] = 0;
+    lex->token_len = len;
     lex->curr_tok = TOK_STR;
 }
 
@@ -142,14 +137,14 @@ static void lex_get_num_token(lexer_t *lex)
     int len  = 0;
 
     do {
-        if (len < LEX_TOK_SIZE) {
-            lex->token_str_buf[len++] = CURR_CH;
+        if (len + 1 < lex->token_buf_size) {
+            lex->token_buf[len++] = CURR_CH;
         }
         lex_get_next_ch(lex);
     } while (isnumber(CURR_CH));
 
-    lex->token_str_buf[len] = 0;
-    lex->token_str_len = len;
+    lex->token_buf[len] = 0;
+    lex->token_len = len;
     lex->curr_tok = TOK_NUM;
 }
 
@@ -235,14 +230,32 @@ TOKEN_LOCATE:
     }
 }
 
-intptr_t lex_init(lexer_t *lex, int (*getline)(void *, int))
+intptr_t lex_init(lexer_t *lex, void *memory, int size, int (*getline)(void *, int))
 {
-    if (lex && getline) {
+    if (lex && memory && size && getline) {
+        int line_size, tok_size;
+        int heap_bottom, heap_size;
+
+        tok_size = SIZE_ALIGN_16(size / 8 / 4);
+        line_size = tok_size * 3;
+
+        heap_bottom = tok_size + line_size;
+        heap_size = size - heap_bottom;
+        if (heap_size < 0) {
+            return 0;
+        }
+
+        lex->line_buf_size = line_size;
+        lex->token_buf_size = tok_size;
+        lex->line_buf = memory;
+        lex->token_buf = memory + line_size;
+        heap_init(&lex->heap, memory + heap_bottom, heap_size);
+
         lex->line_end = 0;
         lex->line_pos = 0;
         lex->getline = getline;
         lex->curr_tok = TOK_EOF;
-        lex->token_str_len = 0;
+        lex->token_len = 0;
 
         lex->line = 0;
         lex->col = 0;
@@ -269,13 +282,13 @@ int lex_token(intptr_t l, token_t *tok)
         tok->type = lex->curr_tok;
         tok->line = lex->line;
         tok->col  = lex->col;
-        tok->text = lex->token_str_buf;
+        tok->text = lex->token_buf;
 
         if (tok->type == TOK_ID || tok->type == TOK_STR) {
-            tok->value = lex->token_str_len;
+            tok->value = lex->token_len;
         } else
         if (tok->type == TOK_NUM) {
-            tok->value = to_number(lex->token_str_buf, lex->token_str_len);
+            tok->value = to_number(lex->token_buf, lex->token_len);
         }
     }
 
