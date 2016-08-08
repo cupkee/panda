@@ -8,8 +8,6 @@
 
 #include "val.h"
 #include "env.h"
-#include "module.h"
-
 
 typedef struct interp_t {
     int error;

@@ -34,30 +34,95 @@ static int get_line_from_string(void *buf, int size)
     return max;
 }
 
-static int eval_env_adjust(eval_env_t *env)
+static int eval_main_var_get(eval_env_t *env, intptr_t sym)
 {
-    return env_scope_extend_to(&env->env, compile_var_num(&env->cpl));
+    int i;
+
+    for (i = 0; i < env->main_var_num; i++) {
+        if (env->main_var_map[i] == sym) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
-int eval_env_init(eval_env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size)
+static int eval_main_var_add(eval_env_t *env, intptr_t sym)
 {
-    if (0 == env_init((env_t *)env, stack_ptr, stack_size, heap_ptr, heap_size)) {
-        return compile_init(&env->cpl, env->env.sym_tbl);
+    int i;
+
+    for (i = 0; i < env->main_var_num; i++) {
+        if (env->main_var_map[i] == sym) {
+            return 0;
+        }
+    }
+
+    if (i < EVAL_MAIN_VAR_MAX) {
+        env->main_var_map[env->main_var_num++] = sym;
+        return 1;
+    }
+
+    return -1;
+}
+
+static int eval_compile_init(compile_t *cpl, eval_env_t *env, void *heap_addr, int heap_size)
+{
+    if (0 != compile_init(cpl, &env->env, heap_addr, heap_size)) {
+        return -1;
+    }
+
+    // set main function compile info history
+    cpl->func_buf[0].var_map = env->main_var_map;
+    cpl->func_buf[0].var_num = env->main_var_num;
+    cpl->func_buf[0].var_max = EVAL_MAIN_VAR_MAX;
+
+    // set function offset for compile
+//    cpl->func_offset = env->env.func_num;
+
+    return 0;
+}
+
+static int eval_compile_update(eval_env_t *env, compile_t *cpl)
+{
+    if (0 != compile_code_relocate(cpl)) {
+        return -1;
+    }
+
+    // update main var scope
+    env->main_var_num = compile_var_num(cpl);
+    return env_scope_extend_to(&env->env, compile_var_num(cpl));
+}
+
+static int eval_compile_deinit(compile_t *cpl)
+{
+    if (cpl) {
+        cpl->func_buf[0].var_map = NULL;
+        return compile_deinit(cpl);
+    }
+    return -1;
+}
+
+int eval_env_init_mini(eval_env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
+{
+    if (!env || !mem_ptr) {
+        return -1;
+    }
+
+    if (0 == env_init((env_t *)env, mem_ptr, mem_size, heap_ptr, heap_size, stack_ptr, stack_size,
+                64, 64, 32, 16, 1024, 1024)) {
+        env->main_var_num = 0;
+
+        return 0;
     } else {
         return -1;
     }
-}
-
-int eval_env_init2(eval_env_t *eval_env, env_t *env)
-{
-    return -1;
 }
 
 int eval_env_deinit(eval_env_t *env)
 {
 
     if (env_deinit((env_t *)env) == 0) {
-        return compile_deinit(&env->cpl);
+        return 0;
     } else {
         return -1;
     }
@@ -66,15 +131,14 @@ int eval_env_deinit(eval_env_t *env)
 int eval_env_add_var(eval_env_t *eval_env, const char *name, val_t *value)
 {
     env_t    *env = (env_t *)eval_env;
-    compile_t *cpl = &eval_env->cpl;
     intptr_t sym_id = symtbl_add(env->sym_tbl, name);
-    int      extend = compile_var_add(cpl, sym_id);
+    int      extend = eval_main_var_add(eval_env, sym_id);
 
     if (extend == 1) {
         return env_scope_extend(env, value);
     } else
     if (extend == 0) {
-        return env_scope_set(env, compile_var_get(cpl, sym_id), value);
+        return env_scope_set(env, eval_main_var_get(eval_env, sym_id), value);
     } else {
         return -1;
     }
@@ -83,9 +147,8 @@ int eval_env_add_var(eval_env_t *eval_env, const char *name, val_t *value)
 int eval_env_get_var(eval_env_t *eval_env, const char *name, val_t **value)
 {
     env_t    *env = (env_t *)eval_env;
-    compile_t *cpl = &eval_env->cpl;
     intptr_t sym_id = symtbl_get(env->sym_tbl, name);
-    int      var_id = compile_var_get(cpl, sym_id);
+    int      var_id = eval_main_var_get(eval_env, sym_id);
 
     return env_scope_get(env, var_id, value);
 }
@@ -93,16 +156,15 @@ int eval_env_get_var(eval_env_t *eval_env, const char *name, val_t **value)
 int eval_env_set_var(eval_env_t *eval_env, const char *name, val_t *value)
 {
     env_t    *env = (env_t *)eval_env;
-    compile_t *cpl = &eval_env->cpl;
     intptr_t sym_id = symtbl_get(env->sym_tbl, name);
-    int      var_id = compile_var_get(cpl, sym_id);
+    int      var_id = eval_main_var_get(eval_env, sym_id);
 
     return env_scope_set(env, var_id, value);
 }
 
 int eval_env_add_native(eval_env_t *env, const char *name, function_native_t native)
 {
-    return compile_native_add(&env->cpl, name, native);
+    return env_native_add(&env->env, name, native);
 }
 
 static void eval_parse_callback(void *u, parse_event_t *e)
@@ -137,20 +199,32 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
 
     int stmt_cnt = 0;
     while (!done) {
-        stmt = parse_stmt(lex, eval_parse_callback, &done);
+        heap_t *heap = env_heap_get_free((env_t*)env);
+        parser_t psr;
+        compile_t cpl;
+
+        /*
+        * free heap used for parse and compile process
+        */
+        parse_init(&psr, lex, heap);
+        stmt = parse_stmt(&psr, eval_parse_callback, &done);
         if (!stmt) break;
         stmt_cnt++;
 
-        compile_code_clean(&env->cpl);
-        if (0 == compile_one_stmt(&env->cpl, stmt, &mod) && 0 == eval_env_adjust(env)) {
+        //printf("parse memory: %d\n", lex_heap_used(lex));
+
+        //compile_code_clean(&env->cpl);
+        eval_compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
+        if (0 == compile_one_stmt(&cpl, stmt, &mod) && 0 == eval_compile_update(env, &cpl)) {
             if (0 != interp_run((env_t *)env, &mod) && v) {
                 printf("execute fail: %d\n", env->env.error);
                 done = -2;
             }
         } else {
-            printf("compile fail: %d\n", env->cpl.error);
+            printf("compile fail: %d\n", cpl.error);
             done = -1;
         }
+        eval_compile_deinit(&cpl);
 
         last_type = stmt->type;
     }

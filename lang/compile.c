@@ -5,6 +5,25 @@
 
 void compile_code_dump(compile_t *cpl);
 
+static void compile_gc(compile_t *cpl)
+{
+    printf("compile: memory not enought! heap free: %d\n", cpl->heap.free);
+    // Not implemented!
+}
+
+static void *compile_malloc(compile_t *cpl, int size)
+{
+    void *p;
+
+    p = heap_alloc(&cpl->heap, size);
+    if (!p) {
+        compile_gc(cpl);
+        return heap_alloc(&cpl->heap, size);
+    }
+
+    return p;
+}
+
 static inline compile_func_t *compile_func_cur(compile_t *cpl) {
     return cpl->func_buf + cpl->func_cur;
 }
@@ -14,7 +33,7 @@ static inline uint8_t *compile_code_buf(compile_t *cpl) {
 }
 
 static inline int compile_code_pos(compile_t *cpl) {
-    return cpl->func_buf[cpl->func_cur].code_pos;
+    return cpl->func_buf[cpl->func_cur].code_num;
 }
 
 static int compile_extend_size(compile_t *cpl, int size, int used, int extend, int limit, int def)
@@ -40,159 +59,19 @@ static int compile_extend_size(compile_t *cpl, int size, int used, int extend, i
     return used + extend < res ? res : used + extend + 1;
 }
 
-static int compile_number_check_extend(compile_t *cpl, int space)
+static inline int compile_number_find_add(compile_t *cpl, double n)
 {
-    int size;
-
-    if (0 < (size = compile_extend_size(cpl, cpl->number_size, cpl->number_pos, space,
-                                LIMIT_STATIC_NUM_SIZE, DEF_STATIC_NUM_SIZE))) {
-        double *ptr;
-
-        if (NULL == (ptr = (double*)malloc(size * sizeof(double)))) {
-            cpl->error = ERR_NotEnoughMemory;
-            return -1;
-        }
-
-        if (cpl->number_buf) {
-            memcpy(ptr, cpl->number_buf, sizeof(double) * cpl->number_pos);
-            free(cpl->number_buf);
-        }
-
-        cpl->number_buf = ptr;
-        cpl->number_size = size;
-    }
-    return size;
+    return env_number_find_add(cpl->env, n);
 }
 
-static int compile_number_find_add(compile_t *cpl, double n)
+static inline int compile_string_find_add(compile_t *cpl, intptr_t s)
 {
-    int i;
-
-    for (i = 0; i < cpl->number_pos; i++) {
-        if (cpl->number_buf[i] == n) {
-            return i;
-        }
-    }
-
-    if (compile_number_check_extend(cpl, 1) >= 0) {
-        cpl->number_buf[cpl->number_pos++] = n;
-        return i;
-    } else {
-        return -1;
-    }
+    return env_string_find_add(cpl->env, s);
 }
 
-static int compile_string_check_extend(compile_t *cpl, int space)
+static inline int compile_native_lookup(compile_t *cpl, intptr_t sym_id)
 {
-    int size;
-
-    if (0 < (size = compile_extend_size(cpl, cpl->string_size, cpl->string_num, space,
-                                LIMIT_STATIC_STR_SIZE, DEF_STATIC_STR_SIZE))) {
-        intptr_t *ptr;
-
-        if (NULL == (ptr = (intptr_t*)malloc(size * sizeof(intptr_t)))) {
-            cpl->error = ERR_NotEnoughMemory;
-            return -1;
-        }
-
-        if (cpl->number_buf) {
-            memcpy(ptr, cpl->string_buf, sizeof(intptr_t) * cpl->number_pos);
-            free(cpl->number_buf);
-        }
-
-        cpl->string_buf = ptr;
-        cpl->string_size = size;
-    }
-    return size;
-}
-
-static int compile_string_find_add(compile_t *cpl, intptr_t s)
-{
-    int i;
-
-    if (s == 0) {
-        return -1;
-    }
-
-    for (i = 0; i < cpl->string_num; i++) {
-        if (cpl->string_buf[i] == s) {
-            return i;
-        }
-    }
-
-    if (compile_string_check_extend(cpl, 1) >= 0) {
-        cpl->string_buf[cpl->string_num++] = s;
-        return i;
-    } else {
-        return -1;
-    }
-}
-
-static int compile_native_check_extend(compile_t *cpl, int space)
-{
-    int size;
-
-    if (0 < (size = compile_extend_size(cpl, cpl->native_size, cpl->native_num, space,
-                                LIMIT_NATIVE_FUNC_SIZE, DEF_NATIVE_FUNC_SIZE))) {
-        intptr_t *ptr, *map;
-
-        if (NULL == (ptr = (intptr_t *)malloc(2 * size * sizeof(intptr_t)))) {
-            cpl->error = ERR_NotEnoughMemory;
-            return -1;
-        }
-        map = ptr + size;
-
-        if (cpl->native_buf) {
-            memcpy(ptr, cpl->native_buf, sizeof(intptr_t) * cpl->native_num);
-            memcpy(map, cpl->native_map, sizeof(intptr_t) * cpl->native_num);
-            free(cpl->native_buf);
-        }
-
-        cpl->native_buf = ptr;
-        cpl->native_map = map;
-        cpl->native_size = size;
-    }
-    return size;
-}
-
-// return: id of variable or -1
-static inline int compile_native_append(compile_t *cpl, intptr_t sym_id, intptr_t native)
-{
-    int i, num;
-
-    // Note: sym_id is a string point of symbal, should not be 0!
-    if (cpl->error || sym_id == 0) {
-        return -1;
-    }
-
-    num = cpl->native_num;
-    for (i = 0; i < num; i++) {
-        if (sym_id == cpl->native_map[i]) {
-            // already exist!
-            return -1;
-        }
-    }
-
-    if (0 > compile_native_check_extend(cpl, 1)) {
-        return -1;
-    }
-
-    cpl->native_map[i] = sym_id;
-    cpl->native_buf[i] = native;
-
-    return cpl->native_num++;
-}
-
-static int compile_native_lookup(compile_t *cpl, intptr_t sym_id)
-{
-    int i;
-
-    if (0 == sym_id) return -1;
-
-    for (i = 0; i < cpl->native_num; i++) {
-        if (sym_id == cpl->native_map[i])  return i;
-    }
-    return -1;
+    return env_native_find(cpl->env, sym_id);
 }
 
 static int compile_func_check_extend(compile_t *cpl, int space)
@@ -203,14 +82,13 @@ static int compile_func_check_extend(compile_t *cpl, int space)
                                 LIMIT_FUNC_SIZE, DEF_FUNC_SIZE))) {
         compile_func_t *ptr;
 
-        if (NULL == (ptr = (compile_func_t*)malloc(size * sizeof(compile_func_t)))) {
+        if (NULL == (ptr = (compile_func_t*) compile_malloc(cpl, size * sizeof(compile_func_t)))) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }
 
         if (cpl->func_buf) {
             memcpy(ptr, cpl->func_buf, sizeof(compile_func_t) * cpl->func_num);
-            free(cpl->func_buf);
         }
 
         cpl->func_buf = ptr;
@@ -229,13 +107,13 @@ static int compile_func_append(compile_t *cpl, int owner)
 
     func_id = cpl->func_num++;
     cpl->func_buf[func_id].owner = owner;
-    cpl->func_buf[func_id].var_size = 0;
-    cpl->func_buf[func_id].var_num  = 0;
-    cpl->func_buf[func_id].arg_num  = 0;
-    cpl->func_buf[func_id].code_size = 0;
-    cpl->func_buf[func_id].code_pos = 0;
+    cpl->func_buf[func_id].var_max = 0;
+    cpl->func_buf[func_id].var_num = 0;
+    cpl->func_buf[func_id].arg_num = 0;
+    cpl->func_buf[func_id].code_max = 0;
+    cpl->func_buf[func_id].code_num = 0;
     cpl->func_buf[func_id].code_buf = NULL;
-    cpl->func_buf[func_id].vars_map = NULL;
+    cpl->func_buf[func_id].var_map = NULL;
 
     return func_id;
 }
@@ -246,21 +124,20 @@ static int compile_varmap_check_extend(compile_t *cpl, int space)
     int size;
 
     func = cpl->func_buf + cpl->func_cur;
-    if (0 < (size = compile_extend_size(cpl, func->var_size, func->var_num, space,
+    if (0 < (size = compile_extend_size(cpl, func->var_max, func->var_num, space,
                                  LIMIT_VMAP_SIZE, DEF_VMAP_SIZE))) {
         intptr_t *ptr;
-        if (NULL == (ptr = (intptr_t *)malloc(size * sizeof(intptr_t)))) {
+        if (NULL == (ptr = (intptr_t *) compile_malloc(cpl,size * sizeof(intptr_t)))) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }
 
-        if (func->vars_map) {
-            memcpy(ptr, func->vars_map, func->var_num * sizeof(intptr_t));
-            free(func->vars_map);
+        if (func->var_map) {
+            memcpy(ptr, func->var_map, func->var_num * sizeof(intptr_t));
         }
 
-        func->vars_map = ptr;
-        func->var_size = size;
+        func->var_map = ptr;
+        func->var_max = size;
     }
     return size;
 }
@@ -279,14 +156,14 @@ static int compile_varmap_find_add(compile_t *cpl, intptr_t sym_id)
     func = compile_func_cur(cpl);
     num = func->var_num;
     for (i = 0; i < num; i++) {
-        if (sym_id == func->vars_map[i]) return i; // already exist!
+        if (sym_id == func->var_map[i]) return i; // already exist!
     }
 
     if (0 > compile_varmap_check_extend(cpl, 1)) {
         return -1;
     }
 
-    func->vars_map[func->var_num++] = sym_id;
+    func->var_map[func->var_num++] = sym_id;
 
     return i;
 }
@@ -304,7 +181,7 @@ static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id)
     func = compile_func_cur(cpl);
     num = func->var_num;
     for (i = 0; i < num; i++) {
-        if (sym_id == func->vars_map[i]) return i; // already exist!
+        if (sym_id == func->var_map[i]) return i; // already exist!
     }
 
     return -1;
@@ -328,21 +205,20 @@ static int compile_code_check_extend(compile_t *cpl, int space)
     int size;
 
     func = cpl->func_buf + cpl->func_cur;
-    if (0 < (size = compile_extend_size(cpl, func->code_size, func->code_pos, space,
+    if (0 < (size = compile_extend_size(cpl, func->code_max, func->code_num, space,
                                  LIMIT_FUNC_CODE_SIZE, DEF_FUNC_CODE_SIZE))) {
         uint8_t *ptr;
-        if (NULL == (ptr = (uint8_t *)malloc(size))) {
+        if (NULL == (ptr = (uint8_t *) compile_malloc(cpl,size))) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }
 
         if (func->code_buf) {
-            memcpy(ptr, func->code_buf, func->code_pos);
-            free(func->code_buf);
+            memcpy(ptr, func->code_buf, func->code_num);
         }
 
-        func->code_buf  = ptr;
-        func->code_size = size;
+        func->code_buf = ptr;
+        func->code_max = size;
     }
     return size;
 }
@@ -356,7 +232,7 @@ static inline int compile_code_append(compile_t *cpl, uint8_t code)
     }
 
     func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_pos++] = code;
+    func->code_buf[func->code_num++] = code;
 
     return 0;
 }
@@ -372,7 +248,7 @@ static inline int compile_code_appends(compile_t *cpl, int n, uint8_t *code)
 
     func = cpl->func_buf + cpl->func_cur;
     for (i = 0; i < n; i++) {
-        func->code_buf[func->code_pos++] = code[i];
+        func->code_buf[func->code_num++] = code[i];
     }
 
     return 0;
@@ -386,7 +262,7 @@ static int compile_code_extend(compile_t *cpl, int bytes)
         return 1;
     }
 
-    func->code_pos += bytes;
+    func->code_num += bytes;
 
     return 0;
 }
@@ -400,11 +276,11 @@ static int compile_code_insert(compile_t *cpl, int pos, int bytes)
         return 1;
     }
 
-    n = func->code_pos - pos;
+    n = func->code_num - pos;
     for (i = 1; i <= n; i++) {
-        func->code_buf[func->code_pos + bytes - i] = func->code_buf[func->code_pos - i];
+        func->code_buf[func->code_num + bytes - i] = func->code_buf[func->code_num - i];
     }
-    func->code_pos += bytes;
+    func->code_num += bytes;
 
     return 0;
 }
@@ -451,9 +327,9 @@ static inline int compile_code_append_func(compile_t *cpl, int func_id)
     }
 
     func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_pos++] = BC_PUSH_SCRIPT;
-    func->code_buf[func->code_pos++] = func_id >> 8;
-    func->code_buf[func->code_pos++] = func_id;
+    func->code_buf[func->code_num++] = BC_PUSH_SCRIPT;
+    func->code_buf[func->code_num++] = func_id >> 8;
+    func->code_buf[func->code_num++] = func_id;
 
     return 0;
 }
@@ -467,9 +343,9 @@ static inline int compile_code_append_native(compile_t *cpl, int id)
     }
 
     func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_pos++] = BC_PUSH_NATIVE;
-    func->code_buf[func->code_pos++] = id >> 8;
-    func->code_buf[func->code_pos++] = id;
+    func->code_buf[func->code_num++] = BC_PUSH_NATIVE;
+    func->code_buf[func->code_num++] = id >> 8;
+    func->code_buf[func->code_num++] = id;
 
     return 0;
 }
@@ -483,8 +359,8 @@ static inline int compile_code_append_var(compile_t *cpl, int id)
     }
 
     func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_pos++] = BC_PUSH_VAR;
-    func->code_buf[func->code_pos++] = id;
+    func->code_buf[func->code_num++] = BC_PUSH_VAR;
+    func->code_buf[func->code_num++] = id;
 
     return 0;
 }
@@ -498,8 +374,8 @@ static inline int compile_code_append_call(compile_t *cpl, int ac)
     }
 
     func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_pos++] = BC_FUNC_CALL;
-    func->code_buf[func->code_pos++] = ac;
+    func->code_buf[func->code_num++] = BC_FUNC_CALL;
+    func->code_buf[func->code_num++] = ac;
 
     return 0;
 }
@@ -654,7 +530,6 @@ void compile_expr_id(compile_t *cpl, expr_t *e)
         if (id >= 0) {
             compile_code_append_native(cpl, id);
         } else {
-            printf("Id not defined: %s\n", ast_expr_text(e));
             cpl->error = ERR_NotDefinedId;
         }
     }
@@ -769,17 +644,15 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     block = ast_expr_rht(e) ? ast_expr_stmt(ast_expr_rht(e)) : NULL;
 
     owner = cpl->func_cur;
-    curr = compile_func_append(cpl, owner);
-    if (curr < 0) {
+    if (0 > (curr = compile_func_append(cpl, owner))) {
         return;
     }
     cpl->func_cur = curr;
-
     compile_arg_def_list(cpl, args);
     compile_stmt_block(cpl, block);
-
-    func_id = curr; // + cpl->func_id_base;
     cpl->func_cur = owner;
+
+    func_id = curr + cpl->func_offset;
     if (name) {
         compile_var_def(cpl, name);
         compile_expr_lft(cpl, name);
@@ -1047,28 +920,20 @@ static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
     compile_code_append_jmp(cpl, BC_JMP, -total);
 }
 
-int compile_init(compile_t *cpl, intptr_t sym_tbl)
+int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size)
 {
     cpl->error = 0;
-
-    cpl->number_size = 0;
-    cpl->number_pos = 0;
-    cpl->number_buf = NULL;
-
-    cpl->string_size = 0;
-    cpl->string_num = 0;
-    cpl->string_buf = NULL;
-
-    cpl->native_size = 0;
-    cpl->native_num = 0;
-    cpl->native_buf = NULL;
 
     cpl->func_size = 0;
     cpl->func_cur = 0;
     cpl->func_num = 0;
     cpl->func_buf = NULL;
+    cpl->func_offset = env->exe.func_num;
 
-    cpl->sym_tbl = sym_tbl;
+    cpl->env = env;
+    cpl->sym_tbl = env->sym_tbl;
+
+    heap_init(&cpl->heap, heap_ptr, heap_size);
 
     return compile_func_append(cpl, -1); // should return zero;
 }
@@ -1077,16 +942,12 @@ int compile_deinit(compile_t *cpl)
 {
     if (cpl) {
         int i;
-
-        if (cpl->number_buf) free(cpl->number_buf);
-        if (cpl->native_buf) free(cpl->native_buf);
-        if (cpl->string_buf) free(cpl->string_buf);
-
-        if (cpl->func_buf) {
+        //if (cpl->func_buf) {
+        if (0) {
             for (i = 0; i < cpl->func_num; i++) {
                 compile_func_t *f = cpl->func_buf + i;
 
-                if (f->vars_map) free(f->vars_map);
+                if (f->var_map) free(f->var_map);
                 if (f->code_buf) free(f->code_buf);
             }
 
@@ -1163,12 +1024,6 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id)
     return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
 }
 
-int compile_native_add(compile_t *cpl, const char *name, function_native_t native)
-{
-    return !(cpl && name && native) ? -1 :
-           compile_native_append(cpl, compile_sym_add(cpl, name), (intptr_t) native);
-}
-
 int compile_stmt(compile_t *cpl, stmt_t *stmt)
 {
     if (!cpl || !stmt) {
@@ -1199,32 +1054,51 @@ int compile_one_stmt(compile_t *cpl, stmt_t *stmt, module_t *mod)
     int ret = compile_stmt(cpl, stmt);
 
     if (ret == 0) {
-        compile_code_append(cpl, BC_STOP);
-        return compile_build_module(cpl, mod);
+        //compile_code_dump(cpl);
+        return compile_code_append(cpl, BC_STOP);
     }
 
     return ret;
 }
 
-int compile_build_module(compile_t *cpl, module_t *mod)
+int compile_code_relocate(compile_t *cpl)
 {
+    executable_t   *exe;
+    compile_func_t *fp;
     int i;
 
-    if (!cpl || cpl->error || !mod) {
+    if (!cpl || cpl->error || !cpl->env) {
         return -1;
     }
 
-    mod->numbers = cpl->number_buf;
-    mod->natives = cpl->native_buf;
-    mod->strings = cpl->string_buf;
-    mod->entry = 0;
+    exe = &cpl->env->exe;
+    fp  = cpl->func_buf;
 
-    for (i = 0; i < 4 && i < cpl->func_num; i++) {
-        mod->ft[i].var_num = cpl->func_buf[i].var_num;
-        mod->ft[i].arg_num = cpl->func_buf[i].arg_num;
-        mod->ft[i].size = cpl->func_buf[i].code_size;
-        mod->ft[i].code = cpl->func_buf[i].code_buf;
+    if (exe->main_code_end + fp->code_num >= exe->main_code_max) {
+        cpl->error = ERR_NotEnoughMemory;
+        return -1;
     }
+    exe->func_map[0] = exe->main_code + exe->main_code_end;
+    memcpy(exe->main_code + exe->main_code_end, fp->code_buf, fp->code_num);
+    exe->main_code_end += fp->code_num;
+
+    for (i = 1; i < cpl->func_num; i++) {
+        fp = cpl->func_buf + i;
+
+        if (exe->func_code_end + fp->code_num >= exe->func_code_max) {
+            cpl->error = ERR_NotEnoughMemory;
+            return -1;
+        }
+
+        exe->func_map[++exe->func_num] = exe->func_code + exe->func_code_end;
+        exe->func_code[exe->func_code_end++] = fp->var_num;
+        exe->func_code[exe->func_code_end++] = fp->arg_num;
+        exe->func_code[exe->func_code_end++] = fp->code_num >> 8;
+        exe->func_code[exe->func_code_end++] = fp->code_num & 0xFF;
+        memcpy(exe->func_code + exe->func_code_end, fp->code_buf, fp->code_num);
+        exe->func_code_end += fp->code_num;
+    }
+
     return 0;
 }
 

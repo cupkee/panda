@@ -81,22 +81,9 @@ typedef struct token_t {
 intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size));
 int lex_deinit(lexer_t *lex);
 
-intptr_t lex_create();
-int lex_destroy();
-
 int lex_token(intptr_t lex, token_t *tok);
 int lex_match(intptr_t lex, int tok);
 int lex_position(intptr_t lex, int *line, int *col);
-
-static inline void *lex_malloc(intptr_t l, int size) {
-    lexer_t *lex = (lexer_t *)l;
-    return heap_alloc(&lex->heap, size);
-}
-
-static inline void lex_mclear(intptr_t l) {
-    lexer_t *lex = (lexer_t *)l;
-    heap_free(&lex->heap);
-}
 
 #endif /* __LANG_LEX_INC__ */
 

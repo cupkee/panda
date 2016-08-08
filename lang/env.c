@@ -28,14 +28,26 @@ static int env_scope_expand(env_t *env, scope_t *scope, int size)
     return 0;
 }
 
-int env_init(env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int heap_size)
+int env_init(env_t *env, void *mem_ptr, int mem_size,
+             void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
+             int number_max, int string_max, int native_max, int func_max,
+             int main_code_max, int func_code_max)
 {
-    intptr_t sym_tbl  = symtbl_create();
+    int mem_offset;
+    int half_size, exe_size;
 
     env->error = 0;
-    env->sym_tbl = sym_tbl;
 
     // stack init
+    if (!stack_ptr) {
+        // alloc memory for stack
+        stack_ptr = ADDR_ALIGN_8(mem_ptr);
+        mem_offset = (intptr_t)stack_ptr - (intptr_t)mem_ptr;
+        mem_offset += sizeof(val_t) * stack_size;
+        // TODO: create a barrier here
+    } else {
+        mem_offset = 0;
+    }
     env->sb = stack_ptr;
     env->ss = stack_size;
     env->sp = stack_size;
@@ -45,23 +57,85 @@ int env_init(env_t *env, val_t *stack_ptr, int stack_size, void *heap_ptr, int h
     if (heap_size % 16) {
         return -1;
     }
-    int half_size = heap_size / 2;
+
+    if (!heap_ptr) {
+        // alloc memory for heap
+        heap_ptr = ADDR_ALIGN_16(mem_ptr + mem_offset);
+        mem_offset += (intptr_t)heap_ptr - (intptr_t)(mem_ptr + mem_offset);
+        mem_offset += heap_size;
+    }
+    half_size = heap_size / 2;
     heap_init(&env->heap_top, heap_ptr, half_size);
     heap_init(&env->heap_bot, heap_ptr + half_size, half_size);
     env->heap = &env->heap_top;
 
-    env->result = NULL;
+    // static memory init
+    exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
+                    number_max, string_max, native_max, func_max, main_code_max, func_code_max);
+    if (exe_size < 0) {
+        return -1;
+    } else {
+        mem_offset += exe_size;
+    }
+    /*
+    // static number buffer init
+    env->func_code = (uint8_t*) (mem_ptr + mem_offset);
+    env->func_code_end = 0;
+    env->func_code_max = func_code_max * (func_max - 1);
+    mem_offset += env->func_code_max;
 
-    if (!(env->sym_tbl = symtbl_create())) {
+    env->main_code = (uint8_t*) (mem_ptr + mem_offset);
+    env->main_code_end = 0;
+    env->main_code_max = func_code_max * 32;
+    mem_offset += env->main_code_max;
+
+    env->number_max = number_max;
+    env->number_num = 0;
+    env->number_map = (double*) (mem_ptr + mem_offset);
+    mem_offset += sizeof(double) * number_max;
+
+    // static string buffer init
+    env->string_max = string_max;
+    env->string_num = 0;
+    env->string_map = (intptr_t *) (mem_ptr + mem_offset);
+    mem_offset += sizeof(intptr_t) * string_max;
+
+    // native function buffer init
+    env->native_max = native_max;
+    env->native_num = 0;
+    env->native_map = (intptr_t *) (mem_ptr + mem_offset);
+    mem_offset += sizeof(intptr_t) * native_max;
+    env->native_fns = (intptr_t *) (mem_ptr + mem_offset);
+    mem_offset += sizeof(intptr_t) * native_max;
+
+    // script function buffer init
+    env->func_max = func_max;
+    env->func_num = 0;
+    env->func_map = (uint8_t **) (mem_ptr + mem_offset);
+    mem_offset += sizeof(uint8_t **) * func_max;
+
+    if (mem_offset + DEF_STRING_SIZE * string_max >= mem_size) {
+        // Memory may not enought!
         return -1;
     }
+    env->symbal_buf = mem_ptr + mem_offset;
+    env->symbal_buf_size = SIZE_ALIGN(string_max * DEF_STRING_SIZE);
+    mem_offset += env->symbal_buf_size;
+    */
+
+
+    env->result = NULL;
 
     if (0 != env_scope_create(env, NULL, 16, 0, NULL)) {
         return -1;
     }
 
+    if (!(env->sym_tbl = symtbl_create())) {
+        return -1;
+    }
+
     if (0 != objects_env_init((env_t *)env)) {
-        if (sym_tbl) symtbl_destroy(sym_tbl);
+        if (env->sym_tbl) symtbl_destroy(env->sym_tbl);
         return -1;
     } else {
         return 0;
@@ -251,3 +325,68 @@ void env_heap_gc(env_t *env, int level)
     env_set_error(env, ERR_NotImplemented);
 }
 
+int env_number_find_add(env_t *env, double n)
+{
+    return executable_number_find_add(&env->exe, n);
+}
+
+int env_string_find_add(env_t *env, intptr_t s)
+{
+    return executable_string_find_add(&env->exe, s);
+}
+
+/*
+int env_add_string(env_t *env, const char *s)
+{
+    int i, space, size;
+    char *locate;
+
+    for (i = 0; i < env->string_num; i++) {
+        if (!strcmp((void *)env->string_map[i], s)) {
+            return 0;
+        }
+    }
+
+    if (i >= env->string_max) {
+        return -1;
+    }
+
+    if (env->string_num) {
+        int last = env->string_num - 1;
+
+        locate = (void *)env->string_map[last] + strlen((void*)env->string_map[last]) + 1;
+    } else {
+        locate = env->symbal_buf;
+    }
+
+    space = (env->symbal_buf_size - (locate - env->symbal_buf));
+    size = strlen(s) + 1;
+
+    if (size < space) {
+        return -1;
+    }
+
+    memcpy(locate, s, size);
+    env->string_map[env->string_num++] = (intptr_t) locate;
+
+    return 1;
+}
+*/
+
+int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, val_t *av))
+{
+    intptr_t sym_id;
+
+    // Note: sym_id is a string point of symbal, should not be 0!
+    if (env->error || 0 == (sym_id = symtbl_add(env->sym_tbl, name))) {
+        env_set_error(env, ERR_SysError);
+        return -1;
+    }
+
+    return executable_native_add(&env->exe, sym_id, (intptr_t) fn);
+}
+
+int env_native_find(env_t *env, intptr_t sym_id)
+{
+    return executable_native_find(&env->exe, sym_id);
+}

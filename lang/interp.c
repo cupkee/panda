@@ -384,15 +384,15 @@ static inline void interp_elem_call(env_t *env) {
 
 int interp_run(env_t *env, module_t *mod)
 {
-    double   *numbers = mod->numbers;
-    intptr_t *natives = mod->natives;
-    intptr_t *strings = mod->strings;
+    double   *numbers = env->exe.number_map;
+    intptr_t *strings = env->exe.string_map;
+    intptr_t *natives = env->exe.native_entry;
+    uint8_t  **functions = env->exe.func_map;
 
-    uint8_t *base = mod->ft[mod->entry].code;
+    uint8_t *base = functions[0]; // entry
     uint8_t *pc = base;
 
     int index;
-
     while(!env->error) {
         uint8_t code = *pc++;
         SHOW("pc: %ld, sp: %d, code: %x\n", pc - base, env->sp, code);
@@ -493,8 +493,11 @@ int interp_run(env_t *env, module_t *mod)
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             {
-                                fn_template_t *ft = mod->ft + index;
-                                intptr_t fn = function_create(ft->code, ft->size, ft->var_num, ft->arg_num);
+                                uint8_t *head = functions[index];
+                                function_info_t info;
+
+                                function_info_read(head, &info);
+                                intptr_t fn = function_create(env, info.code, info.size, info.var_num, info.arg_num);
                                 if (0 == fn) {
                                     interp_set_error(env, ERR_SysError);
                                 } else {

@@ -1,6 +1,7 @@
 #include "function.h"
 
 typedef struct function_t {
+    uint8_t type;
     uint8_t arg_num;
     uint8_t var_num;
     int     size;
@@ -8,11 +9,12 @@ typedef struct function_t {
     scope_t *super;
 } function_t;
 
-intptr_t function_create(uint8_t *code, int size, uint8_t vn, uint8_t an)
+intptr_t function_create(env_t *env, uint8_t *code, int size, uint8_t vn, uint8_t an)
 {
-    function_t *fn = (function_t *) malloc(sizeof(function_t));
+    function_t *fn = (function_t *) env_heap_alloc(env, sizeof(function_t));
 
     if (fn) {
+        fn->type = 88;
         fn->code = code;
         fn->size = size;
         fn->arg_num = an;
@@ -24,9 +26,6 @@ intptr_t function_create(uint8_t *code, int size, uint8_t vn, uint8_t an)
 
 int function_destroy(intptr_t fn)
 {
-    if (fn) {
-        free((void *)fn);
-    }
     return 0;
 }
 

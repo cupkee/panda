@@ -4,32 +4,32 @@
 #include "lex.h"
 #include "parse.h"
 
-static expr_t *parse_expr_funcdef(intptr_t lex, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_parenth(intptr_t lex, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_array(intptr_t lex, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_dict(intptr_t lex, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_attr(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_elem(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_call(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_pair(intptr_t lex, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_unary(intptr_t lex, int type, expr_t *lft, parse_callback_t cb, void *ud);
-static expr_t *parse_expr_form_binary(intptr_t lex, int type, expr_t *lft, expr_t *rht, parse_callback_t cb, void *ud);
-static stmt_t *parse_stmt_block(intptr_t lex, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_funcdef(parser_t *psr, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_parenth(parser_t *psr, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_array(parser_t *psr, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_dict(parser_t *psr, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_attr(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_elem(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_call(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_pair(parser_t *psr, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_unary(parser_t *psr, int type, expr_t *lft, parse_callback_t cb, void *ud);
+static expr_t *parse_expr_form_binary(parser_t *psr, int type, expr_t *lft, expr_t *rht, parse_callback_t cb, void *ud);
+static stmt_t *parse_stmt_block(parser_t *psr, parse_callback_t cb, void *ud);
 
 static parse_event_t parse_event;
 
-static void parse_fail(intptr_t lex, int err, parse_callback_t cb, void *ud)
+static void parse_fail(parser_t *psr, int err, parse_callback_t cb, void *ud)
 {
     if (cb) {
         parse_event.type = PARSE_FAIL;
         parse_event.error.code = err;
-        lex_position(lex, &parse_event.error.line, &parse_event.error.col);
+        parse_position(psr, &parse_event.error.line, &parse_event.error.col);
 
         cb(ud, &parse_event);
     }
 }
 
-static void parse_eof(intptr_t lex, parse_callback_t cb, void *ud)
+static void parse_eof(parser_t *psr, parse_callback_t cb, void *ud)
 {
     if (cb) {
         parse_event.type = PARSE_EOF;
@@ -37,9 +37,9 @@ static void parse_eof(intptr_t lex, parse_callback_t cb, void *ud)
     }
 }
 
-static inline char *parse_strdup(intptr_t lex, const char *s) {
+static inline char *parse_strdup(parser_t *psr, const char *s) {
     int size  = strlen(s) + 1;
-    char *dup = lex_malloc(lex, size);
+    char *dup = heap_alloc(psr->heap, size);
 
     if (dup) {
         memcpy(dup, s, size);
@@ -47,127 +47,132 @@ static inline char *parse_strdup(intptr_t lex, const char *s) {
     return dup;
 }
 
-static inline expr_t *parse_expr_alloc_type(intptr_t lex, int type) {
-    expr_t *e = (expr_t *) lex_malloc(lex, sizeof(expr_t));
+static inline expr_t *parse_expr_alloc_type(parser_t *psr, int type) {
+    expr_t *e = (expr_t *) heap_alloc(psr->heap, sizeof(expr_t));
 
-    if (e)
+    if (e) {
         e->type = type;
+        e->body.child.lft = NULL;
+        e->body.child.rht = NULL;
+    }
 
     return e;
 }
 
-static inline expr_t *parse_expr_alloc_str(intptr_t lex, int type, const char *text) {
-    expr_t *e = (expr_t *) lex_malloc(lex, sizeof(expr_t));
+static inline expr_t *parse_expr_alloc_str(parser_t *psr, int type, const char *text) {
+    expr_t *e = (expr_t *) parse_expr_alloc_type(psr, type);
 
     if (e) {
-        char *str = parse_strdup(lex, text);
+        char *str = parse_strdup(psr, text);
 
         if (!str) {
             return NULL;
         }
         e->body.data.str = str;
-        e->type = type;
     }
     return e;
 }
 
-static inline expr_t *parse_expr_alloc_num(intptr_t lex, int type, const char *text) {
-    expr_t *e = (expr_t *) lex_malloc(lex, sizeof(expr_t));
+static inline expr_t *parse_expr_alloc_num(parser_t *psr, const char *text) {
+    expr_t *e = (expr_t *) parse_expr_alloc_type(psr, EXPR_NUM);
 
     if (e) {
         e->body.data.num = atoi(text);
-        e->type = type;
     }
     return e;
 }
 
-static inline expr_t *parse_expr_alloc_proc(intptr_t lex, stmt_t * s) {
-    expr_t *e = (expr_t *) lex_malloc(lex, sizeof(expr_t));
+static inline expr_t *parse_expr_alloc_proc(parser_t *psr, stmt_t * s) {
+    expr_t *e = (expr_t *) parse_expr_alloc_type(psr, EXPR_FUNCPROC);
 
     if (e) {
-        e->type = EXPR_FUNCPROC;
         e->body.data.proc = s;
     }
 
     return e;
 }
 
-static inline stmt_t *parse_stmt_alloc_0(intptr_t lex, int type) {
-    stmt_t *s = (stmt_t *) lex_malloc(lex, sizeof(stmt_t));
-
-    if (s)
-        s->type = type;
-
-    return s;
-}
-
-static inline stmt_t *parse_stmt_alloc_1(intptr_t lex, int t, expr_t *e) {
-    stmt_t *s = (stmt_t *) lex_malloc(lex, sizeof(stmt_t));
+static inline stmt_t *parse_stmt_alloc_0(parser_t *psr, int type) {
+    stmt_t *s = (stmt_t *) heap_alloc(psr->heap, sizeof(stmt_t));
 
     if (s) {
-        s->type = t;
-        s->expr = e;
+        s->type = type;
+        s->next = NULL;
     }
 
     return s;
 }
 
-static inline stmt_t *parse_stmt_alloc_2(intptr_t lex, int t, expr_t *e, stmt_t *block) {
-    stmt_t *s = (stmt_t *) lex_malloc(lex, sizeof(stmt_t));
+static inline stmt_t *parse_stmt_alloc_1(parser_t *psr, int t, expr_t *e) {
+    stmt_t *s = (stmt_t *) heap_alloc(psr->heap, sizeof(stmt_t));
+
+    if (s) {
+        s->type = t;
+        s->expr = e;
+        s->next = NULL;
+    }
+
+    return s;
+}
+
+static inline stmt_t *parse_stmt_alloc_2(parser_t *psr, int t, expr_t *e, stmt_t *block) {
+    stmt_t *s = (stmt_t *) heap_alloc(psr->heap, sizeof(stmt_t));
 
     if (s) {
         s->type = t;
         s->expr = e;
         s->block = block;
+        s->next = NULL;
     }
 
     return s;
 }
 
-static inline stmt_t *parse_stmt_alloc_3(intptr_t lex, int t, expr_t *e, stmt_t *block, stmt_t *other) {
-    stmt_t *s = (stmt_t *) lex_malloc(lex, sizeof(stmt_t));
+static inline stmt_t *parse_stmt_alloc_3(parser_t *psr, int t, expr_t *e, stmt_t *block, stmt_t *other) {
+    stmt_t *s = (stmt_t *) heap_alloc(psr->heap, sizeof(stmt_t));
 
     if (s) {
         s->type = t;
         s->expr = e;
         s->block = block;
         s->other = other;
+        s->next = NULL;
     }
 
     return s;
 }
 
-static expr_t *parse_expr_factor(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_factor(parser_t *psr, parse_callback_t cb, void *ud)
 {
     token_t token;
-    int tok = lex_token(lex, &token);
+    int tok = parse_token(psr, &token);
     expr_t *expr = NULL;
 
     switch (tok) {
-        case TOK_EOF:   parse_fail(lex, ERR_InvalidSyntax, cb, ud); break;
-        case '(':       expr = parse_expr_form_parenth(lex, cb, ud); break;
-        case '[':       expr = parse_expr_form_array(lex, cb, ud); break;
-        case '{':       expr = parse_expr_form_dict(lex, cb, ud); break;
-        case TOK_DEF:   expr = parse_expr_funcdef(lex, cb, ud) ; break;
-        case TOK_ID:    if(!(expr = parse_expr_alloc_str(lex, EXPR_ID, token.text))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_NUM:   if(!(expr = parse_expr_alloc_num(lex, EXPR_NUM, token.text))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_STR:   if(!(expr = parse_expr_alloc_str(lex, EXPR_STRING, token.text))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_UND:   if(!(expr = parse_expr_alloc_type(lex, EXPR_UND))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_NAN:   if(!(expr = parse_expr_alloc_type(lex, EXPR_NAN))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_NULL:  if(!(expr = parse_expr_alloc_type(lex, EXPR_NULL))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_TRUE:  if(!(expr = parse_expr_alloc_type(lex, EXPR_TRUE))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
-        case TOK_FALSE: if(!(expr = parse_expr_alloc_type(lex, EXPR_FALSE))) parse_fail(lex, ERR_NotEnoughMemory, cb, ud); lex_match(lex, tok); break;
+        case TOK_EOF:   parse_fail(psr, ERR_InvalidSyntax, cb, ud); break;
+        case '(':       expr = parse_expr_form_parenth(psr, cb, ud); break;
+        case '[':       expr = parse_expr_form_array(psr, cb, ud); break;
+        case '{':       expr = parse_expr_form_dict(psr, cb, ud); break;
+        case TOK_DEF:   expr = parse_expr_funcdef(psr, cb, ud) ; break;
+        case TOK_ID:    if(!(expr = parse_expr_alloc_str(psr, EXPR_ID, token.text))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_NUM:   if(!(expr = parse_expr_alloc_num(psr, token.text))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_STR:   if(!(expr = parse_expr_alloc_str(psr, EXPR_STRING, token.text))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_UND:   if(!(expr = parse_expr_alloc_type(psr, EXPR_UND))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_NAN:   if(!(expr = parse_expr_alloc_type(psr, EXPR_NAN))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_NULL:  if(!(expr = parse_expr_alloc_type(psr, EXPR_NULL))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_TRUE:  if(!(expr = parse_expr_alloc_type(psr, EXPR_TRUE))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
+        case TOK_FALSE: if(!(expr = parse_expr_alloc_type(psr, EXPR_FALSE))) parse_fail(psr, ERR_NotEnoughMemory, cb, ud); parse_match(psr, tok); break;
         default:
-                        parse_fail(lex, ERR_InvalidToken, cb, ud); break;
+                        parse_fail(psr, ERR_InvalidToken, cb, ud); break;
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_primary(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_factor(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_factor(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     //if (expr && expr->type != EXPR_ID) {
     //    return expr;
@@ -175,114 +180,114 @@ static expr_t *parse_expr_primary(intptr_t lex, parse_callback_t cb, void *ud)
 
     while (expr && (tok == '.' || tok == '[' || tok == '(')) {
         if (tok == '.') {
-            expr = parse_expr_form_attr(lex, expr, cb, ud);
+            expr = parse_expr_form_attr(psr, expr, cb, ud);
         } else
         if (tok == '[') {
-            expr = parse_expr_form_elem(lex, expr, cb, ud);
+            expr = parse_expr_form_elem(psr, expr, cb, ud);
         } else {
             if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
                 break;
             }
-            expr = parse_expr_form_call(lex, expr, cb, ud);
+            expr = parse_expr_form_call(psr, expr, cb, ud);
         }
-        tok = lex_token(lex, NULL);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_unary(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_unary(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
-    int tok = lex_token(lex, NULL);
+    int tok = parse_token(psr, NULL);
 
     if (tok == '!') {
-        lex_match(lex, tok);
-        expr = parse_expr_form_unary(lex, EXPR_LOGIC_NOT, parse_expr_unary(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_unary(psr, EXPR_LOGIC_NOT, parse_expr_unary(psr, cb, ud), cb, ud);
     } else
     if (tok == '-' || tok == '~') {
-        lex_match(lex, tok);
-        expr = parse_expr_form_unary(lex, tok == '-' ? EXPR_NEG : EXPR_NOT,
-                                     parse_expr_unary(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_unary(psr, tok == '-' ? EXPR_NEG : EXPR_NOT,
+                                     parse_expr_unary(psr, cb, ud), cb, ud);
     } else {
-        expr = parse_expr_primary(lex, cb, ud);
+        expr = parse_expr_primary(psr, cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_mul(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_mul(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_unary(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_unary(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     while (expr && (tok == '*' || tok == '/' || tok == '%')) {
         int type = tok == '*' ? EXPR_MUL : tok == '/' ? EXPR_DIV : EXPR_MOD;
 
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, type, expr, parse_expr_unary(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, type, expr, parse_expr_unary(psr, cb, ud), cb, ud);
 
-        tok = lex_token(lex, NULL);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_add(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_add(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_mul(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_mul(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     while (expr && (tok == '+' || tok == '-')) {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, tok == '+' ? EXPR_ADD : EXPR_SUB,
-                                      expr, parse_expr_mul(lex, cb, ud), cb, ud);
-        tok = lex_token(lex, NULL);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, tok == '+' ? EXPR_ADD : EXPR_SUB,
+                                      expr, parse_expr_mul(psr, cb, ud), cb, ud);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_shift(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_shift(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_add(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_add(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     while (expr && (tok == TOK_RSHIFT || tok == TOK_LSHIFT)) {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, tok == TOK_RSHIFT ? EXPR_RSHIFT : EXPR_LSHIFT,
-                                      expr, parse_expr_add(lex, cb, ud), cb, ud);
-        tok = lex_token(lex, NULL);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, tok == TOK_RSHIFT ? EXPR_RSHIFT : EXPR_LSHIFT,
+                                      expr, parse_expr_add(psr, cb, ud), cb, ud);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_aand (intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_aand (parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_shift(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_shift(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     while (expr && (tok == '&' || tok == '|' || tok == '^')) {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, tok == '&' ? EXPR_AND : tok == '|' ? EXPR_OR : EXPR_XOR,
-                                      expr, parse_expr_shift(lex, cb, ud), cb, ud);
-        tok = lex_token(lex, NULL);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, tok == '&' ? EXPR_AND : tok == '|' ? EXPR_OR : EXPR_XOR,
+                                      expr, parse_expr_shift(psr, cb, ud), cb, ud);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_test (intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_test (parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_aand(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_aand(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     while (expr && (tok == '>' || tok == '<' || tok == TOK_NE ||
                     tok == TOK_EQ || tok == TOK_GE || tok == TOK_LE || tok == TOK_IN)) {
         int type;
 
-        lex_match(lex, tok);
+        parse_match(psr, tok);
         switch(tok) {
             case '>': type = EXPR_TGT; break;
             case '<': type = EXPR_TLT; break;
@@ -293,217 +298,217 @@ static expr_t *parse_expr_test (intptr_t lex, parse_callback_t cb, void *ud)
             default: type = EXPR_TIN;
         }
 
-        expr = parse_expr_form_binary(lex, type, expr, parse_expr_aand(lex, cb, ud), cb, ud);
-        tok = lex_token(lex, NULL);
+        expr = parse_expr_form_binary(psr, type, expr, parse_expr_aand(psr, cb, ud), cb, ud);
+        tok = parse_token(psr, NULL);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_logic_and(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_logic_and(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_test(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_test(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     if (expr && (tok == TOK_LOGICAND)) {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_LOGIC_AND, expr, parse_expr_logic_and(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, EXPR_LOGIC_AND, expr, parse_expr_logic_and(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_logic_or(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_logic_or(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_logic_and(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_logic_and(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     if (expr && (tok == TOK_LOGICOR)) {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_LOGIC_OR, expr, parse_expr_logic_or(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, EXPR_LOGIC_OR, expr, parse_expr_logic_or(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_ternary(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_ternary(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_logic_or(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_logic_or(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     if (expr && tok == '?') {
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_TERNARY, expr, parse_expr_form_pair(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, EXPR_TERNARY, expr, parse_expr_form_pair(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_assign(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_assign(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_ternary(lex, cb, ud);
-    int tok = lex_token(lex, NULL);
+    expr_t *expr = parse_expr_ternary(psr, cb, ud);
+    int tok = parse_token(psr, NULL);
 
     if (expr && tok == '=') {
         if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM) {
-            parse_fail(lex, ERR_InvalidLeftValue, cb, ud);
+            parse_fail(psr, ERR_InvalidLeftValue, cb, ud);
             return NULL;
         }
 
-        lex_match(lex, tok);
-        expr = parse_expr_form_binary(lex, EXPR_ASSIGN, expr, parse_expr_assign(lex, cb, ud), cb, ud);
+        parse_match(psr, tok);
+        expr = parse_expr_form_binary(psr, EXPR_ASSIGN, expr, parse_expr_assign(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_kv(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_kv(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    int tok = lex_token(lex, NULL);
+    int tok = parse_token(psr, NULL);
     expr_t *expr;
 
     if (tok != TOK_ID && tok != TOK_STR) {
-        parse_fail(lex, ERR_InvalidToken, cb, ud);
+        parse_fail(psr, ERR_InvalidToken, cb, ud);
         return NULL;
     }
 
-    expr = parse_expr_factor(lex, cb, ud);
+    expr = parse_expr_factor(psr, cb, ud);
     if (expr) {
-        if (!lex_match(lex, ':')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ':')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
-        expr = parse_expr_form_binary(lex, EXPR_PAIR, expr, parse_expr_assign(lex, cb, ud), cb, ud);
+        expr = parse_expr_form_binary(psr, EXPR_PAIR, expr, parse_expr_assign(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_vardef(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_vardef(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    int tok = lex_token(lex, NULL);
+    int tok = parse_token(psr, NULL);
     expr_t *expr;
 
     if (tok != TOK_ID) {
-        parse_fail(lex, ERR_InvalidToken, cb, ud);
+        parse_fail(psr, ERR_InvalidToken, cb, ud);
         return NULL;
     }
 
-    expr = parse_expr_factor(lex, cb, ud);
-    if (expr && lex_match(lex, '=')) {
-        expr = parse_expr_form_binary(lex, EXPR_ASSIGN, expr, parse_expr_assign(lex, cb, ud), cb, ud);
+    expr = parse_expr_factor(psr, cb, ud);
+    if (expr && parse_match(psr, '=')) {
+        expr = parse_expr_form_binary(psr, EXPR_ASSIGN, expr, parse_expr_assign(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_kvlist(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_kvlist(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_kv(lex, cb, ud);
+    expr_t *expr = parse_expr_kv(psr, cb, ud);
 
-    if (expr && lex_match(lex, ',')) {
-        expr = parse_expr_form_binary(lex, EXPR_COMMA, expr, parse_expr_kvlist(lex, cb, ud), cb, ud);
+    if (expr && parse_match(psr, ',')) {
+        expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_kvlist(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_vardef_list(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_vardef_list(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_vardef(lex, cb, ud);
+    expr_t *expr = parse_expr_vardef(psr, cb, ud);
 
-    if (expr && lex_match(lex, ',')) {
-        expr = parse_expr_form_binary(lex, EXPR_COMMA, expr, parse_expr_vardef_list(lex, cb, ud), cb, ud);
+    if (expr && parse_match(psr, ',')) {
+        expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_vardef_list(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_comma(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_comma(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_assign(lex, cb, ud);
+    expr_t *expr = parse_expr_assign(psr, cb, ud);
 
-    if (expr && lex_match(lex, ',')) {
-        expr = parse_expr_form_binary(lex, EXPR_COMMA, expr, parse_expr_comma(lex, cb, ud), cb, ud);
+    if (expr && parse_match(psr, ',')) {
+        expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_comma(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_funcdef(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_funcdef(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *name = NULL, *param = NULL, *head = NULL, *proc = NULL;
     stmt_t *block = NULL;
 
-    lex_match(lex, TOK_DEF);
+    parse_match(psr, TOK_DEF);
 
-    if (lex_token(lex, NULL) == TOK_ID) {
-        if (!(name = parse_expr_factor(lex, cb, ud))) {
+    if (parse_token(psr, NULL) == TOK_ID) {
+        if (!(name = parse_expr_factor(psr, cb, ud))) {
             return NULL;
         }
     }
 
-    if (!lex_match(lex, '(')) {
-        parse_fail(lex, ERR_InvalidToken, cb, ud);
+    if (!parse_match(psr, '(')) {
+        parse_fail(psr, ERR_InvalidToken, cb, ud);
         goto DO_ERROR;
     }
 
-    if (!lex_match(lex, ')')) {
-        if (!(param = parse_expr_vardef_list(lex, cb, ud))) {
+    if (!parse_match(psr, ')')) {
+        if (!(param = parse_expr_vardef_list(psr, cb, ud))) {
             goto DO_ERROR;
         }
-        if (!lex_match(lex, ')')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ')')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             goto DO_ERROR;
         }
     }
 
-    if (!(block = parse_stmt_block(lex, cb, ud))) {
+    if (!(block = parse_stmt_block(psr, cb, ud))) {
         goto DO_ERROR;
     }
 
     if (name || param) {
-        if (!(head = parse_expr_alloc_type(lex, EXPR_FUNCHEAD))) {
-            parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+        if (!(head = parse_expr_alloc_type(psr, EXPR_FUNCHEAD))) {
+            parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
             goto DO_ERROR;
         }
         ast_expr_set_lft(head, name);
         ast_expr_set_rht(head, param);
     }
 
-    if (!(proc = parse_expr_alloc_proc(lex, block))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (!(proc = parse_expr_alloc_proc(psr, block))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         goto DO_ERROR;
     }
 
-    return parse_expr_form_binary(lex, EXPR_FUNCDEF, head, proc, cb, ud);
+    return parse_expr_form_binary(psr, EXPR_FUNCDEF, head, proc, cb, ud);
 
 DO_ERROR:
     return NULL;
 }
 
-static expr_t *parse_expr_form_attr(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_attr(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud)
 {
-    lex_match(lex, '.');
+    parse_match(psr, '.');
 
-    if (TOK_ID != lex_token(lex, NULL)) {
-        parse_fail(lex, ERR_InvalidToken, cb, ud);
+    if (TOK_ID != parse_token(psr, NULL)) {
+        parse_fail(psr, ERR_InvalidToken, cb, ud);
         return NULL;
     }
 
-    return parse_expr_form_binary(lex, EXPR_PROP, lft, parse_expr_factor(lex, cb, ud), cb, ud);
+    return parse_expr_form_binary(psr, EXPR_PROP, lft, parse_expr_factor(psr, cb, ud), cb, ud);
 }
 
-static expr_t *parse_expr_form_elem(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_elem(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
-    lex_match(lex, '[');
+    parse_match(psr, '[');
 
-    expr = parse_expr_form_binary(lex, EXPR_ELEM, lft, parse_expr_ternary(lex, cb, ud), cb, ud);
+    expr = parse_expr_form_binary(psr, EXPR_ELEM, lft, parse_expr_ternary(psr, cb, ud), cb, ud);
     if (expr) {
-        if (!lex_match(lex, ']')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ']')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     }
@@ -511,18 +516,18 @@ static expr_t *parse_expr_form_elem(intptr_t lex, expr_t *lft, parse_callback_t 
     return expr;
 }
 
-static expr_t *parse_expr_form_call(intptr_t lex, expr_t *lft, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_call(parser_t *psr, expr_t *lft, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
-    lex_match(lex, '(');
+    parse_match(psr, '(');
 
-    if (lex_match(lex, ')')) {
-        expr = parse_expr_form_unary(lex, EXPR_CALL, lft, cb, ud);
+    if (parse_match(psr, ')')) {
+        expr = parse_expr_form_unary(psr, EXPR_CALL, lft, cb, ud);
     } else {
-        expr = parse_expr_form_binary(lex, EXPR_CALL, lft, parse_expr_comma(lex, cb, ud), cb, ud);
-        if (expr && ! lex_match(lex, ')')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        expr = parse_expr_form_binary(psr, EXPR_CALL, lft, parse_expr_comma(psr, cb, ud), cb, ud);
+        if (expr && ! parse_match(psr, ')')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     }
@@ -530,86 +535,86 @@ static expr_t *parse_expr_form_call(intptr_t lex, expr_t *lft, parse_callback_t 
     return expr;
 }
 
-static expr_t *parse_expr_form_parenth(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_parenth(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
     // should not empty
-    lex_match(lex, '(');
-    expr = parse_expr_comma(lex, cb, ud);
+    parse_match(psr, '(');
+    expr = parse_expr_comma(psr, cb, ud);
     if (expr) {
-        if (!lex_match(lex, ')')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ')')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     }
     return expr;
 }
 
-static expr_t *parse_expr_form_array(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_array(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
-    lex_match(lex, '[');
+    parse_match(psr, '[');
 
     // empty array
-    if (lex_match(lex, ']')) {
-        if (NULL == (expr = parse_expr_alloc_type(lex, EXPR_ARRAY))) {
-            parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (parse_match(psr, ']')) {
+        if (NULL == (expr = parse_expr_alloc_type(psr, EXPR_ARRAY))) {
+            parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         }
         return expr;
     }
 
-    expr = parse_expr_form_unary(lex, EXPR_ARRAY, parse_expr_comma(lex, cb, ud), cb, ud);
+    expr = parse_expr_form_unary(psr, EXPR_ARRAY, parse_expr_comma(psr, cb, ud), cb, ud);
     if (expr) {
-        if (!lex_match(lex, ']')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ']')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     }
     return expr;
 }
 
-static expr_t *parse_expr_form_dict(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_dict(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
-    lex_match(lex, '{');
+    parse_match(psr, '{');
 
     // empty dict
-    if (lex_match(lex, '}')) {
-        if (NULL == (expr = parse_expr_alloc_type(lex, EXPR_DICT))) {
-            parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (parse_match(psr, '}')) {
+        if (NULL == (expr = parse_expr_alloc_type(psr, EXPR_DICT))) {
+            parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         }
         return expr;
     }
 
-    expr = parse_expr_form_unary(lex, EXPR_DICT, parse_expr_kvlist(lex, cb, ud), cb, ud);
+    expr = parse_expr_form_unary(psr, EXPR_DICT, parse_expr_kvlist(psr, cb, ud), cb, ud);
     if (expr) {
-        if (!lex_match(lex, '}')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, '}')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     }
     return expr;
 }
 
-static expr_t *parse_expr_form_pair(intptr_t lex, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_pair(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr_ternary(lex, cb, ud);
+    expr_t *expr = parse_expr_ternary(psr, cb, ud);
 
     if (expr) {
-        if (!lex_match(lex, ':')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, ':')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
-        expr = parse_expr_form_binary(lex, EXPR_PAIR, expr, parse_expr_ternary(lex, cb, ud), cb, ud);
+        expr = parse_expr_form_binary(psr, EXPR_PAIR, expr, parse_expr_ternary(psr, cb, ud), cb, ud);
     }
 
     return expr;
 }
 
-static expr_t *parse_expr_form_unary(intptr_t lex, int type, expr_t *lft, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_unary(parser_t *psr, int type, expr_t *lft, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
@@ -617,8 +622,8 @@ static expr_t *parse_expr_form_unary(intptr_t lex, int type, expr_t *lft, parse_
         return NULL;
     }
 
-    if (NULL == (expr = parse_expr_alloc_type(lex, type))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (NULL == (expr = parse_expr_alloc_type(psr, type))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     } else {
         ast_expr_set_lft(expr, lft);
     }
@@ -626,7 +631,7 @@ static expr_t *parse_expr_form_unary(intptr_t lex, int type, expr_t *lft, parse_
     return expr;
 }
 
-static expr_t *parse_expr_form_binary(intptr_t lex, int type, expr_t *lft, expr_t *rht, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_form_binary(parser_t *psr, int type, expr_t *lft, expr_t *rht, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
@@ -634,8 +639,8 @@ static expr_t *parse_expr_form_binary(intptr_t lex, int type, expr_t *lft, expr_
         return NULL;
     }
 
-    if (NULL == (expr = parse_expr_alloc_type(lex, type))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (NULL == (expr = parse_expr_alloc_type(psr, type))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     } else {
         ast_expr_set_lft(expr, lft);
         ast_expr_set_rht(expr, rht);
@@ -644,20 +649,20 @@ static expr_t *parse_expr_form_binary(intptr_t lex, int type, expr_t *lft, expr_
     return expr;
 }
 
-static stmt_t *parse_stmt_block(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_block(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *s = NULL;
 
-    if (lex_match(lex, '{')) {
-        if (!(s = parse_stmt_list(lex, cb, ud))) {
+    if (parse_match(psr, '{')) {
+        if (!(s = parse_stmt_list(psr, cb, ud))) {
             return NULL;
         }
-        if (!lex_match(lex, '}')) {
-            parse_fail(lex, ERR_InvalidToken, cb, ud);
+        if (!parse_match(psr, '}')) {
+            parse_fail(psr, ERR_InvalidToken, cb, ud);
             return NULL;
         }
     } else {
-        if (!(s = parse_stmt(lex, cb, ud))) {
+        if (!(s = parse_stmt(psr, cb, ud))) {
             return NULL;
         }
     }
@@ -665,177 +670,177 @@ static stmt_t *parse_stmt_block(intptr_t lex, parse_callback_t cb, void *ud)
     return s;
 }
 
-static stmt_t *parse_stmt_if(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_if(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *cond = NULL;
     stmt_t *block = NULL;
     stmt_t *other = NULL;
     stmt_t *s;
 
-    lex_match(lex, TOK_IF);
+    parse_match(psr, TOK_IF);
 
-    if (!(cond = parse_expr(lex, cb, ud))) {
+    if (!(cond = parse_expr(psr, cb, ud))) {
         return NULL;
     }
 
-    if (!(block = parse_stmt_block(lex, cb, ud))) {
+    if (!(block = parse_stmt_block(psr, cb, ud))) {
         return NULL;
     }
 
-    if (lex_match(lex, TOK_ELSE)) {
-        if (!(other = parse_stmt_block(lex, cb, ud))) {
+    if (parse_match(psr, TOK_ELSE)) {
+        if (!(other = parse_stmt_block(psr, cb, ud))) {
             return NULL;
         }
     }
 
     if (other) {
-        s = parse_stmt_alloc_3(lex, STMT_IF, cond, block, other);
+        s = parse_stmt_alloc_3(psr, STMT_IF, cond, block, other);
     } else {
-        s = parse_stmt_alloc_2(lex, STMT_IF, cond, block);
+        s = parse_stmt_alloc_2(psr, STMT_IF, cond, block);
     }
 
     if (!s) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
 
     return s;
 }
 
-static stmt_t *parse_stmt_var(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_var(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr;
 
-    lex_match(lex, TOK_VAR);
-    expr = parse_expr_vardef_list(lex, cb, ud);
+    parse_match(psr, TOK_VAR);
+    expr = parse_expr_vardef_list(psr, cb, ud);
     if (expr) {
         stmt_t *s;
-        lex_match(lex, ';');
-        if (NULL != (s = parse_stmt_alloc_1(lex, STMT_VAR, expr))) {
+        parse_match(psr, ';');
+        if (NULL != (s = parse_stmt_alloc_1(psr, STMT_VAR, expr))) {
             return s;
         } else {
-            parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+            parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         }
     }
 
     return NULL;
 }
 
-static stmt_t *parse_stmt_ret(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_ret(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr = NULL;
     stmt_t *s;
 
-    lex_match(lex, TOK_RET);
+    parse_match(psr, TOK_RET);
 
-    if (!lex_match(lex, ';')) {
-        if (NULL == (expr = parse_expr(lex, cb, ud))) {
+    if (!parse_match(psr, ';')) {
+        if (NULL == (expr = parse_expr(psr, cb, ud))) {
             return NULL;
         }
-        lex_match(lex, ';');
+        parse_match(psr, ';');
     }
 
-    if (!(s = parse_stmt_alloc_1(lex, STMT_RET, expr))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (!(s = parse_stmt_alloc_1(psr, STMT_RET, expr))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
     return s;
 }
 
-static stmt_t *parse_stmt_while(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_while(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *cond = NULL;
     stmt_t *block = NULL;
     stmt_t *s;
 
-    lex_match(lex, TOK_WHILE);
+    parse_match(psr, TOK_WHILE);
 
-    if (!(cond = parse_expr(lex, cb, ud))) {
+    if (!(cond = parse_expr(psr, cb, ud))) {
         return NULL;
     }
 
-    if (!(block = parse_stmt_block(lex, cb, ud))) {
+    if (!(block = parse_stmt_block(psr, cb, ud))) {
         return NULL;
     }
 
-    s = parse_stmt_alloc_2(lex, STMT_WHILE, cond, block);
+    s = parse_stmt_alloc_2(psr, STMT_WHILE, cond, block);
     if (!s) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
 
     return s;
 }
 
-static stmt_t *parse_stmt_break(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_break(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *s;
 
-    lex_match(lex, TOK_BREAK);
-    lex_match(lex, ';');
+    parse_match(psr, TOK_BREAK);
+    parse_match(psr, ';');
 
-    if (!(s = parse_stmt_alloc_0(lex, STMT_BREAK))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (!(s = parse_stmt_alloc_0(psr, STMT_BREAK))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
     return s;
 }
 
-static inline stmt_t *parse_stmt_continue(intptr_t lex, parse_callback_t cb, void *ud)
+static inline stmt_t *parse_stmt_continue(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *s;
 
-    lex_match(lex, TOK_CONTINUE);
-    lex_match(lex, ';');
+    parse_match(psr, TOK_CONTINUE);
+    parse_match(psr, ';');
 
-    if (!(s = parse_stmt_alloc_0(lex, STMT_CONTINUE))) {
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+    if (!(s = parse_stmt_alloc_0(psr, STMT_CONTINUE))) {
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
     return s;
 }
 
-static stmt_t *parse_stmt_expr(intptr_t lex, parse_callback_t cb, void *ud)
+static stmt_t *parse_stmt_expr(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    expr_t *expr = parse_expr(lex, cb, ud);
+    expr_t *expr = parse_expr(psr, cb, ud);
 
-    lex_match(lex, ';');
+    parse_match(psr, ';');
     if (expr) {
-        stmt_t *s = parse_stmt_alloc_1(lex, STMT_EXPR, expr);
+        stmt_t *s = parse_stmt_alloc_1(psr, STMT_EXPR, expr);
         if (s) {
             return s;
         }
-        parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+        parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
     }
 
     return NULL;
 }
 
-expr_t *parse_expr(intptr_t lex, parse_callback_t cb, void *ud)
+expr_t *parse_expr(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    return parse_expr_comma(lex, cb, ud);
+    return parse_expr_comma(psr, cb, ud);
 }
 
-stmt_t *parse_stmt(intptr_t lex, parse_callback_t cb, void *ud)
+stmt_t *parse_stmt(parser_t *psr, parse_callback_t cb, void *ud)
 {
-    int tok = lex_token(lex, NULL);
+    int tok = parse_token(psr, NULL);
 
     switch (tok) {
-        case TOK_EOF:       parse_eof(lex, cb, ud); return NULL;
-        case TOK_IF:        return parse_stmt_if(lex, cb, ud);
-        case TOK_VAR:       return parse_stmt_var(lex, cb, ud);
-        case TOK_RET:       return parse_stmt_ret(lex, cb, ud);
-        case TOK_WHILE:     return parse_stmt_while(lex, cb, ud);
-        case TOK_BREAK:     return parse_stmt_break(lex, cb, ud);
-        case TOK_CONTINUE:  return parse_stmt_continue(lex, cb, ud);
-        default:            return parse_stmt_expr(lex, cb, ud);
+        case TOK_EOF:       parse_eof(psr, cb, ud); return NULL;
+        case TOK_IF:        return parse_stmt_if(psr, cb, ud);
+        case TOK_VAR:       return parse_stmt_var(psr, cb, ud);
+        case TOK_RET:       return parse_stmt_ret(psr, cb, ud);
+        case TOK_WHILE:     return parse_stmt_while(psr, cb, ud);
+        case TOK_BREAK:     return parse_stmt_break(psr, cb, ud);
+        case TOK_CONTINUE:  return parse_stmt_continue(psr, cb, ud);
+        default:            return parse_stmt_expr(psr, cb, ud);
     }
 }
 
-stmt_t *parse_stmt_list(intptr_t lex, parse_callback_t cb, void *ud)
+stmt_t *parse_stmt_list(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *head = NULL, *last, *curr;
-    int tok = lex_token(lex, NULL);
+    int tok = parse_token(psr, NULL);
 
     while (tok != 0 && tok != '}') {
-        while (lex_match(lex, ';'));
+        while (parse_match(psr, ';'));
 
-        if (!(curr = parse_stmt(lex, cb, ud))) {
+        if (!(curr = parse_stmt(psr, cb, ud))) {
             return NULL;
         }
 
@@ -845,12 +850,12 @@ stmt_t *parse_stmt_list(intptr_t lex, parse_callback_t cb, void *ud)
             last = head = curr;
         }
 
-        tok = lex_token(lex, NULL);
+        tok = parse_token(psr, NULL);
     }
 
     if (!head) {
-        if (!(head = parse_stmt_alloc_0(lex, STMT_PASS))) {
-            parse_fail(lex, ERR_NotEnoughMemory, cb, ud);
+        if (!(head = parse_stmt_alloc_0(psr, STMT_PASS))) {
+            parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         }
     }
 
