@@ -26,7 +26,7 @@ export CPPFLAGS
 export CFLAGS
 export LDFLAGS
 
-.PHONY: all test cunit esbl lang
+.PHONY: all test cunit esbl lang leo
 
 all: test
 
@@ -43,9 +43,13 @@ test: clean cunit esbl lang
 	${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub
 	${TEST_DIR}/test
 
+leo: test
+	${MAKE} -C leo -f ${MAKE_DIR}/Makefile.pub
+
 clean:
 	${MAKE} -C cunit clean -f ${MAKE_DIR}/Makefile.pub
 	${MAKE} -C esbl clean -f ${MAKE_DIR}/Makefile.pub
 	${MAKE} -C lang clean -f ${MAKE_DIR}/Makefile.pub
 	${MAKE} -C test clean -f ${MAKE_DIR}/Makefile.pub
+	${MAKE} -C leo  clean -f ${MAKE_DIR}/Makefile.pub
 
