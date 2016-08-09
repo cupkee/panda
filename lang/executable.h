@@ -52,7 +52,7 @@ typedef struct executable_t {
     uint8_t  *func_code;
 } executable_t;
 
-int executable_init(executable_t *exe, void *memory, uint32_t size,
+int executable_init(executable_t *exe, void *memory, int size,
                     int number_max, int string_max, int native_max, int func_max,
                     int main_code_max, int func_code_max);
 

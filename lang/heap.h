@@ -13,7 +13,7 @@ typedef struct heap_t {
 } heap_t;
 
 void heap_init(heap_t *heap, void *base, int size);
-void heap_free(heap_t *heap);
+void heap_clean(heap_t *heap);
 
 void *heap_alloc(heap_t *heap, int size);
 int heap_is_owner(heap_t *heap, void *p);

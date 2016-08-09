@@ -5,23 +5,116 @@
 
 void compile_code_dump(compile_t *cpl);
 
+static inline intptr_t *compile_mem_head(void *mem) {
+    return (intptr_t *) (((unsigned long)mem) - sizeof(intptr_t) * 2);
+}
+
+static inline void swap(intptr_t *buf, uint32_t a, uint32_t b) {
+    intptr_t tmp = buf[a];
+
+    buf[a] = buf[b];
+    buf[b] = tmp;
+}
+
+static void max_heapify(intptr_t *buf, uint32_t start, uint32_t end)
+{
+    uint32_t dad = start;
+    uint32_t son = dad * 2 + 1;
+
+    while(son < end) {
+        // choice the max
+        if (son + 1 < end && buf[son] < buf[son + 1]) {
+            son ++;
+        }
+
+        if (buf[son] > buf[dad]) {
+            swap(buf, dad, son);
+            dad = son;
+            son = dad * 2 + 1;
+        } else {
+            return;
+        }
+    }
+}
+
+static void heap_sort(intptr_t *buf, int num)
+{
+    int i;
+
+    for (i = num / 2 - 1; i >= 0; i--) {
+        max_heapify(buf, i, num);
+    }
+    for (i = num - 1; i > 0; i--) {
+        swap(buf, 0, i);
+        max_heapify(buf, 0, i);
+    }
+}
+
 static void compile_gc(compile_t *cpl)
 {
-    printf("compile: memory not enought! heap free: %d\n", cpl->heap.free);
-    // Not implemented!
+    intptr_t *keep_tbl = (intptr_t *)(cpl->heap.base + cpl->heap.free);
+    int keep_num = cpl->func_num * 2 + 1;
+    intptr_t *head;
+    int i, n, free = 0;
+
+    keep_tbl[0] = (intptr_t) compile_mem_head(cpl->func_buf);
+    for (i = 0, n = 1; i < cpl->func_num; i++) {
+        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].var_map);
+        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].code_buf);
+    }
+
+    // compute new address
+    heap_sort(keep_tbl, keep_num);
+
+    for (i = 0; i < keep_num; i++) {
+        head = (intptr_t *)(keep_tbl[i]);
+
+        head[1] = (intptr_t)cpl->heap.base + free;
+        free += head[0];
+    }
+
+    // update memory reference
+    head = compile_mem_head(cpl->func_buf);
+    cpl->func_buf = (compile_func_t *) (head[1] + sizeof(intptr_t) * 2);
+    for (i = 0; i < cpl->func_num; i++) {
+        head = compile_mem_head(cpl->func_buf[i].var_map);
+        cpl->func_buf[i].var_map = (intptr_t *)(head[1] + sizeof(intptr_t) * 2);
+
+        head = compile_mem_head(cpl->func_buf[i].code_buf);
+        cpl->func_buf[i].code_buf = (uint8_t *)(head[1] + sizeof(intptr_t) * 2);
+    }
+
+    // move
+    for (i = 0; i < keep_num; i++) {
+        intptr_t *head = (intptr_t *)(keep_tbl[i]);
+        memmove((void*)(head[1]), head, head[0]);
+    }
+
+    //printf("compile gc: %d -> %d\n", cpl->heap.free, free);
+    cpl->heap.free = free;
 }
 
 static void *compile_malloc(compile_t *cpl, int size)
 {
+    int keep_size = sizeof(intptr_t) * (cpl->func_num * 2 + 1);
     void *p;
 
-    p = heap_alloc(&cpl->heap, size);
-    if (!p) {
+    size += sizeof(intptr_t) * 2;
+    size = SIZE_ALIGN(size);
+
+    //printf("compile alloc: %d, size: %u, free: %u\n", size, cpl->heap.size, cpl->heap.free);
+    if (cpl->heap.free + size + keep_size > cpl->heap.size) {
         compile_gc(cpl);
-        return heap_alloc(&cpl->heap, size);
+        if (cpl->heap.free + size + keep_size > cpl->heap.size) {
+            return NULL;
+        }
     }
 
-    return p;
+    p = cpl->heap.base + cpl->heap.free;
+    cpl->heap.free += size;
+    *((intptr_t*)p) = size;
+
+    return p + sizeof(intptr_t) * 2;
 }
 
 static inline compile_func_t *compile_func_cur(compile_t *cpl) {
@@ -834,7 +927,6 @@ static void compile_stmt_cond(compile_t *cpl, stmt_t *s)
 
     compile_stmt_block(cpl, s->block);
     other = compile_code_pos(cpl);
-
     if (s->other) {
         skip_pos = other;
         compile_code_extend(cpl, 3);
@@ -1024,6 +1116,22 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id)
     return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
 }
 
+int compile_vmap_copy(compile_t *cpl, intptr_t *buf, int size)
+{
+    compile_func_t *f = compile_func_cur(cpl);
+    int i;
+
+    if (f->var_num > size) {
+        return -1;
+    }
+
+    for (i = 0; i < f->var_num; i++) {
+        buf[i] = f->var_map[i];
+    }
+
+    return i;
+}
+
 int compile_stmt(compile_t *cpl, stmt_t *stmt)
 {
     if (!cpl || !stmt) {
@@ -1049,7 +1157,7 @@ int compile_stmt(compile_t *cpl, stmt_t *stmt)
     return -cpl->error;
 }
 
-int compile_one_stmt(compile_t *cpl, stmt_t *stmt, module_t *mod)
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt)
 {
     int ret = compile_stmt(cpl, stmt);
 

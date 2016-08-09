@@ -6,12 +6,11 @@ void heap_init(heap_t *heap, void *base, int size)
         heap->size = size;
         heap->free = 0;
         heap->base = base;
-
-        memset(base, 0, size);
+        //memset(base, 0, size);
     }
 }
 
-void heap_free(heap_t *heap)
+void heap_clean(heap_t *heap)
 {
     if (heap) {
         heap->free = 0;
@@ -20,10 +19,12 @@ void heap_free(heap_t *heap)
 }
 
 void *heap_alloc(heap_t *heap, int size) {
-    size = SIZE_ALIGN(size);
     if (heap) {
-        int free = heap->free + size;
+        int free;
 
+        size = SIZE_ALIGN(size);
+        free = heap->free + size;
+        //printf("Alloc %d, size: %u, free: %u\n", size, heap->size, heap->free);
         if (free < heap->size) {
             void *p = heap->base + heap->free;
             heap->free = free;

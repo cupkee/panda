@@ -382,7 +382,7 @@ static inline void interp_elem_call(env_t *env) {
     }
 }
 
-int interp_run(env_t *env, module_t *mod)
+int interp_run(env_t *env)
 {
     double   *numbers = env->exe.number_map;
     intptr_t *strings = env->exe.string_map;

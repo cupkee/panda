@@ -24,7 +24,8 @@
 #define SIZE_ALIGN_64(x)            (((x) + 63) & ~0x3F)
 #define SIZE_ALIGN_64(x)            (((x) + 63) & ~0x3F)
 
-#define SIZE_ALIGN                  SIZE_ALIGN_64
+#define SIZE_ALIGN                  SIZE_ALIGN_8
+#define ADDR_ALING                  ADDR_ALIGN_8
 
 // esbl profile
 #define DEF_VECT_SIZE           (16)
@@ -32,19 +33,43 @@
 
 
 // lang profile
-#define EVAL_MAIN_VAR_MAX           (32)
 
-#define DEF_STRING_SIZE             (8)
+
+#define EXECUTABLE_MINI
+//#define EXECUTABLE_SMALL
+//#define EXECUTABLE_NORMAL
+//#define EXECUTABLE_LARGE
+//#define EXECUTABLE_HUGE
+
+#if defined(EXECUTABLE_MINI)
+
+# define EVAL_MAIN_VAR_MAX          (16)
+
+# define DEF_MAIN_VAR_NUM           (16)
+
+# define EXE_FUNCTION_MAX           (16)
+# define EXE_NUMBER_MAX             (40)
+# define EXE_STRING_MAX             (80)
+# define EXE_NATIVE_MAX             (16)
+# define EXE_MAIN_CODE_MAX          (512)
+# define EXE_FUNC_CODE_MAX          (1536)
+
+# define DEF_FUNC_SIZE              (4)
+# define LIMIT_FUNC_SIZE            (16)
+
+# define DEF_VMAP_SIZE              (4)
+# define LIMIT_VMAP_SIZE            (16)
+
+# define DEF_FUNC_CODE_SIZE         (32)
+# define LIMIT_FUNC_CODE_SIZE       (32767)
+
+# define DEF_STRING_SIZE            (8)
+
+#elif defined(EXECUTABLE_SMALL)
+#else // NORMAL
+#endif
 
 // lang compile resource default and limit
-#define DEF_FUNC_SIZE               (4)
-#define LIMIT_FUNC_SIZE             (512)
-
-#define DEF_VMAP_SIZE               (8)
-#define LIMIT_VMAP_SIZE             (255)
-
-#define DEF_FUNC_CODE_SIZE          (32)
-#define LIMIT_FUNC_CODE_SIZE        (32767)
 
 #endif /* __CUPKEE_CONFIG__ */
 

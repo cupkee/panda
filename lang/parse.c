@@ -97,6 +97,9 @@ static inline stmt_t *parse_stmt_alloc_0(parser_t *psr, int type) {
 
     if (s) {
         s->type = type;
+        s->expr = NULL;
+        s->block = NULL;
+        s->other = NULL;
         s->next = NULL;
     }
 
@@ -109,6 +112,8 @@ static inline stmt_t *parse_stmt_alloc_1(parser_t *psr, int t, expr_t *e) {
     if (s) {
         s->type = t;
         s->expr = e;
+        s->block = NULL;
+        s->other = NULL;
         s->next = NULL;
     }
 
@@ -122,6 +127,7 @@ static inline stmt_t *parse_stmt_alloc_2(parser_t *psr, int t, expr_t *e, stmt_t
         s->type = t;
         s->expr = e;
         s->block = block;
+        s->other = NULL;
         s->next = NULL;
     }
 

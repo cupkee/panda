@@ -19,7 +19,7 @@ typedef struct interp_t {
     val_t *result;
 } interp_t;
 
-int interp_run(env_t *env, module_t *mod);
+int interp_run(env_t *env);
 
 static inline void interp_stack_alloc(env_t *env, int n) {
     env->sp -= n;

@@ -23,37 +23,18 @@ typedef struct compile_func_t {
 } compile_func_t;
 
 typedef struct compile_t {
-    int16_t error;     //
-    uint8_t main_var_num;
-    uint8_t main_arg_num;
+    int     error;     //
 
     int16_t bgn_pos;   // for loop continue
     int16_t skip_pos;  // for loop break
-
-    env_t  *env;
-
-    heap_t  heap;
-
-    /*
-    uint16_t number_size;
-    uint16_t number_num;
-    uint16_t string_size;
-    uint16_t string_num;
-    uint16_t native_size;
-    uint16_t native_num;
-
-    double  *number_buf;
-    intptr_t *string_buf;
-    intptr_t *native_buf;
-    intptr_t *native_map;
-    */
-
-    intptr_t *main_var_map;
 
     uint16_t func_size;
     uint16_t func_num;
     uint16_t func_cur;
     uint16_t func_offset;
+
+    env_t  *env;
+    heap_t  heap;
 
     compile_func_t *func_buf;
     intptr_t sym_tbl;
@@ -71,14 +52,16 @@ int compile_var_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_get(compile_t *cpl, intptr_t sym_id);
 
 int compile_stmt(compile_t *cpl, stmt_t *stmt);
-int compile_one_stmt(compile_t *cpl, stmt_t *stmt, module_t *mod);
+int compile_one_stmt(compile_t *cpl, stmt_t *stmt);
+int compile_vmap_copy(compile_t *cpl, intptr_t *buf, int size);
 
-int compile_build_module(compile_t *cpl, module_t *mod);
 int compile_code_relocate(compile_t *cpl);
 
-static inline void compile_code_clean(compile_t *cpl) {
-    if (cpl && cpl->func_buf && cpl->func_num)
-        cpl->func_buf[cpl->func_cur].code_num = 0;
+static inline void compile_clear_main(compile_t *cpl) {
+    if (cpl && cpl->env) {
+        executable_t *exe = &cpl->env->exe;
+        exe->main_code_end = 0;
+    }
 }
 
 static inline int compile_var_num(compile_t *cpl) {

@@ -1,6 +1,6 @@
 #include "executable.h"
 
-int executable_init(executable_t *exe, void *mem_ptr, uint32_t mem_size,
+int executable_init(executable_t *exe, void *mem_ptr, int mem_size,
                     int number_max, int string_max, int native_max, int func_max,
                     int main_code_max, int func_code_max)
 {
@@ -44,19 +44,17 @@ int executable_init(executable_t *exe, void *mem_ptr, uint32_t mem_size,
     exe->func_map = (uint8_t **) (mem_ptr + mem_offset);
     mem_offset += sizeof(uint8_t **) * func_max;
 
-    if (mem_offset + DEF_STRING_SIZE * string_max >= mem_size) {
-        // Memory may not enought!
-        return -1;
-    }
-    exe->symbal_buf = mem_ptr + mem_offset;
-    exe->symbal_buf_max = SIZE_ALIGN(string_max * DEF_STRING_SIZE);
-    mem_offset += exe->symbal_buf_max;
 
-    if (mem_offset > mem_size) {
+    // symbal buffer
+    if (string_max * DEF_STRING_SIZE > mem_size - mem_offset) {
+        //printf("Mem size: %d, Exe used at less: %d\n", mem_size, string_max * DEF_STRING_SIZE);
         return -1;
-    } else {
-        return mem_offset;
     }
+
+    exe->symbal_buf = mem_ptr + mem_offset;
+    exe->symbal_buf_max = mem_size - mem_offset;
+    mem_offset += exe->symbal_buf_max;
+    return mem_size;
 }
 
 int executable_number_find_add(executable_t *exe, double n)

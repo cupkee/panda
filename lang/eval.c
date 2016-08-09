@@ -67,30 +67,40 @@ static int eval_main_var_add(eval_env_t *env, intptr_t sym)
 
 static int eval_compile_init(compile_t *cpl, eval_env_t *env, void *heap_addr, int heap_size)
 {
+    int i;
+
     if (0 != compile_init(cpl, &env->env, heap_addr, heap_size)) {
         return -1;
     }
 
     // set main function compile info history
-    cpl->func_buf[0].var_map = env->main_var_map;
-    cpl->func_buf[0].var_num = env->main_var_num;
-    cpl->func_buf[0].var_max = EVAL_MAIN_VAR_MAX;
-
-    // set function offset for compile
-//    cpl->func_offset = env->env.func_num;
+    for (i = 0; i < env->main_var_num; i++) {
+        compile_var_add(cpl, env->main_var_map[i]);
+    }
 
     return 0;
 }
 
 static int eval_compile_update(eval_env_t *env, compile_t *cpl)
 {
+    int num;
+
+    compile_clear_main(cpl);
     if (0 != compile_code_relocate(cpl)) {
         return -1;
     }
 
-    // update main var scope
-    env->main_var_num = compile_var_num(cpl);
-    return env_scope_extend_to(&env->env, compile_var_num(cpl));
+    // save main var map info & update scope
+    num = compile_vmap_copy(cpl, env->main_var_map, EVAL_MAIN_VAR_MAX);
+    if (num < 0) {
+        return -1;
+    }
+    env->main_var_num = num;
+
+    // all memory used on parse & compile process can be free here
+    heap_reset(env_heap_get_free(&env->env));
+
+    return env_scope_extend_to(&env->env, num);
 }
 
 static int eval_compile_deinit(compile_t *cpl)
@@ -102,14 +112,16 @@ static int eval_compile_deinit(compile_t *cpl)
     return -1;
 }
 
-int eval_env_init_mini(eval_env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
+int eval_env_init(eval_env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
 {
     if (!env || !mem_ptr) {
         return -1;
     }
 
-    if (0 == env_init((env_t *)env, mem_ptr, mem_size, heap_ptr, heap_size, stack_ptr, stack_size,
-                64, 64, 32, 16, 1024, 1024)) {
+    if (0 == env_init((env_t *)env, mem_ptr, mem_size,
+                heap_ptr, heap_size, stack_ptr, stack_size,
+                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, EXE_FUNCTION_MAX,
+                EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX)) {
         env->main_var_num = 0;
 
         return 0;
@@ -175,18 +187,15 @@ static void eval_parse_callback(void *u, parse_event_t *e)
         //printf("Parse end\n");
     } else
     if (e->type == PARSE_FAIL) {
-        *done = -3;
-        printf("Parse fail: %d\n", e->error.code);
+        *done = -e->error.code;
+        //printf("Parse fail: %d\n", e->error.code);
     }
 }
 
-int eval_string(eval_env_t *env, const char *input, val_t **v)
+int eval_string(eval_env_t *env, void *mem_ptr, int mem_size, const char *input, val_t **v)
 {
     lexer_t lex_st;
-    stmt_t  *stmt;
-    module_t mod;
     intptr_t lex;
-    uint8_t  lex_memory[8192];
     static val_t undefined = TAG_UNDEFINED;
     int done = 0, last_type = 0;
 
@@ -195,10 +204,10 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
     }
 
     get_line_init(input);
-    lex = lex_init(&lex_st, lex_memory, 8192, get_line_from_string);
+    lex = lex_init(&lex_st, mem_ptr, mem_size, get_line_from_string);
 
-    int stmt_cnt = 0;
     while (!done) {
+        stmt_t  *stmt;
         heap_t *heap = env_heap_get_free((env_t*)env);
         parser_t psr;
         compile_t cpl;
@@ -209,20 +218,17 @@ int eval_string(eval_env_t *env, const char *input, val_t **v)
         parse_init(&psr, lex, heap);
         stmt = parse_stmt(&psr, eval_parse_callback, &done);
         if (!stmt) break;
-        stmt_cnt++;
+        //printf("parse memory: %d\n", heap->free);
 
-        //printf("parse memory: %d\n", lex_heap_used(lex));
-
-        //compile_code_clean(&env->cpl);
         eval_compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
-        if (0 == compile_one_stmt(&cpl, stmt, &mod) && 0 == eval_compile_update(env, &cpl)) {
-            if (0 != interp_run((env_t *)env, &mod) && v) {
-                printf("execute fail: %d\n", env->env.error);
-                done = -2;
+        if (0 == compile_one_stmt(&cpl, stmt) && 0 == eval_compile_update(env, &cpl)) {
+            if (0 != interp_run((env_t *)env) && v) {
+                done = -env->env.error;
+                //printf("execute fail: %d\n", env->env.error);
             }
         } else {
-            printf("compile fail: %d\n", cpl.error);
-            done = -1;
+            done = -cpl.error;
+            //printf("compile fail: %d\n", cpl.error);
         }
         eval_compile_deinit(&cpl);
 

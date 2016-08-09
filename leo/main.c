@@ -3,12 +3,13 @@
 
 #include "lang/eval.h"
 
-
 #define MEM_SIZE    (1024 * 512)
 #define HEAP_SIZE    (1024 * 496)
 #define STACK_SIZE    (1024)
 
 void *MEM_PTR[MEM_SIZE];
+
+char eval_buf[128];
 
 int main(int ac, char **av)
 {
@@ -16,7 +17,7 @@ int main(int ac, char **av)
     val_t *res;
     char *line;
 
-    if(0 != eval_env_init_mini(&env_st, MEM_PTR, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
+    if(0 != eval_env_init(&env_st, MEM_PTR, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
         printf("eval_env_init fail\n");
         return -1;
     }
@@ -24,7 +25,7 @@ int main(int ac, char **av)
     printf("LEO V0.1\n\n");
 
     while ((line = readline("> ")) != NULL) {
-        if (0 != eval_string(env, line, &res)) {
+        if (0 != eval_string(env, eval_buf, 128, line, &res)) {
             printf("eval fail\n");
             break;
         }

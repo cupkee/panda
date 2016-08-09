@@ -74,59 +74,11 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
                     number_max, string_max, native_max, func_max, main_code_max, func_code_max);
     if (exe_size < 0) {
         return -1;
-    } else {
-        mem_offset += exe_size;
     }
-    /*
-    // static number buffer init
-    env->func_code = (uint8_t*) (mem_ptr + mem_offset);
-    env->func_code_end = 0;
-    env->func_code_max = func_code_max * (func_max - 1);
-    mem_offset += env->func_code_max;
-
-    env->main_code = (uint8_t*) (mem_ptr + mem_offset);
-    env->main_code_end = 0;
-    env->main_code_max = func_code_max * 32;
-    mem_offset += env->main_code_max;
-
-    env->number_max = number_max;
-    env->number_num = 0;
-    env->number_map = (double*) (mem_ptr + mem_offset);
-    mem_offset += sizeof(double) * number_max;
-
-    // static string buffer init
-    env->string_max = string_max;
-    env->string_num = 0;
-    env->string_map = (intptr_t *) (mem_ptr + mem_offset);
-    mem_offset += sizeof(intptr_t) * string_max;
-
-    // native function buffer init
-    env->native_max = native_max;
-    env->native_num = 0;
-    env->native_map = (intptr_t *) (mem_ptr + mem_offset);
-    mem_offset += sizeof(intptr_t) * native_max;
-    env->native_fns = (intptr_t *) (mem_ptr + mem_offset);
-    mem_offset += sizeof(intptr_t) * native_max;
-
-    // script function buffer init
-    env->func_max = func_max;
-    env->func_num = 0;
-    env->func_map = (uint8_t **) (mem_ptr + mem_offset);
-    mem_offset += sizeof(uint8_t **) * func_max;
-
-    if (mem_offset + DEF_STRING_SIZE * string_max >= mem_size) {
-        // Memory may not enought!
-        return -1;
-    }
-    env->symbal_buf = mem_ptr + mem_offset;
-    env->symbal_buf_size = SIZE_ALIGN(string_max * DEF_STRING_SIZE);
-    mem_offset += env->symbal_buf_size;
-    */
-
 
     env->result = NULL;
 
-    if (0 != env_scope_create(env, NULL, 16, 0, NULL)) {
+    if (0 != env_scope_create(env, NULL, DEF_MAIN_VAR_NUM, 0, NULL)) {
         return -1;
     }
 
