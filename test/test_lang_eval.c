@@ -9,7 +9,7 @@
 
 #define STACK_SIZE  128
 #define HEAP_SIZE   4096
-#define EXE_SIZE    4096
+#define EXE_SIZE    5120
 #define EVN_BUF_SIZE    (sizeof(val_t) * STACK_SIZE + HEAP_SIZE + EXE_SIZE)
 #define EVAL_BUF_SIZE   128
 

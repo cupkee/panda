@@ -143,7 +143,7 @@ int eval_env_deinit(eval_env_t *env)
 int eval_env_add_var(eval_env_t *eval_env, const char *name, val_t *value)
 {
     env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = symtbl_add(env->sym_tbl, name);
+    intptr_t sym_id = env_symbal_add(env, name);
     int      extend = eval_main_var_add(eval_env, sym_id);
 
     if (extend == 1) {
@@ -159,7 +159,7 @@ int eval_env_add_var(eval_env_t *eval_env, const char *name, val_t *value)
 int eval_env_get_var(eval_env_t *eval_env, const char *name, val_t **value)
 {
     env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = symtbl_get(env->sym_tbl, name);
+    intptr_t sym_id = env_symbal_get(env, name);
     int      var_id = eval_main_var_get(eval_env, sym_id);
 
     return env_scope_get(env, var_id, value);
@@ -168,7 +168,7 @@ int eval_env_get_var(eval_env_t *eval_env, const char *name, val_t **value)
 int eval_env_set_var(eval_env_t *eval_env, const char *name, val_t *value)
 {
     env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = symtbl_get(env->sym_tbl, name);
+    intptr_t sym_id = env_symbal_get(env, name);
     int      var_id = eval_main_var_get(eval_env, sym_id);
 
     return env_scope_set(env, var_id, value);

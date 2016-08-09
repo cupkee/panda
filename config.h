@@ -28,8 +28,8 @@
 #define ADDR_ALING                  ADDR_ALIGN_8
 
 // esbl profile
-#define DEF_VECT_SIZE           (16)
-#define DEF_HTBL_SIZE           (16)
+#define DEF_VECT_SIZE               (16)
+#define DEF_HTBL_SIZE               (16)
 
 
 // lang profile
@@ -48,8 +48,8 @@
 # define DEF_MAIN_VAR_NUM           (16)
 
 # define EXE_FUNCTION_MAX           (16)
-# define EXE_NUMBER_MAX             (40)
-# define EXE_STRING_MAX             (80)
+# define EXE_NUMBER_MAX             (32)
+# define EXE_STRING_MAX             (128)
 # define EXE_NATIVE_MAX             (16)
 # define EXE_MAIN_CODE_MAX          (512)
 # define EXE_FUNC_CODE_MAX          (1536)

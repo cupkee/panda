@@ -8,7 +8,6 @@
 
 #include "val.h"
 #include "heap.h"
-#include "symtbl.h"
 #include "executable.h"
 
 typedef struct scope_t {
@@ -36,39 +35,16 @@ typedef struct env_t {
     scope_t *scope;
     val_t *result;
 
-    intptr_t sym_tbl;
+    //intptr_t sym_tbl;
+
+    uint16_t symbal_tbl_size;
+    uint16_t symbal_tbl_hold;
+    uint16_t symbal_buf_end;
+    uint16_t symbal_buf_used;
+    intptr_t *symbal_tbl;
+    char *symbal_buf;
 
     executable_t exe;
-    /*
-    // executable info
-    char    *symbal_buf;
-    uint32_t symbal_buf_size;
-
-    uint32_t func_code_max;
-    uint32_t func_code_end;
-    uint16_t main_code_max;
-    uint16_t main_code_end;
-
-    uint16_t number_max;
-    uint16_t number_num;
-
-    uint16_t string_max;
-    uint16_t string_num;
-
-    uint16_t native_max;
-    uint16_t native_num;
-
-    uint16_t func_max;
-    uint16_t func_num;
-
-    double   *number_map;
-    intptr_t *string_map;
-    intptr_t *native_map;
-    intptr_t *native_fns;
-    uint8_t **func_map;
-    uint8_t  *main_code;
-    uint8_t  *func_code;
-    */
 } env_t;
 
 int env_init(env_t *env, void * mem_ptr, int mem_size,

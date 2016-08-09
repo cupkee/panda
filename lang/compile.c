@@ -1023,7 +1023,6 @@ int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size)
     cpl->func_offset = env->exe.func_num;
 
     cpl->env = env;
-    cpl->sym_tbl = env->sym_tbl;
 
     heap_init(&cpl->heap, heap_ptr, heap_size);
 
@@ -1048,23 +1047,6 @@ int compile_deinit(compile_t *cpl)
         return 0;
     }
     return -1;
-}
-
-intptr_t compile_sym_add(compile_t *cpl, const char *sym)
-{
-    if (!cpl || cpl->error || !cpl->sym_tbl) {
-        return 0;
-    }
-
-    return symtbl_add(cpl->sym_tbl, sym);
-}
-
-intptr_t compile_sym_find(compile_t *cpl, const char *sym)
-{
-    if (cpl->sym_tbl) {
-        return symtbl_get(cpl->sym_tbl, sym);
-    }
-    return 0;
 }
 
 int compile_arg_add(compile_t *cpl, intptr_t sym_id)

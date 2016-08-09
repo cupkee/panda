@@ -1,9 +1,9 @@
 
-#include "symtbl.h"
 #include "env.h"
 #include "object.h"
 
-#define FRAME_SIZE (sizeof(frame_t) / sizeof(val_t))
+#define VACATED     (-1)
+#define FRAME_SIZE  (sizeof(frame_t) / sizeof(val_t))
 
 typedef struct frame_t {
     int fp;
@@ -28,13 +28,129 @@ static int env_scope_expand(env_t *env, scope_t *scope, int size)
     return 0;
 }
 
+static inline char *env_symbal_buf_alloc(env_t *env, int size)
+{
+    if (env->symbal_buf_used + size < env->symbal_buf_end) {
+        char *p = env->symbal_buf + env->symbal_buf_used;
+        env->symbal_buf_used += size;
+        return p;
+    }
+    return NULL;
+}
+
+static char *env_symbal_put(env_t *env, const char *str)
+{
+    int size = strlen(str) + 1;
+    char *sym = env_symbal_buf_alloc(env, size);
+
+    if (sym) {
+        memcpy(sym, str, size);
+    }
+    return sym;
+}
+
+static uint32_t hash_pjw(const void *key)
+{
+    const char *ptr = key;
+    uint32_t val = 0;
+
+    while (*ptr) {
+        uint32_t tmp;
+
+        val = (val << 4) + *ptr;
+        tmp = val & 0xf0000000;
+        if (tmp) {
+            val = (val ^ (tmp >> 24)) ^ tmp;
+        }
+
+        ptr++;
+    }
+
+    return val;
+}
+
+static inline uint32_t htbl_key(uint32_t size, uint32_t hash, int i) {
+    return hash + i * (hash * 2 + 1);
+}
+
+static int env_symbal_lookup(env_t *env, const char *symbal, char **res)
+{
+    uint32_t size, pos, i, hash;
+    intptr_t *tbl = env->symbal_tbl;
+
+
+    if (env->symbal_tbl_hold == 0) {
+        return 0;
+    }
+
+    size = env->symbal_tbl_size;
+    hash = hash_pjw(symbal);
+
+    for (i = 0; i < size; i++) {
+        pos = htbl_key(size, hash, i) % size;
+
+        if (tbl[pos] == 0) {
+            break;
+        }
+        if ((intptr_t)symbal == tbl[pos] || !strcmp(symbal, (char*)tbl[pos])) {
+            if (res) *res = (char *)tbl[pos];
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static intptr_t env_symbal_insert(env_t *env, const char *symbal)
+{
+    uint32_t size, pos, i, hash;
+    intptr_t *tbl = env->symbal_tbl;
+    char *p;
+
+    if (env_symbal_lookup(env, symbal, &p) == 1) {
+        return (intptr_t)p;
+    }
+
+    size = env->symbal_tbl_size;
+    if (env->symbal_tbl_hold >= size) {
+        env_set_error(env, ERR_ResourceOutLimit);
+        return 0;
+    }
+
+    hash = hash_pjw(symbal);
+    for (i = 0; i < size; i++) {
+        pos = htbl_key(size, hash, i) % size;
+
+        if (tbl[pos] == 0 || tbl[pos] == VACATED) {
+            p = env_symbal_put(env, symbal);
+            tbl[pos] = (intptr_t)p;
+            env->symbal_tbl_hold++;
+            return (intptr_t)p;
+        }
+    }
+
+    return 0;
+}
+
+intptr_t env_symbal_add(env_t *env, const char *name) {
+    return env_symbal_insert(env, name);
+}
+
+intptr_t env_symbal_get(env_t *env, const char *name) {
+    char *p;
+    if (1 == env_symbal_lookup(env, name, &p)) {
+        return (intptr_t)p;
+    }
+    return 0;
+}
+
 int env_init(env_t *env, void *mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int native_max, int func_max,
              int main_code_max, int func_code_max)
 {
     int mem_offset;
-    int half_size, exe_size;
+    int half_size, exe_size, symbal_tbl_size;
 
     env->error = 0;
 
@@ -75,19 +191,37 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     if (exe_size < 0) {
         return -1;
     }
+    mem_offset += exe_size;
 
-    env->result = NULL;
+    symbal_tbl_size = EXE_STRING_MAX * sizeof(intptr_t);
+    if (mem_offset + symbal_tbl_size > mem_size) {
+        return -1;
+    }
+    env->symbal_tbl = (intptr_t *) (mem_ptr + mem_offset);
+    env->symbal_tbl_size = EXE_STRING_MAX;
+    env->symbal_tbl_hold = 0;
+    memset(mem_ptr + mem_offset, 0, symbal_tbl_size);
+    mem_offset += symbal_tbl_size;
+
+    env->symbal_buf = mem_ptr + mem_offset;
+    env->symbal_buf_end = mem_size - mem_offset;
+    env->symbal_buf_used = 0;
+
+    /*
+    printf("memory total: %d\n", mem_size);
+    printf("stack: %d\n", mem_offset - exe_size - heap_size);
+    printf("heap:  %d\n", heap_size);
+    printf("exe:   %d\n", exe_size);
+    printf("left:  %d\n", mem_size - mem_offset);
+    */
 
     if (0 != env_scope_create(env, NULL, DEF_MAIN_VAR_NUM, 0, NULL)) {
         return -1;
     }
 
-    if (!(env->sym_tbl = symtbl_create())) {
-        return -1;
-    }
+    env->result = NULL;
 
     if (0 != objects_env_init((env_t *)env)) {
-        if (env->sym_tbl) symtbl_destroy(env->sym_tbl);
         return -1;
     } else {
         return 0;
@@ -99,8 +233,6 @@ int env_deinit(env_t *env)
     if (!env) {
         return -1;
     }
-
-    if (env->sym_tbl) symtbl_destroy(env->sym_tbl);
 
     return 0;
 }
@@ -198,17 +330,17 @@ int env_scope_get(env_t *env, int id, val_t **v) {
     return -1;
 }
 
-intptr_t env_symbal_add(env_t *env, const char *name) {
+intptr_t env_symbal_add1(env_t *env, const char *name) {
     if (env) {
-        return symtbl_add(env->sym_tbl, name);
+        return 0;//symtbl_add(env->sym_tbl, name);
     } else {
         return 0;
     }
 }
 
-intptr_t env_symbal_get(env_t *env, const char *name) {
+intptr_t env_symbal_get1(env_t *env, const char *name) {
     if (env) {
-        return symtbl_get(env->sym_tbl, name);
+        return 0; //symtbl_get(env->sym_tbl, name);
     } else {
         return 0;
     }
@@ -330,7 +462,7 @@ int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, va
     intptr_t sym_id;
 
     // Note: sym_id is a string point of symbal, should not be 0!
-    if (env->error || 0 == (sym_id = symtbl_add(env->sym_tbl, name))) {
+    if (env->error || 0 == (sym_id = env_symbal_add(env, name))) {
         env_set_error(env, ERR_SysError);
         return -1;
     }
