@@ -127,7 +127,7 @@ static inline const char *val_2_cstring(val_t *v) {
     uint64_t t = *v & TAG_MASK;
 
     if (t == TAG_STRING_I) {
-        return ((const char *)v) + 2;
+        return ((const char *)v) + 4;
     } else
     if (t == TAG_STRING_O || t == TAG_STRING_S) {
         return (const char *) val_2_intptr(v);
@@ -222,6 +222,15 @@ static inline void val_set_reference(val_t *p, val_t *r) {
 
 static inline void val_set_string(val_t *p, intptr_t s) {
     *((uint64_t *)p) = TAG_STRING_S | s;
+}
+
+static inline void val_set_owned_string(val_t *p, intptr_t s) {
+    *((uint64_t *)p) = TAG_STRING_O | s;
+}
+
+static inline void val_set_inner_string(val_t *p, char c) {
+    *((uint64_t *)p) = TAG_STRING_I;
+    *(((char *)p) + 4) = c;
 }
 
 static inline void val_set_script(val_t *p, intptr_t s) {

@@ -14,7 +14,20 @@ int string_compare(val_t *a, val_t *b)
     }
 }
 
-val_t string_add(env_t *env, val_t *a, val_t *b)
+void string_at(env_t *env, val_t *a, val_t *b, val_t *res)
+{
+    const char *s = val_2_cstring(a);
+    int l = strlen(s);
+    int i = val_2_integer(b);
+
+    if (i >= 0 && i < l) {
+        val_set_inner_string(res, s[i]);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 {
     const char *s1 = val_2_cstring(a);
     const char *s2 = val_2_cstring(b);
@@ -27,10 +40,10 @@ val_t string_add(env_t *env, val_t *a, val_t *b)
         memcpy(buf, s1, size1);
         memcpy(buf + size1, s2, size2);
         buf[size1 + size2] = 0;
-        return val_mk_owned_string((intptr_t) buf);
+        val_set_owned_string(res, (intptr_t) buf);
     } else {
         env_set_error(env, ERR_NotEnoughMemory);
-        return val_mk_undefined();
+        val_set_undefined(res);
     }
 }
 

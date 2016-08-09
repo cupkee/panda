@@ -146,7 +146,6 @@ int object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
     const char *name = val_2_cstring(key);
     object_t *obj;
 
-
     if (!name) {
         return ERR_InvalidSementic;
     }
@@ -182,8 +181,13 @@ int object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
     return env->error;
 }
 
-int object_elem_get(env_t *env, val_t *self, val_t *key, val_t *prop)
+int object_elem_get(env_t *env, val_t *self, val_t *key, val_t *elem)
 {
-    env_set_error(env, ERR_NotImplemented);
+    if (val_is_string(self) && val_is_number(key)) {
+        string_at(env, self, key, elem);
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+
     return env->error;
 }

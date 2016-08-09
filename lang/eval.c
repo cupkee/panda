@@ -241,6 +241,8 @@ int eval_string(eval_env_t *env, void *mem_ptr, int mem_size, const char *input,
         } else {
             *v = &undefined;
         }
+    } else {
+        printf("FAIL: %d\n", done);
     }
 
     return done;

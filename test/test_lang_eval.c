@@ -571,6 +571,7 @@ static void test_eval_string(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "c.indexOf(a)", &res) && val_is_number(res) && 0 == val_2_double(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "c.indexOf(b)", &res) && val_is_number(res) && 6 == val_2_double(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "true.toString().length()", &res) && val_is_number(res) && 4 == val_2_double(res));
+    CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a[0] == 'h'", &res) && val_is_boolean(res) && val_is_true(res));
 
     eval_env_deinit(env);
 }

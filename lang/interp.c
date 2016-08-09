@@ -96,7 +96,6 @@ static inline void interp_mul_stack(env_t *env) {
     } else {
         val_set_nan(res);
     }
-
 }
 
 static inline void interp_div_stack(env_t *env) {
@@ -137,7 +136,7 @@ static inline void interp_add_stack(env_t *env) {
     } else
     if (val_is_string(a)){
         if (val_is_string(b)) {
-            *res = string_add(env, a, b);
+            string_add(env, a, b, res);
         } else {
             val_set_nan(res);
         }
@@ -363,8 +362,8 @@ static inline void interp_prop_call(env_t *env) {
 static inline void interp_elem_get(env_t *env) {
     val_t *key = interp_stack_pop(env);
     val_t *obj = interp_stack_peek(env);
-    val_t *prop = obj;
-    int err = object_elem_get(env, obj, key, prop);
+    val_t *elem = obj;
+    int err = object_elem_get(env, obj, key, elem);
 
     if (err) {
         interp_set_error(env, err);

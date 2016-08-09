@@ -40,6 +40,8 @@ int main(int ac, char **av)
         } else {
             printf("wawa\n");
         }
+        add_history(line);
+        free(line);
     }
 
     return 0;
