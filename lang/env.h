@@ -1,6 +1,5 @@
 
 
-
 #ifndef __LANG_ENV_INC__
 #define __LANG_ENV_INC__
 
@@ -10,8 +9,10 @@
 #include "heap.h"
 #include "executable.h"
 
+#define MAGIC_SCOPE     (MAGIC_BASE + 1)
+
 typedef struct scope_t {
-    uint8_t type;
+    uint8_t magic;
     uint8_t size;
     uint8_t num;
     val_t   *var_buf;
@@ -19,7 +20,8 @@ typedef struct scope_t {
 } scope_t;
 
 typedef struct env_t {
-    int error;
+    int16_t error;
+    int16_t main_var_num;
 
     int fp;
     int ss;
@@ -35,14 +37,14 @@ typedef struct env_t {
     scope_t *scope;
     val_t *result;
 
-    //intptr_t sym_tbl;
+    intptr_t *main_var_map;
 
     uint16_t symbal_tbl_size;
     uint16_t symbal_tbl_hold;
     uint16_t symbal_buf_end;
     uint16_t symbal_buf_used;
     intptr_t *symbal_tbl;
-    char *symbal_buf;
+    char     *symbal_buf;
 
     executable_t exe;
 } env_t;
@@ -54,18 +56,10 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
 
 int env_deinit(env_t *env);
 
-static inline void env_set_error(env_t *env, int error) {
-    if (env) env->error = error;
-}
-
-static inline heap_t *env_heap_get_free(env_t *env) {
-    return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
-}
-
 void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
 
-int env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
+scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
 int env_scope_extend(env_t *env, val_t *v);
 int env_scope_extend_to(env_t *env, int size);
 int env_scope_get(env_t *env, int id, val_t **v);
@@ -82,6 +76,43 @@ int env_native_find(env_t *env, intptr_t sym_id);
 
 int  env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av);
 void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
+int  env_native_frame_setup(env_t *env, int vc);
+void env_native_return(env_t *env, val_t res);
+
+static inline void env_set_error(env_t *env, int error) {
+    if (env) env->error = error;
+}
+
+static inline heap_t *env_heap_get_free(env_t *env) {
+    return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
+}
+
+static inline val_t *env_stack_push(env_t *env) {
+    return env->sb + (--env->sp);
+}
+
+static inline val_t *env_get_var_ref(env_t *env, int index) {
+    if (index < 256) {
+        return env->scope->var_buf + index;
+    } else {
+        int loop = index >> 8;
+
+        index &= 0xff;
+        scope_t *scope = env->scope;
+        while(loop) {
+            loop--;
+            scope = scope->super;
+        }
+        return env->scope->var_buf + index;
+    }
+}
+
+static inline void env_return_noframe(env_t *env, int ac, val_t res)
+{
+    env->sp += ac + 1; // release arguments & fobj in stack
+    *env_stack_push(env) = res;
+}
+
 
 #endif /* __LANG_ENV_INC__ */
 

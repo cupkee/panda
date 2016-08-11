@@ -141,6 +141,12 @@ int objects_env_init(env_t *env)
     return env->error;
 }
 
+int object_prop_set(env_t *env, val_t *self, val_t *key, val_t *prop)
+{
+    env_set_error(env, ERR_NotImplemented);
+    return -1;
+}
+
 int object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
 {
     const char *name = val_2_cstring(key);

@@ -28,7 +28,7 @@ static inline val_t *interp_stack_push(env_t *env) {
     return env->sb + (--env->sp);
 }
 
-static inline void interp_push_ref(env_t *env, val_t *r) {
+static inline void interp_push_ref(env_t *env, intptr_t r) {
     val_set_reference(interp_stack_push(env), r);
 }
 
@@ -88,7 +88,7 @@ static inline void interp_logic_not_stack(env_t *env) {
 
 static inline void interp_mul_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(b) && val_is_number(a)) {
@@ -100,7 +100,7 @@ static inline void interp_mul_stack(env_t *env) {
 
 static inline void interp_div_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
@@ -112,7 +112,7 @@ static inline void interp_div_stack(env_t *env) {
 
 static inline void interp_mod_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
@@ -123,8 +123,8 @@ static inline void interp_mod_stack(env_t *env) {
 }
 
 static inline void interp_add_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *b = interp_stack_peek(env); // Note: keep in stack, deffence GC!
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -136,6 +136,7 @@ static inline void interp_add_stack(env_t *env) {
     } else
     if (val_is_string(a)){
         if (val_is_string(b)) {
+            // Maybe cause gc here!
             string_add(env, a, b, res);
         } else {
             val_set_nan(res);
@@ -143,11 +144,12 @@ static inline void interp_add_stack(env_t *env) {
     } else {
         val_set_nan(res);
     }
+    interp_stack_pop(env);
 }
 
 static inline void interp_sub_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -163,7 +165,7 @@ static inline void interp_sub_stack(env_t *env) {
 
 static inline void interp_and_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a) && val_is_number(b)) {
@@ -175,7 +177,7 @@ static inline void interp_and_stack(env_t *env) {
 
 static inline void interp_or_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a) && val_is_number(b)) {
@@ -187,7 +189,7 @@ static inline void interp_or_stack(env_t *env) {
 
 static inline void interp_xor_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a) && val_is_number(b)) {
@@ -199,7 +201,7 @@ static inline void interp_xor_stack(env_t *env) {
 
 static inline void interp_lshift_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a) && val_is_number(b)) {
@@ -211,7 +213,7 @@ static inline void interp_lshift_stack(env_t *env) {
 
 static inline void interp_rshift_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a) && val_is_number(b)) {
@@ -235,7 +237,7 @@ static inline int interp_test_equal(val_t *a, val_t *b) {
 
 static inline void interp_teq_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     val_set_boolean(res, interp_test_equal(a, b));
@@ -243,7 +245,7 @@ static inline void interp_teq_stack(env_t *env) {
 
 static inline void interp_tne_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     val_set_boolean(res, !interp_test_equal(a, b));
@@ -251,7 +253,7 @@ static inline void interp_tne_stack(env_t *env) {
 
 static inline void interp_tgt_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -271,7 +273,7 @@ static inline void interp_tgt_stack(env_t *env) {
 
 static inline void interp_tge_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -291,7 +293,7 @@ static inline void interp_tge_stack(env_t *env) {
 
 static inline void interp_tlt_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -311,7 +313,7 @@ static inline void interp_tlt_stack(env_t *env) {
 
 static inline void interp_tle_stack(env_t *env) {
     val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
+    val_t *a = b + 1;
     val_t *res = a;
 
     if (val_is_number(a)) {
@@ -330,55 +332,68 @@ static inline void interp_tle_stack(env_t *env) {
 }
 
 static inline void interp_assign(env_t *env) {
-    val_t *b = interp_stack_pop(env);
-    val_t *a = interp_stack_peek(env);
-    val_t *res = a;
+    val_t *rht = interp_stack_peek(env);
+    val_t *lft = rht + 1;
 
-    *res = *val_2_reference(a) = *b;
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+
+        *res = *env_get_var_ref(env, val_2_intptr(lft)) = *rht;
+        interp_stack_pop(env);
+    } else {
+        val_t *obj = lft + 1;
+        val_t *res = obj;
+        *res = object_prop_set(env, obj, lft, rht);
+        interp_stack_release(env, 2);
+    }
 }
 
 static inline void interp_prop_get(env_t *env) {
-    val_t *key = interp_stack_pop(env);
-    val_t *obj = interp_stack_peek(env);
-    val_t *prop = obj;
-    int err = object_prop_get(env, obj, key, prop);
+    val_t *key = interp_stack_peek(env);
+    val_t *obj = key + 1;
+    val_t *res = obj;
+    int err = object_prop_get(env, obj, key, res);
 
     if (err) {
         interp_set_error(env, err);
     }
+    interp_stack_pop(env);
 }
 
 static inline void interp_prop_call(env_t *env) {
-    val_t *key = interp_stack_pop(env);
-    val_t *obj = interp_stack_peek(env); // a as the first argument: self
-    val_t *prop = interp_stack_push(env);
+    val_t *key = interp_stack_peek(env);
+    val_t *obj = key + 1; // a as the first argument: self
+    val_t *prop = key;
     int err = object_prop_get(env, obj, key, prop);
 
     if (err) {
         interp_set_error(env, err);
     }
+    // no pop
 }
 
 static inline void interp_elem_get(env_t *env) {
-    val_t *key = interp_stack_pop(env);
-    val_t *obj = interp_stack_peek(env);
-    val_t *elem = obj;
+    val_t *key = interp_stack_peek(env);
+    val_t *obj = key + 1;
+    val_t *res = obj;
+    int err = object_elem_get(env, obj, key, res);
+
+    if (err) {
+        interp_set_error(env, err);
+    }
+    interp_stack_pop(env);
+}
+
+static inline void interp_elem_call(env_t *env) {
+    val_t *key = interp_stack_peek(env);
+    val_t *obj = key + 1; // a as the first argument: self
+    val_t *elem = key;
     int err = object_elem_get(env, obj, key, elem);
 
     if (err) {
         interp_set_error(env, err);
     }
-}
-
-static inline void interp_elem_call(env_t *env) {
-    val_t *key = interp_stack_pop(env);
-    val_t *obj = interp_stack_peek(env); // a as the first argument: self
-    val_t *prop = interp_stack_push(env);
-    int err = object_elem_get(env, obj, key, prop);
-
-    if (err) {
-        interp_set_error(env, err);
-    }
+    // no pop
 }
 
 int interp_run(env_t *env)
@@ -488,7 +503,7 @@ int interp_run(env_t *env)
 
         case BC_PUSH_VAR_REF:
                             index = (*pc++); SHOW("PUSH_VAR_REF %d\n", index);
-                            interp_push_ref(env, env->scope->var_buf + index); break;
+                            interp_push_ref(env, index); break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             {
@@ -530,32 +545,32 @@ int interp_run(env_t *env)
         case BC_LSHIFT:     SHOW("LSHIFT\n"); interp_lshift_stack(env); break;
         case BC_RSHIFT:     SHOW("RSHIFT\n"); interp_rshift_stack(env); break;
 
-        case BC_TEQ:        SHOW("TEQ\n"); interp_teq_stack(env); break;
-        case BC_TNE:        SHOW("TNE\n"); interp_tne_stack(env); break;
-        case BC_TGT:        SHOW("TGT\n"); interp_tgt_stack(env); break;
-        case BC_TGE:        SHOW("TGE\n"); interp_tge_stack(env); break;
-        case BC_TLT:        SHOW("TLT\n"); interp_tlt_stack(env); break;
-        case BC_TLE:        SHOW("TLE\n"); interp_tle_stack(env); break;
+        case BC_TEQ:        interp_teq_stack(env); SHOW("TEQ\n"); break;
+        case BC_TNE:        interp_tne_stack(env); SHOW("TNE\n"); break;
+        case BC_TGT:        interp_tgt_stack(env); SHOW("TGT\n"); break;
+        case BC_TGE:        interp_tge_stack(env); SHOW("TGE\n"); break;
+        case BC_TLT:        interp_tlt_stack(env); SHOW("TLT\n"); break;
+        case BC_TLE:        interp_tle_stack(env); SHOW("TLE\n"); break;
 
-        case BC_TIN:        SHOW("TIN\n"); interp_set_error(env, ERR_InvalidByteCode); break;
+        case BC_TIN:        interp_set_error(env, ERR_InvalidByteCode); SHOW("TIN\n"); break;
 
-        case BC_ASSIGN:     SHOW("ASSING\n"); interp_assign(env); break;
+        case BC_ASSIGN:     interp_assign(env); SHOW("ASSING\n"); break;
         case BC_FUNC_CALL:  index = *pc++;
                             {
-                                val_t *fn = interp_stack_pop(env);
-                                val_t *av = interp_stack_peek(env);
+                                val_t *fn = interp_stack_peek(env);
+                                val_t *av = fn + 1;
+                                int ac = index;
 
-                                interp_stack_release(env, index);
                                 if (val_is_script(fn)) {
-                                    function_call(val_2_intptr(fn), env, index, av, &pc);
+                                    function_call(fn, env, ac, av, &pc);
                                 } else
                                 if (val_is_native(fn)) {
-                                    function_call_native(val_2_intptr(fn), env, index, av, &pc);
+                                    function_call_native(fn, env, ac, av);
                                 } else {
                                     interp_set_error(env, ERR_InvalidCallor);
                                 }
                             }
-                            SHOW("CALL %d\n", index); break;
+                            SHOW("CALL %p:%d\n", pc, index); break;
 
         case BC_PROP:       interp_prop_get(env); SHOW("PROP\n"); break;
         case BC_PROP_METH:  interp_prop_call(env); SHOW("PROP_METH\n"); break;

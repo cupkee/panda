@@ -1,20 +1,11 @@
 #include "function.h"
 
-typedef struct function_t {
-    uint8_t type;
-    uint8_t arg_num;
-    uint8_t var_num;
-    int     size;
-    uint8_t *code;
-    scope_t *super;
-} function_t;
-
 intptr_t function_create(env_t *env, uint8_t *code, int size, uint8_t vn, uint8_t an)
 {
     function_t *fn = (function_t *) env_heap_alloc(env, sizeof(function_t));
 
     if (fn) {
-        fn->type = 88;
+        fn->magic = MAGIC_FUNCTION;
         fn->code = code;
         fn->size = size;
         fn->arg_num = an;
@@ -29,16 +20,17 @@ int function_destroy(intptr_t fn)
     return 0;
 }
 
-int function_call(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
+int function_call(val_t *fv, env_t *env, int ac, val_t *av, uint8_t **pc)
 {
-    function_t *fn = (function_t *) fv;
+    function_t *fn = (function_t *) val_2_intptr(fv);
+    uint8_t *entry = fn->code;
 
     if (!fn) {
         return -1;
     }
 
     if (fn->size == 0) { // empty script
-        interp_result_set(env, val_mk_undefined());
+        env_return_noframe(env, ac, val_mk_undefined());
         return 0;
     }
 
@@ -46,15 +38,18 @@ int function_call(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
         return -1;
     }
 
-    *pc = fn->code;
+    // env_frame_setup maybe cause GC ... fn should not be used!
+    *pc = entry;
     return 0;
 }
 
-int function_call_native(intptr_t fv, env_t *env, int ac, val_t *av, uint8_t **pc)
+int function_call_native(val_t *fv, env_t *env, int ac, val_t *av)
 {
-    function_native_t fn = (function_native_t) fv;
+    function_native_t fn = (function_native_t) val_2_intptr(fv);
 
-    interp_result_set(env, fn(env, ac, av));
+    env_native_frame_setup(env, ac);
+    env_native_return(env, fn(env, ac, av));
+    //env_return_noframe(env, ac, fn(env, ac, av));
 
     return 0;
 }

@@ -16,7 +16,7 @@ void heap_init(heap_t *heap, void *base, int size);
 void heap_clean(heap_t *heap);
 
 void *heap_alloc(heap_t *heap, int size);
-int heap_is_owner(heap_t *heap, void *p);
+int heap_is_owned(heap_t *heap, void *p);
 
 static inline void heap_reset(heap_t *heap) {
     heap->free = 0;

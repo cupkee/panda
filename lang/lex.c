@@ -18,15 +18,20 @@ static int to_number(const char *s, int len)
 
 static void lex_get_next_ch(lexer_t *lex)
 {
-    if (lex->line_pos >= lex->line_end) {
-        int len = lex->getline(lex->line_buf, lex->line_buf_size);
+    int ch;
 
-        if (len <= 0) {
-            len = 1;
-            lex->line_buf[0] = 0;
+    if (lex->line_pos >= lex->line_end) {
+        int len;
+
+        if (!lex->getline || 0 >= (len = lex->getline(lex->line_buf, lex->line_buf_size))) {
+            ch = 0;
+        } else {
+            lex->line_end = len;
+            lex->line_pos = 1;
+            ch = lex->line_buf[0];
         }
-        lex->line_end = len;
-        lex->line_pos = 0;
+    } else {
+        ch = lex->line_buf[lex->line_pos ++];
     }
 
     if (lex->curr_ch == '\n') {
@@ -37,7 +42,7 @@ static void lex_get_next_ch(lexer_t *lex)
     }
 
     lex->curr_ch = lex->next_ch;
-    lex->next_ch = lex->line_buf[lex->line_pos ++];
+    lex->next_ch = ch;
 }
 
 static int lex_chk_token_type(const char *str, int len)
@@ -246,6 +251,32 @@ intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, i
         lex->line_end = 0;
         lex->line_pos = 0;
         lex->getline = getline;
+        lex->curr_tok = TOK_EOF;
+        lex->token_len = 0;
+
+        lex->line = 0;
+        lex->col = 0;
+        lex_get_next_ch(lex);
+        lex_get_next_ch(lex);
+        lex_get_next_token(lex);
+
+        return (intptr_t) lex;
+    }
+
+    return 0;
+}
+
+intptr_t lex_init2(lexer_t *lex, void *mem_ptr, int mem_size, const char *input)
+{
+    if (lex && mem_ptr && mem_size && input) {
+        lex->line_buf_size = strlen(input);
+        lex->line_buf = (char *)input;
+        lex->token_buf_size = mem_size;
+        lex->token_buf = mem_ptr;
+
+        lex->line_end = lex->line_buf_size;
+        lex->line_pos = 0;
+        lex->getline = NULL;
         lex->curr_tok = TOK_EOF;
         lex->token_len = 0;
 

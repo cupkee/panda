@@ -16,6 +16,7 @@ int objects_env_init(env_t *env);
 
 int object_prop_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 int object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
+int object_prop_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
 
 #endif /* __LANG_OBJECT_INC__ */
 

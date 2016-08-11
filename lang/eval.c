@@ -34,35 +34,17 @@ static int get_line_from_string(void *buf, int size)
     return max;
 }
 
-static int eval_main_var_get(eval_env_t *env, intptr_t sym)
+static void eval_parse_callback(void *u, parse_event_t *e)
 {
-    int i;
+    int *error = (int *)u;
 
-    for (i = 0; i < env->main_var_num; i++) {
-        if (env->main_var_map[i] == sym) {
-            return i;
-        }
+    if (e->type == PARSE_EOF) {
+        //printf("Parse end\n");
+    } else
+    if (e->type == PARSE_FAIL) {
+        *error = -e->error.code;
+        //printf("Parse fail: %d\n", e->error.code);
     }
-
-    return -1;
-}
-
-static int eval_main_var_add(eval_env_t *env, intptr_t sym)
-{
-    int i;
-
-    for (i = 0; i < env->main_var_num; i++) {
-        if (env->main_var_map[i] == sym) {
-            return 0;
-        }
-    }
-
-    if (i < EVAL_MAIN_VAR_MAX) {
-        env->main_var_map[env->main_var_num++] = sym;
-        return 1;
-    }
-
-    return -1;
 }
 
 static int eval_compile_init(compile_t *cpl, eval_env_t *env, void *heap_addr, int heap_size)
@@ -90,23 +72,28 @@ static int eval_compile_update(eval_env_t *env, compile_t *cpl)
         return -1;
     }
 
-    // save main var map info & update scope
+    // save main var map info
     num = compile_vmap_copy(cpl, env->main_var_map, EVAL_MAIN_VAR_MAX);
     if (num < 0) {
         return -1;
     }
     env->main_var_num = num;
 
-    // all memory used on parse & compile process can be free here
+    // All memory used on parse & compile process can be release here
     heap_reset(env_heap_get_free(&env->env));
 
-    return env_scope_extend_to(&env->env, num);
+    // Check the main scope space is enought?
+    if (compile_var_num(cpl) > EVAL_MAIN_VAR_MAX) {
+        env_set_error(&env->env, ERR_ResourceOutLimit);
+        return -1;
+    }
+
+    return 0;
 }
 
 static int eval_compile_deinit(compile_t *cpl)
 {
     if (cpl) {
-        cpl->func_buf[0].var_map = NULL;
         return compile_deinit(cpl);
     }
     return -1;
@@ -140,73 +127,24 @@ int eval_env_deinit(eval_env_t *env)
     }
 }
 
-int eval_env_add_var(eval_env_t *eval_env, const char *name, val_t *value)
-{
-    env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = env_symbal_add(env, name);
-    int      extend = eval_main_var_add(eval_env, sym_id);
-
-    if (extend == 1) {
-        return env_scope_extend(env, value);
-    } else
-    if (extend == 0) {
-        return env_scope_set(env, eval_main_var_get(eval_env, sym_id), value);
-    } else {
-        return -1;
-    }
-}
-
-int eval_env_get_var(eval_env_t *eval_env, const char *name, val_t **value)
-{
-    env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = env_symbal_get(env, name);
-    int      var_id = eval_main_var_get(eval_env, sym_id);
-
-    return env_scope_get(env, var_id, value);
-}
-
-int eval_env_set_var(eval_env_t *eval_env, const char *name, val_t *value)
-{
-    env_t    *env = (env_t *)eval_env;
-    intptr_t sym_id = env_symbal_get(env, name);
-    int      var_id = eval_main_var_get(eval_env, sym_id);
-
-    return env_scope_set(env, var_id, value);
-}
-
-int eval_env_add_native(eval_env_t *env, const char *name, function_native_t native)
-{
-    return env_native_add(&env->env, name, native);
-}
-
-static void eval_parse_callback(void *u, parse_event_t *e)
-{
-    int *done = (int *)u;
-
-    if (e->type == PARSE_EOF) {
-        //printf("Parse end\n");
-    } else
-    if (e->type == PARSE_FAIL) {
-        *done = -e->error.code;
-        //printf("Parse fail: %d\n", e->error.code);
-    }
-}
-
 int eval_string(eval_env_t *env, void *mem_ptr, int mem_size, const char *input, val_t **v)
 {
     lexer_t lex_st;
     intptr_t lex;
     static val_t undefined = TAG_UNDEFINED;
-    int done = 0, last_type = 0;
+    int error = 0, last_type = 0;
 
     if (!env || !input) {
         return -1;
     }
 
     get_line_init(input);
-    lex = lex_init(&lex_st, mem_ptr, mem_size, get_line_from_string);
+    if (0) {
+        lex = lex_init(&lex_st, mem_ptr, mem_size, get_line_from_string);
+    }
+    lex = lex_init2(&lex_st, mem_ptr, mem_size, input);
 
-    while (!done) {
+    while (!error) {
         stmt_t  *stmt;
         heap_t *heap = env_heap_get_free((env_t*)env);
         parser_t psr;
@@ -216,35 +154,33 @@ int eval_string(eval_env_t *env, void *mem_ptr, int mem_size, const char *input,
         * free heap used for parse and compile process
         */
         parse_init(&psr, lex, heap);
-        stmt = parse_stmt(&psr, eval_parse_callback, &done);
+        stmt = parse_stmt(&psr, eval_parse_callback, &error);
         if (!stmt) break;
-        //printf("parse memory: %d\n", heap->free);
 
+        last_type = stmt->type;
         eval_compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
         if (0 == compile_one_stmt(&cpl, stmt) && 0 == eval_compile_update(env, &cpl)) {
             if (0 != interp_run((env_t *)env) && v) {
-                done = -env->env.error;
+                error = -env->env.error;
                 //printf("execute fail: %d\n", env->env.error);
             }
         } else {
-            done = -cpl.error;
+            error = -cpl.error;
             //printf("compile fail: %d\n", cpl.error);
         }
         eval_compile_deinit(&cpl);
-
-        last_type = stmt->type;
     }
 
-    if (!done && v) {
+    if (!error && v) {
         if (last_type == STMT_EXPR) {
             *v = env->env.result;
         } else {
             *v = &undefined;
         }
     } else {
-        printf("FAIL: %d\n", done);
+        printf("FAIL: %d\n", error);
     }
 
-    return done;
+    return error;
 }
 

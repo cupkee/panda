@@ -23,11 +23,9 @@ typedef struct eval_env_t {
 int eval_env_init(eval_env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size);
 int eval_env_deinit(eval_env_t *env);
 
-int eval_env_add_var(eval_env_t *env, const char *name, val_t *value);
-int eval_env_set_var(eval_env_t *env, const char *name, val_t *value);
-int eval_env_get_var(eval_env_t *env, const char *name, val_t **value);
-
-int eval_env_add_native(eval_env_t *env, const char *name, function_native_t function);
+static inline int eval_env_add_native(eval_env_t *env, const char *name, function_native_t function) {
+    return env_native_add(&env->env, name, function);
+}
 
 int eval_string(eval_env_t *env, void *mem_ptr, int mem_size, const char *input, val_t **result);
 

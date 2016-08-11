@@ -43,7 +43,7 @@ test: clean cunit esbl lang
 	${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub
 	${TEST_DIR}/test
 
-leo: test
+leo: lang
 	${MAKE} -C leo -f ${MAKE_DIR}/Makefile.pub
 
 clean:

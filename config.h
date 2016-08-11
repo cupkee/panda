@@ -33,6 +33,7 @@
 
 
 // lang profile
+#define MAGIC_BASE                  (0xE0)
 
 
 #define EXECUTABLE_MINI

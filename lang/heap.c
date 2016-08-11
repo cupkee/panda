@@ -34,7 +34,8 @@ void *heap_alloc(heap_t *heap, int size) {
     return NULL;
 }
 
-int heap_is_owner(heap_t *heap, void *p)
+int heap_is_owned(heap_t *heap, void *p)
 {
-    return (p - heap->base) < heap->size;
+    int dis = p - heap->base;
+    return dis >= 0 && dis < heap->size;
 }

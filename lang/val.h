@@ -71,10 +71,6 @@ static inline intptr_t val_2_intptr(val_t *v) {
     return (intptr_t)(*v & VAR_MASK);
 }
 
-static inline val_t *val_2_reference(val_t *v) {
-    return ((val_t *)(*v & VAR_MASK));
-}
-
 static inline val_t double_2_val(double d) {
     return ((valnum_t*)&d)->v;
 }
@@ -129,8 +125,11 @@ static inline const char *val_2_cstring(val_t *v) {
     if (t == TAG_STRING_I) {
         return ((const char *)v) + 4;
     } else
-    if (t == TAG_STRING_O || t == TAG_STRING_S) {
+    if (t == TAG_STRING_S) {
         return (const char *) val_2_intptr(v);
+    } else
+    if (t == TAG_STRING_O) {
+        return (const char *) (val_2_intptr(v) + 3);
     } else {
         return NULL;
     }
@@ -149,8 +148,6 @@ static inline int val_is_array(val_t *v) {
 }
 
 static inline int val_is_true(val_t *v) {
-    if (val_is_reference(v)) v = val_2_reference(v);
-
     return val_is_boolean(v) ? val_2_intptr(v) :
            val_is_number(v)  ? val_2_double(v) != 0 :
            val_is_string(v)  ? *val_2_cstring(v) :
@@ -192,7 +189,7 @@ static inline val_t val_mk_owned_string(intptr_t s) {
     return TAG_STRING_O | s;
 }
 
-static inline val_t val_mk_reference(const val_t *ref) {
+static inline val_t val_mk_reference(intptr_t ref) {
     return TAG_REFERENCE | (val_t) ref;
 }
 
@@ -216,7 +213,7 @@ static inline void val_set_number(val_t *p, double d) {
     *((double *)p) = d;
 }
 
-static inline void val_set_reference(val_t *p, val_t *r) {
+static inline void val_set_reference(val_t *p, intptr_t r) {
     *((uint64_t *)p) = TAG_REFERENCE | (val_t) r;
 }
 
