@@ -1012,6 +1012,28 @@ static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
     compile_code_append_jmp(cpl, BC_JMP, -total);
 }
 
+static int compile_save_main_vmap(compile_t *cpl)
+{
+    compile_func_t *f = compile_func_cur(cpl);
+    int i;
+
+    if (cpl->error) {
+        return -1;
+    }
+
+    if (f->var_num > INTERACTIVE_VAR_MAX) {
+        cpl->error = ERR_ResourceOutLimit;
+        return -1;
+    }
+
+    for (i = 0; i < f->var_num; i++) {
+        cpl->env->main_var_map[i] = f->var_map[i];
+    }
+
+    cpl->env->main_var_num = i;
+    return 0;
+}
+
 int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size)
 {
     cpl->error = 0;
@@ -1026,7 +1048,19 @@ int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size)
 
     heap_init(&cpl->heap, heap_ptr, heap_size);
 
-    return compile_func_append(cpl, -1); // should return zero;
+    if (0 != compile_func_append(cpl, -1)) {
+        return -1;
+    }
+
+    // Interactive mode, restore main var history
+    if (env->main_var_map && env->main_var_num) {
+        int i;
+        for (i = 0; i < env->main_var_num; i++) {
+            compile_var_add(cpl, env->main_var_map[i]);
+        }
+    }
+
+    return 0;
 }
 
 int compile_deinit(compile_t *cpl)
@@ -1145,7 +1179,8 @@ int compile_one_stmt(compile_t *cpl, stmt_t *stmt)
 
     if (ret == 0) {
         //compile_code_dump(cpl);
-        return compile_code_append(cpl, BC_STOP);
+        compile_code_append(cpl, BC_STOP);
+        return compile_save_main_vmap(cpl);
     }
 
     return ret;
@@ -1163,6 +1198,11 @@ int compile_code_relocate(compile_t *cpl)
 
     exe = &cpl->env->exe;
     fp  = cpl->func_buf;
+
+    // interactive mode, history of main code should be clear to save space
+    if (cpl->env->main_var_map) {
+        exe->main_code_end = 0;
+    }
 
     if (exe->main_code_end + fp->code_num >= exe->main_code_max) {
         cpl->error = ERR_NotEnoughMemory;

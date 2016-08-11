@@ -137,7 +137,7 @@ intptr_t env_symbal_get(env_t *env, const char *name) {
 int env_init(env_t *env, void *mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int native_max, int func_max,
-             int main_code_max, int func_code_max)
+             int main_code_max, int func_code_max, int interactive)
 {
     int mem_offset;
     int half_size, exe_size, symbal_tbl_size;
@@ -160,20 +160,31 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     env->fp = stack_size;
 
     // heap init
-    if (heap_size % 16) {
-        return -1;
-    }
-
     if (!heap_ptr) {
         // alloc memory for heap
+        heap_size = SIZE_ALIGN_16(heap_size);
         heap_ptr = ADDR_ALIGN_16(mem_ptr + mem_offset);
         mem_offset += (intptr_t)heap_ptr - (intptr_t)(mem_ptr + mem_offset);
         mem_offset += heap_size;
+    } else {
+        if (heap_size % 16 || ((intptr_t)heap_ptr & 0xf)) {
+            // heap should be align 16!
+            return -1;
+        }
     }
     half_size = heap_size / 2;
     heap_init(&env->heap_top, heap_ptr, half_size);
     heap_init(&env->heap_bot, heap_ptr + half_size, half_size);
     env->heap = &env->heap_top;
+
+    // main_var_map init
+    if (interactive) {
+        env->main_var_map = (intptr_t *)(mem_ptr + mem_offset);
+        mem_offset += sizeof(intptr_t) * INTERACTIVE_VAR_MAX;
+    } else {
+        env->main_var_map = NULL;
+    }
+    env->main_var_num = 0;
 
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
@@ -205,7 +216,8 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     printf("left:  %d\n", mem_size - mem_offset);
     */
 
-    if (NULL == (env->scope = env_scope_create(env, NULL, DEF_MAIN_VAR_NUM, 0, NULL))) {
+    env->scope = NULL;
+    if (interactive && (NULL == (env->scope = env_scope_create(env, NULL, INTERACTIVE_VAR_MAX, 0, NULL)))) {
         return -1;
     }
 
@@ -492,6 +504,7 @@ static void env_heap_gc_init(env_t *env)
     val_t   *sb;
     int fp, sp, ss;
 
+    heap_reset(heap);
     env->scope = env_heap_copy_scope(heap, env->scope);
 
     fp = env->fp, sp = env->sp, ss = env->ss;
@@ -548,7 +561,9 @@ void env_heap_gc(env_t *env, int level)
     env_heap_gc_init(env);
     env_heap_gc_scan(env);
 
-    heap_clean(env->heap);
+    // Todo: this line is not useable looked, but will cause test fail if deleted! Fix it!
+    heap_reset(env->heap);
+
     env->heap = env_heap_get_free(env);
 }
 

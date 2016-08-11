@@ -44,9 +44,7 @@
 
 #if defined(EXECUTABLE_MINI)
 
-# define EVAL_MAIN_VAR_MAX          (16)
-
-# define DEF_MAIN_VAR_NUM           (16)
+# define INTERACTIVE_VAR_MAX        (16)
 
 # define EXE_FUNCTION_MAX           (16)
 # define EXE_NUMBER_MAX             (32)

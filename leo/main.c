@@ -13,7 +13,7 @@ char eval_buf[128];
 
 int main(int ac, char **av)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
     char *line;
 

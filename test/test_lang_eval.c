@@ -28,7 +28,7 @@ static int test_clean()
 
 static void test_eval_simple(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -43,12 +43,12 @@ static void test_eval_simple(void)
     // float token is not supported by lex
     //CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "1.0001", &res) && val_is_number(*res) && val_2_double(*res) == 1.0001);
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_calculate(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -105,13 +105,13 @@ static void test_eval_calculate(void)
 
     /*
     */
-    eval_env_deinit(env);
+    env_deinit(env);
     return;
 }
 
 static void test_eval_compare(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -130,12 +130,12 @@ static void test_eval_compare(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "0 > 1 ? 0 ? 10: 20 : 1 ? 30: 40", &res) && val_is_number(res) &&  30 == val_2_double(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "0 < 1 ? 0 ? 10: 20 : 1 ? 30: 40", &res) && val_is_number(res) &&  20 == val_2_double(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_logic(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -180,11 +180,11 @@ static void test_eval_logic(void)
     /*
     */
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 static void test_eval_symbal(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -231,12 +231,12 @@ static void test_eval_symbal(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a - b < 10", &res) && val_is_boolean(res) &&  val_is_true(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a * b == 10", &res) && val_is_boolean(res) &&  val_is_true(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_var(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
 
@@ -267,12 +267,12 @@ static void test_eval_var(void)
     /*
     */
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_if(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -325,12 +325,12 @@ static void test_eval_if(void)
     /*
     */
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_while(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -368,12 +368,12 @@ static void test_eval_while(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "c == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a == 4 && b == 2 && c == 3", &res) && val_is_boolean(res) && val_is_true(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_function(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     char *fib = "def fib(max) {     \
@@ -414,7 +414,7 @@ static void test_eval_function(void)
     // CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a = fff(10)", &res) && val_is_number(*res) && 362880 == val_2_double(*res));
 
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 val_t test_native_one(env_t *env, int ac, val_t *av)
@@ -453,14 +453,14 @@ val_t test_native_fib(env_t *env, int ac, val_t *av)
 
 static void test_eval_native(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 <= eval_env_add_native(env, "one", test_native_one));
-    CU_ASSERT(0 <= eval_env_add_native(env, "add", test_native_add));
-    CU_ASSERT(0 <= eval_env_add_native(env, "fib", test_native_fib));
+    CU_ASSERT(0 <= env_native_add(env, "one", test_native_one));
+    CU_ASSERT(0 <= env_native_add(env, "add", test_native_add));
+    CU_ASSERT(0 <= env_native_add(env, "fib", test_native_fib));
 
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "var a = 1, b = 1;", &res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "b = a + one()", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -476,7 +476,7 @@ static void test_eval_native(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a = (0 + add(b, one())) * 1;", &res) && val_is_number(res) && 1000 == val_2_double(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a == 1000", &res) && val_is_boolean(res) && val_is_true(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_native_call_script(void)
@@ -485,7 +485,7 @@ static void test_eval_native_call_script(void)
 
 static void test_eval_string(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -518,12 +518,12 @@ static void test_eval_string(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a[0] == 'h'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "a[0].length()", &res) && val_is_number(res) && 1 == val_2_integer(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 static void test_eval_gc(void)
 {
-    eval_env_t env_st, *env = &env_st;
+    env_t env_st, *env = &env_st;
     val_t *res;
 
     CU_ASSERT_FATAL(0 == eval_env_init(&env_st, env_buf, EVN_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
@@ -538,7 +538,7 @@ static void test_eval_gc(void)
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "f", &res) && val_is_string(res));
     CU_ASSERT(0 == eval_string(env, eval_buf, EVAL_BUF_SIZE, "f == 'hello world.'", &res) && val_is_boolean(res) && val_is_true(res));
 
-    eval_env_deinit(env);
+    env_deinit(env);
 }
 
 CU_pSuite test_lang_eval_entry()

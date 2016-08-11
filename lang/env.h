@@ -37,8 +37,6 @@ typedef struct env_t {
     scope_t *scope;
     val_t *result;
 
-    intptr_t *main_var_map;
-
     uint16_t symbal_tbl_size;
     uint16_t symbal_tbl_hold;
     uint16_t symbal_buf_end;
@@ -46,13 +44,16 @@ typedef struct env_t {
     intptr_t *symbal_tbl;
     char     *symbal_buf;
 
+    intptr_t *main_var_map;
+
     executable_t exe;
 } env_t;
 
 int env_init(env_t *env, void * mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int native_max, int func_max,
-             int main_code_max, int func_code_max);
+             int main_code_max, int func_code_max,
+             int interactive);
 
 int env_deinit(env_t *env);
 
