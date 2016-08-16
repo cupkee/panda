@@ -11,7 +11,7 @@ test_SRCS = test.c \
 			test_lang_val.c  \
 			test_lang_parse.c \
 			test_lang_symtbl.c \
-			test_lang_eval.c
+			test_lang_exec.c
 
 
 test_CPPFLAGS = -I../cunit

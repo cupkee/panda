@@ -1,15 +1,37 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "lang/eval.h"
+#include "lang/exec.h"
 
-#define MEM_SIZE    (1024 * 512)
-#define HEAP_SIZE    (1024 * 496)
+#define HEAP_SIZE     (1024 * 480)
 #define STACK_SIZE    (1024)
+#define MEM_SIZE      (STACK_SIZE * sizeof(val_t) + HEAP_SIZE + EXE_MEM_SPACE + SYMBAL_MEM_SPACE)
 
 void *MEM_PTR[MEM_SIZE];
 
 char eval_buf[128];
+
+static void print_value(val_t *v)
+{
+    if (val_is_number(v)) {
+        printf("%f\n", val_2_double(v));
+    } else
+    if (val_is_boolean(v)) {
+        printf("%s\n", val_2_intptr(v) ? "true" : "false");
+    } else
+    if (val_is_string(v)) {
+        printf("'%s'\n", val_2_cstring(v));
+    } else
+    if (val_is_undefined(v)) {
+        printf("undefined\n");
+    } else
+    if (val_is_nan(v)) {
+        printf("NaN\n");
+    } else {
+        printf("[object]");
+    }
+
+}
 
 int main(int ac, char **av)
 {
@@ -17,30 +39,25 @@ int main(int ac, char **av)
     val_t *res;
     char *line;
 
-    if(0 != eval_env_init(&env_st, MEM_PTR, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
-        printf("eval_env_init fail\n");
+    if(0 != exec_env_init(&env_st, MEM_PTR, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
+        printf("env_init fail\n");
         return -1;
     }
 
     printf("LEO V0.1\n\n");
 
     while ((line = readline("> ")) != NULL) {
-        if (0 != eval_string(env, eval_buf, 128, line, &res)) {
-            printf("eval fail\n");
-            break;
-        }
-        if (val_is_number(res)) {
-            printf("%f\n", val_2_double(res));
+        int err = exec_string(env, eval_buf, 128, line, &res);
+
+        if (err < 0) {
+            printf("Fail: %d\n", err);
+            continue;
         } else
-        if (val_is_boolean(res)) {
-            printf("%s\n", val_2_intptr(res) ? "true" : "false");
-        } else
-        if (val_is_string(res)) {
-            printf("%s\n", val_2_cstring(res));
-        } else {
-            printf("wawa\n");
+        if (err > 0) {
+            print_value(res);
+            add_history(line);
         }
-        add_history(line);
+
         free(line);
     }
 

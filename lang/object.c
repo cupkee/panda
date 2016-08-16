@@ -62,16 +62,16 @@ static val_t object_to_string(env_t *env, int ac, val_t *obj)
     if (val_is_number(obj)) {
         return val_mk_static_string((intptr_t)"number");
     } else
-    if (val_is_undefined(obj))  {
+    if (val_is_undefined(obj)) {
         return val_mk_static_string((intptr_t)"undefined");
     } else
-    if (val_is_nan(obj))  {
+    if (val_is_nan(obj)) {
         return val_mk_static_string((intptr_t)"NaN");
     } else
-    if (val_is_boolean(obj))  {
+    if (val_is_boolean(obj)) {
         return val_mk_static_string((intptr_t)(val_2_intptr(obj) ? "true" : "false"));
     } else
-    if (val_is_array(obj))  {
+    if (val_is_array(obj)) {
         return val_mk_static_string((intptr_t)"Array");
     } else {
         return val_mk_static_string((intptr_t)"Object");

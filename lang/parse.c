@@ -20,6 +20,7 @@ static parse_event_t parse_event;
 
 static void parse_fail(parser_t *psr, int err, parse_callback_t cb, void *ud)
 {
+    psr->error = err;
     if (cb) {
         parse_event.type = PARSE_FAIL;
         parse_event.error.code = err;
@@ -29,10 +30,10 @@ static void parse_fail(parser_t *psr, int err, parse_callback_t cb, void *ud)
     }
 }
 
-static void parse_eof(parser_t *psr, parse_callback_t cb, void *ud)
+static void parse_post(parser_t *psr, int type, parse_callback_t cb, void *ud)
 {
     if (cb) {
-        parse_event.type = PARSE_EOF;
+        parse_event.type = type;
         cb(ud, &parse_event);
     }
 }
@@ -659,8 +660,12 @@ static stmt_t *parse_stmt_block(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *s = NULL;
 
+    parse_post(psr, PARSE_ENTER_BLOCK, cb, ud);
     if (parse_match(psr, '{')) {
         if (!(s = parse_stmt_list(psr, cb, ud))) {
+            if (psr->error == 0) {
+                parse_fail(psr, ERR_InvalidToken, cb, ud);
+            }
             return NULL;
         }
         if (!parse_match(psr, '}')) {
@@ -669,9 +674,13 @@ static stmt_t *parse_stmt_block(parser_t *psr, parse_callback_t cb, void *ud)
         }
     } else {
         if (!(s = parse_stmt(psr, cb, ud))) {
+            if (psr->error == 0) {
+                parse_fail(psr, ERR_InvalidToken, cb, ud);
+            }
             return NULL;
         }
     }
+    parse_post(psr, PARSE_LEAVE_BLOCK, cb, ud);
 
     return s;
 }
@@ -827,7 +836,7 @@ stmt_t *parse_stmt(parser_t *psr, parse_callback_t cb, void *ud)
     int tok = parse_token(psr, NULL);
 
     switch (tok) {
-        case TOK_EOF:       parse_eof(psr, cb, ud); return NULL;
+        case TOK_EOF:       parse_post(psr, PARSE_EOF, cb, ud); return NULL;
         case TOK_IF:        return parse_stmt_if(psr, cb, ud);
         case TOK_VAR:       return parse_stmt_var(psr, cb, ud);
         case TOK_RET:       return parse_stmt_ret(psr, cb, ud);
