@@ -36,8 +36,7 @@ static int test_clean()
 
 static void test_expr_factor(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
@@ -49,10 +48,9 @@ static void test_expr_factor(void)
     test_set_line(" (a + b) \n");
     test_set_line(" {a: 1, b: 2} \n");
 
-
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
@@ -102,8 +100,7 @@ static void test_expr_factor(void)
 
 static void test_expr_primary(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
@@ -113,9 +110,9 @@ static void test_expr_primary(void)
     test_set_line("a(b) a(b)(c)\n");
     test_set_line("f(a)[b].c[d](e)\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_PROP);
@@ -170,17 +167,16 @@ static void test_expr_primary(void)
 
 static void test_expr_unary(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("-a ~b !c !!d\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NEG);
@@ -203,17 +199,16 @@ static void test_expr_unary(void)
 
 static void test_expr_mul(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a*b 1/2 c%2\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_MUL);
@@ -233,17 +228,16 @@ static void test_expr_mul(void)
 
 static void test_expr_add(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a+b 1-2 c+1-2*f\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
@@ -268,17 +262,16 @@ static void test_expr_add(void)
 
 static void test_expr_shift(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("1<<1 1>>2 1<<1+2 1+2>>1\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT);
@@ -307,17 +300,16 @@ static void test_expr_shift(void)
 
 static void test_expr_test(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("1>1 2<2 3>=3 4<=4 5!=5 6==6 a in b\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TGT);
@@ -357,17 +349,16 @@ static void test_expr_test(void)
 
 static void test_expr_logic(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a&&b||c&&d\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_OR);
@@ -386,17 +377,16 @@ static void test_expr_logic(void)
 
 static void test_expr_ternary(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a ? b: c\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TERNARY);
@@ -413,17 +403,16 @@ static void test_expr_ternary(void)
 
 static void test_expr_assign(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a = b = c\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ASSIGN);
@@ -440,17 +429,16 @@ static void test_expr_assign(void)
 
 static void test_expr_comma(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
     test_clr_line();
     test_set_line("a , b , c\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_COMMA);
@@ -467,8 +455,7 @@ static void test_expr_comma(void)
 
 static void test_expr_funcdef(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
@@ -479,9 +466,9 @@ static void test_expr_funcdef(void)
     test_set_line("def f(x) {x = x + 1; return x * 2}\n");
     test_set_line("def () {}\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
@@ -518,8 +505,7 @@ static void test_expr_funcdef(void)
 
 static void test_expr_funcall(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     expr_t   *expr;
 
@@ -529,9 +515,9 @@ static void test_expr_funcall(void)
     test_set_line("a (b)\n");
     test_set_line("a (b, c)\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
@@ -556,8 +542,7 @@ static void test_expr_funcall(void)
 
 static void test_stmt_simple(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     stmt_t   *stmt;
 
@@ -570,9 +555,9 @@ static void test_stmt_simple(void)
     test_set_line("return a + b\n");
     test_set_line("return;\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     // expression
     CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
@@ -610,8 +595,7 @@ static void test_stmt_simple(void)
 
 static void test_stmt_if(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     stmt_t   *stmt;
 
@@ -623,9 +607,9 @@ static void test_stmt_if(void)
     test_set_line("   b = b - a\n");
     test_set_line("}\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     // expression
     CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
@@ -637,8 +621,7 @@ static void test_stmt_if(void)
 
 static void test_stmt_while(void)
 {
-    lexer_t  lex_st;
-    intptr_t lex;
+    lexer_t  lex;
     parser_t psr;
     stmt_t   *stmt;
 
@@ -648,9 +631,9 @@ static void test_stmt_while(void)
     test_set_line("   b = b + 1\n");
     test_set_line("}\n");
 
-    CU_ASSERT(0 != (lex = lex_init(&lex_st, lex_buf, LEX_BUF_SIZE, test_get_line)));
+    CU_ASSERT(0 == lex_init(&lex, lex_buf, LEX_BUF_SIZE, test_get_line));
     heap_init(&heap, heap_buf, PSR_BUF_SIZE);
-    parse_init(&psr, lex, &heap);
+    parse_init(&psr, &lex, &heap);
 
     // expression
     CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));

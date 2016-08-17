@@ -68,9 +68,11 @@ typedef enum bcode_t {
 
     BC_PROP,
     BC_PROP_METH,
+    BC_PROP_SET,
 
     BC_ELEM,
     BC_ELEM_METH,
+    BC_ELEM_SET,
 
     BC_FUNC_CALL,
 

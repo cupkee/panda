@@ -5,7 +5,7 @@
 #include "cunit/CUnit.h"
 #include "cunit/CUnit_Basic.h"
 
-#include "lang/exec.h"
+#include "lang/interp.h"
 
 #define STACK_SIZE      128
 #define HEAP_SIZE       4096

@@ -93,6 +93,7 @@ typedef struct stmt_t {
 
 typedef struct expr_t {
     int type;
+    int line, col;
     union {
         union {
             char   *str;

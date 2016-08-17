@@ -5,10 +5,6 @@
 
 void compile_code_dump(compile_t *cpl);
 
-static inline intptr_t *compile_mem_head(void *mem) {
-    return (intptr_t *) (((unsigned long)mem) - sizeof(intptr_t) * 2);
-}
-
 static inline void swap(intptr_t *buf, uint32_t a, uint32_t b) {
     intptr_t tmp = buf[a];
 
@@ -50,50 +46,19 @@ static void heap_sort(intptr_t *buf, int num)
     }
 }
 
-static void compile_gc(compile_t *cpl)
-{
-    intptr_t *keep_tbl = (intptr_t *)(cpl->heap.base + cpl->heap.free);
-    int keep_num = cpl->func_num * 2 + 1;
-    intptr_t *head;
-    int i, n, free = 0;
+static void compile_gc(compile_t *cpl);
 
-    keep_tbl[0] = (intptr_t) compile_mem_head(cpl->func_buf);
-    for (i = 0, n = 1; i < cpl->func_num; i++) {
-        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].var_map);
-        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].code_buf);
-    }
-
-    // compute new address
-    heap_sort(keep_tbl, keep_num);
-
-    for (i = 0; i < keep_num; i++) {
-        head = (intptr_t *)(keep_tbl[i]);
-
-        head[1] = (intptr_t)cpl->heap.base + free;
-        free += head[0];
-    }
-
-    // update memory reference
-    head = compile_mem_head(cpl->func_buf);
-    cpl->func_buf = (compile_func_t *) (head[1] + sizeof(intptr_t) * 2);
-    for (i = 0; i < cpl->func_num; i++) {
-        head = compile_mem_head(cpl->func_buf[i].var_map);
-        cpl->func_buf[i].var_map = (intptr_t *)(head[1] + sizeof(intptr_t) * 2);
-
-        head = compile_mem_head(cpl->func_buf[i].code_buf);
-        cpl->func_buf[i].code_buf = (uint8_t *)(head[1] + sizeof(intptr_t) * 2);
-    }
-
-    // move
-    for (i = 0; i < keep_num; i++) {
-        intptr_t *head = (intptr_t *)(keep_tbl[i]);
-        memmove((void*)(head[1]), head, head[0]);
-    }
-
-    //printf("compile gc: %d -> %d\n", cpl->heap.free, free);
-    cpl->heap.free = free;
-}
-
+/* alloced memory:
+ * head   +--------------+
+ *        | memory size  |
+ *        +--------------+
+ *        | new address  |  <- used by gc
+ * user   +--------------+
+ *        |              |
+ *        |  user memory |
+ *        |              |
+ *        |     ....     |
+ */
 static void *compile_malloc(compile_t *cpl, int size)
 {
     int keep_size = sizeof(intptr_t) * (cpl->func_num * 2 + 1);
@@ -112,9 +77,62 @@ static void *compile_malloc(compile_t *cpl, int size)
 
     p = cpl->heap.base + cpl->heap.free;
     cpl->heap.free += size;
-    *((intptr_t*)p) = size;
+    *((intptr_t*)p) = size; // set head.size
 
     return p + sizeof(intptr_t) * 2;
+}
+
+static inline intptr_t *compile_mem_head(void *mem) {
+    return (intptr_t *) (((unsigned long)mem) - sizeof(intptr_t) * 2);
+}
+
+static void compile_gc(compile_t *cpl)
+{
+    intptr_t *keep_tbl = (intptr_t *)(cpl->heap.base + cpl->heap.free);
+    int keep_num = cpl->func_num * 2 + 1;
+    intptr_t *head;
+    int i, n, free = 0;
+
+    keep_tbl[0] = (intptr_t) compile_mem_head(cpl->func_buf);
+    for (i = 0, n = 1; i < cpl->func_num; i++) {
+        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].var_map);
+        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].code_buf);
+    }
+
+    /*
+     * compute & recorde new address
+     */
+    heap_sort(keep_tbl, keep_num);
+    for (i = 0; i < keep_num; i++) {
+        head = (intptr_t *)(keep_tbl[i]);
+
+        head[1] = (intptr_t)cpl->heap.base + free;
+        free += head[0];
+    }
+
+    /*
+     * update pointer reference
+     */
+    head = compile_mem_head(cpl->func_buf);
+    cpl->func_buf = (compile_func_t *) (head[1] + sizeof(intptr_t) * 2);
+    for (i = 0; i < cpl->func_num; i++) {
+        head = compile_mem_head(cpl->func_buf[i].var_map);
+        cpl->func_buf[i].var_map = (intptr_t *)(head[1] + sizeof(intptr_t) * 2);
+
+        head = compile_mem_head(cpl->func_buf[i].code_buf);
+        cpl->func_buf[i].code_buf = (uint8_t *)(head[1] + sizeof(intptr_t) * 2);
+    }
+
+    /*
+     * data relocation
+     */
+    for (i = 0; i < keep_num; i++) {
+        intptr_t *head = (intptr_t *)(keep_tbl[i]);
+        memmove((void*)(head[1]), head, head[0]);
+    }
+
+    //printf("compile gc: %d -> %d\n", cpl->heap.free, free);
+    cpl->heap.free = free;
 }
 
 static inline compile_func_t *compile_func_cur(compile_t *cpl) {
@@ -146,7 +164,6 @@ static int compile_extend_size(compile_t *cpl, int size, int used, int extend, i
         cpl->error = ERR_ResourceOutLimit;
         return -1;
     }
-
 
     res = size * 2;
     return used + extend < res ? res : used + extend + 1;
@@ -213,14 +230,13 @@ static int compile_func_append(compile_t *cpl, int owner)
 
 static int compile_varmap_check_extend(compile_t *cpl, int space)
 {
-    compile_func_t *func;
     int size;
+    compile_func_t *func = compile_func_cur(cpl);
 
-    func = cpl->func_buf + cpl->func_cur;
     if (0 < (size = compile_extend_size(cpl, func->var_max, func->var_num, space,
                                  LIMIT_VMAP_SIZE, DEF_VMAP_SIZE))) {
         intptr_t *ptr;
-        if (NULL == (ptr = (intptr_t *) compile_malloc(cpl,size * sizeof(intptr_t)))) {
+        if (NULL == (ptr = (intptr_t *)compile_malloc(cpl, size * sizeof(intptr_t)))) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }
@@ -266,7 +282,6 @@ static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id)
     compile_func_t *func;
     int i, num;
 
-    // Note: sym_id is a string point of symbal, should not be 0!
     if (cpl->error || sym_id == 0) {
         return -1;
     }
@@ -324,7 +339,7 @@ static inline int compile_code_append(compile_t *cpl, uint8_t code)
         return 1;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
+    func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = code;
 
     return 0;
@@ -339,7 +354,7 @@ static inline int compile_code_appends(compile_t *cpl, int n, uint8_t *code)
         return 1;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
+    func = compile_func_cur(cpl);
     for (i = 0; i < n; i++) {
         func->code_buf[func->code_num++] = code[i];
     }
@@ -388,7 +403,7 @@ static void compile_code_append_num(compile_t *cpl, double n)
     }
 
     if (0 > (id = compile_number_find_add(cpl, n))) {
-        cpl->error = ERR_SysError;
+        cpl->error = ERR_ResourceOutLimit;
         return;
     }
 
@@ -402,7 +417,7 @@ static void compile_code_append_str(compile_t *cpl, const char *s)
     int id;
 
     if (0 > (id = compile_string_find_add(cpl, compile_sym_add(cpl, s)))) {
-        cpl->error = ERR_SysError;
+        cpl->error = ERR_ResourceOutLimit;
         return;
     }
 
@@ -496,18 +511,6 @@ static void compile_code_append_jmp(compile_t *cpl, uint8_t jmp, int step)
     }
 }
 
-/*
-static void compile_code_insert_jmp(compile_t *cpl, int pos, uint8_t jmp, int step)
-{
-    if (0 == compile_code_insert(cpl, pos, 3)) {
-        uint8_t *code_buf = compile_code_buf(cpl);
-        code_buf[pos] = jmp;
-        code_buf[pos+1] = step >> 8;
-        code_buf[pos+2] = step;
-    }
-}
-*/
-
 static void compile_code_insert_xjmp(compile_t *cpl, int from, int step)
 {
     int jmps = (step < -128 || step > 127) ? 3 : 2;
@@ -529,11 +532,11 @@ static inline void compile_code_insert_jmp_to(compile_t *cpl, int from, int to)
     return compile_code_insert_xjmp(cpl, from, to - from);
 }
 
-static void compile_tt_jmp_pop(compile_t *cpl, int from, int to)
+static void compile_true_jmp_false_pop(compile_t *cpl, int from, int to)
 {
     int step = to - from + 1; // one POP instruction
 
-    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 4 : 3)) {
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, (step > 127 || step < -128) ? 4 : 3)) {
         uint8_t *code_buf = compile_code_buf(cpl);
         if (step > 127) {
             code_buf[from++] = BC_JMP_T;
@@ -546,11 +549,11 @@ static void compile_tt_jmp_pop(compile_t *cpl, int from, int to)
     }
 }
 
-static void compile_nt_jmp_pop(compile_t *cpl, int from, int to)
+static void compile_false_jmp_true_pop(compile_t *cpl, int from, int to)
 {
     int step = to - from + 1; // one POP instruction
 
-    if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 4 : 3)) {
+    if (!cpl->error && 0 == compile_code_insert(cpl, from, (step > 127 || step < -128) ? 4 : 3)) {
         uint8_t *code_buf = compile_code_buf(cpl);
         if (step > 127) {
             code_buf[from++] = BC_JMP_F;
@@ -563,7 +566,7 @@ static void compile_nt_jmp_pop(compile_t *cpl, int from, int to)
     }
 }
 
-static void compile_pop_nt_jmp(compile_t *cpl, int from, int to)
+static void compile_false_pop_jmp(compile_t *cpl, int from, int to)
 {
     int step = to - from;
 
@@ -599,7 +602,7 @@ static void compile_expr_logic_and(compile_t *cpl, expr_t *e)
     int pos;
     compile_expr(cpl, ast_expr_lft(e)); pos = compile_code_pos(cpl);
     compile_expr(cpl, ast_expr_rht(e));
-    compile_nt_jmp_pop(cpl, pos, compile_code_pos(cpl));
+    compile_false_jmp_true_pop(cpl, pos, compile_code_pos(cpl));
 }
 
 static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
@@ -607,7 +610,7 @@ static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
     int pos;
     compile_expr(cpl, ast_expr_lft(e)); pos = compile_code_pos(cpl);
     compile_expr(cpl, ast_expr_rht(e));
-    compile_tt_jmp_pop(cpl, pos, compile_code_pos(cpl));
+    compile_true_jmp_false_pop(cpl, pos, compile_code_pos(cpl));
 }
 
 void compile_expr_id(compile_t *cpl, expr_t *e)
@@ -760,11 +763,11 @@ static void compile_callor(compile_t *cpl, expr_t *e, int argc)
 {
     if (e->type == EXPR_PROP) {
         compile_expr_binary(cpl, e, BC_PROP_METH);
-        argc += 1; // insert sefl at first of arguments
+        argc += 1; // insert self at first of arguments
     } else
     if (e->type == EXPR_ELEM) {
         compile_expr_binary(cpl, e, BC_ELEM_METH);
-        argc += 1; // insert sefl at first of arguments
+        argc += 1; // insert self at first of arguments
     } else {
         compile_expr(cpl, e);
     }
@@ -846,7 +849,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
                             compile_expr(cpl, ast_expr_rht(ast_expr_rht(e))); end = compile_code_pos(cpl);
 
                             compile_code_insert_jmp_to(cpl, pos2, end);
-                            compile_pop_nt_jmp(cpl, pos1, pos2 + (compile_code_pos(cpl) - end));
+                            compile_false_pop_jmp(cpl, pos1, pos2 + (compile_code_pos(cpl) - end));
                         }
                         break;
     default:            cpl->error = ERR_NotImplemented; break;
@@ -1012,13 +1015,21 @@ static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
     compile_code_append_jmp(cpl, BC_JMP, -total);
 }
 
+static inline int env_is_interactive(env_t *env) {
+    return env->main_var_map != NULL;
+}
+
 static int compile_save_main_vmap(compile_t *cpl)
 {
     compile_func_t *f = compile_func_cur(cpl);
     int i;
 
     if (cpl->error) {
-        return -1;
+        return -cpl->error;
+    }
+
+    if (!env_is_interactive(cpl->env)) {
+        return 0;
     }
 
     if (f->var_num > INTERACTIVE_VAR_MAX) {
@@ -1168,6 +1179,18 @@ int compile_one_stmt(compile_t *cpl, stmt_t *stmt)
     }
 
     return ret;
+}
+
+int compile_multi_stmt(compile_t *cpl, stmt_t *stmt)
+{
+    while (stmt) {
+        if (compile_stmt(cpl, stmt)) {
+            break;
+        }
+        stmt = stmt->next;
+    }
+    compile_code_append(cpl, BC_STOP);
+    return compile_save_main_vmap(cpl);
 }
 
 int compile_code_relocate(compile_t *cpl)

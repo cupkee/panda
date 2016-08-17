@@ -235,7 +235,7 @@ TOKEN_LOCATE:
     }
 }
 
-intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size))
+int lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size))
 {
     if (lex && memory && size && getline) {
         lex->line_buf_size = size;
@@ -255,13 +255,13 @@ intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, i
         lex_get_next_ch(lex);
         lex_get_next_token(lex);
 
-        return (intptr_t) lex;
+        return 0;
     }
 
-    return 0;
+    return -1;
 }
 
-intptr_t lex_init2(lexer_t *lex, const char *input)
+int lex_init2(lexer_t *lex, const char *input)
 {
     if (lex && input) {
         lex->line_buf_size = strlen(input);
@@ -281,10 +281,10 @@ intptr_t lex_init2(lexer_t *lex, const char *input)
         lex_get_next_ch(lex);
         lex_get_next_token(lex);
 
-        return (intptr_t) lex;
+        return 0;
     }
 
-    return 0;
+    return -1;
 }
 
 int lex_deinit(lexer_t *lex)
@@ -292,10 +292,8 @@ int lex_deinit(lexer_t *lex)
     return 0;
 }
 
-int lex_token(intptr_t l, token_t *tok)
+int lex_token(lexer_t *lex, token_t *tok)
 {
-    lexer_t *lex = (lexer_t *)l;
-
     if (tok) {
         tok->type = lex->curr_tok;
         tok->line = lex->line;
@@ -313,10 +311,8 @@ int lex_token(intptr_t l, token_t *tok)
     return lex->curr_tok;
 }
 
-int lex_match(intptr_t l, int tok)
+int lex_match(lexer_t *lex, int tok)
 {
-    lexer_t *lex = (lexer_t *)l;
-
     if (lex->curr_tok == tok) {
         lex_get_next_token(lex);
         return 1;
@@ -325,10 +321,8 @@ int lex_match(intptr_t l, int tok)
     }
 }
 
-int lex_position(intptr_t l, int *line, int *col)
+int lex_position(lexer_t *lex, int *line, int *col)
 {
-    lexer_t *lex = (lexer_t *)l;
-
     if (lex) {
         if (line) *line = lex->line;
         if (col) *col = lex->col;

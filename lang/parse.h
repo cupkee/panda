@@ -18,7 +18,7 @@ enum {
 
 typedef struct parser_t {
     int      error;
-    intptr_t lex;
+    lexer_t *lex;
     heap_t  *heap;
 } parser_t;
 
@@ -32,7 +32,7 @@ typedef struct parse_event_t {
 
 typedef void (*parse_callback_t)(void *u, parse_event_t *e);
 
-static inline int parse_init(parser_t *psr, intptr_t lex, heap_t *heap) {
+static inline int parse_init(parser_t *psr, lexer_t *lex, heap_t *heap) {
     if (psr && lex && heap) {
         psr->error = 0;
         psr->lex = lex;

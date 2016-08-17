@@ -397,13 +397,12 @@ static inline void interp_elem_call(env_t *env) {
     // no pop
 }
 
-static int interp_run(env_t *env, uint8_t *entry)
+static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
     double   *numbers = env->exe.number_map;
     intptr_t *strings = env->exe.string_map;
     intptr_t *natives = env->exe.native_entry;
     uint8_t  **functions = env->exe.func_map;
-
 
     uint8_t *base = entry;
     uint8_t *pc = base;
@@ -529,7 +528,7 @@ static int interp_run(env_t *env, uint8_t *entry)
                             break;
 
         case BC_POP:        SHOW("POP\n"); interp_stack_pop(env); break;
-        case BC_POP_RESULT: SHOW("POP_RESULT\n"); env->result = interp_stack_pop(env); break;
+        case BC_POP_RESULT: SHOW("POP_RESULT\n"); *result = interp_stack_pop(env); break;
 
         case BC_NEG:        SHOW("NEG\n"); interp_neg_stack(env); break;
         case BC_NOT:        SHOW("NOT\n"); interp_not_stack(env); break;
@@ -596,14 +595,14 @@ static void parse_callback(void *u, parse_event_t *e)
         //printf("Parse end\n");
     } else
     if (e->type == PARSE_ENTER_BLOCK) {
-        printf("enter block\n");
+//        printf("enter block\n");
     } else
     if (e->type == PARSE_LEAVE_BLOCK) {
-        printf("leave block\n");
+//        printf("leave block\n");
     } else
     if (e->type == PARSE_FAIL) {
         *error = -e->error.code;
-        //printf("Parse fail: %d\n", e->error.code);
+//        printf("Parse fail: %d, line:%d, col:%d\n", e->error.code, e->error.line, e->error.col);
     }
 }
 
@@ -630,50 +629,46 @@ int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *h
 
 int interp_execute_string(env_t *env, const char *input, val_t **v)
 {
-    lexer_t lex_st;
-    intptr_t lex;
+    lexer_t lex;
+    stmt_t  *stmt;
+    heap_t *heap = env_heap_get_free((env_t*)env);
+    parser_t psr;
+    compile_t cpl;
+    int error = 0, stmt_type;
     static val_t undefined = TAG_UNDEFINED;
-    int error = 0, exec_cnt = 0, last_type = 0;
 
     if (!env || !input) {
         return -1;
     }
 
-    lex = lex_init2(&lex_st, input);
+    // The free heap can be used for parse and compile process
+    lex_init2(&lex, input);
+    parse_init(&psr, &lex, heap);
+    stmt = parse_stmt_list(&psr, parse_callback, &error);
+    if (!stmt) {
+        return error ? -error : 0;
+    }
 
-    while (!error) {
-        stmt_t  *stmt;
-        heap_t *heap = env_heap_get_free((env_t*)env);
-        parser_t psr;
-        compile_t cpl;
-
-        // The free heap can be used for parse and compile process
-        parse_init(&psr, lex, heap);
-        stmt = parse_stmt(&psr, parse_callback, &error);
-        if (!stmt) break;
-        last_type = stmt->type;
-
-        compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
-        if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
-            if (0 != interp_run(env, env_get_main_entry(env)) && v) {
-                error = -env->error;
-                //printf("execute fail: %d\n", env->env.error);
+    compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
+    if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
+        while (stmt) {
+            if (!stmt->next) {
+                stmt_type = stmt->type;
             }
-        } else {
-            error = -cpl.error;
-            //printf("compile fail: %d\n", cpl.error);
+            stmt = stmt->next;
         }
-        compile_deinit(&cpl);
-        exec_cnt ++;
+
+        if (0 != interp_run(env, env_get_main_entry(env), v)) {
+            error = -env->error;
+        }
+    } else {
+        error = -cpl.error;
     }
 
-    if (exec_cnt && !error && v) {
-        if (last_type == STMT_EXPR) {
-            *v = env->result;
-        } else {
-            *v = &undefined;
-        }
+    if (!error && stmt_type != STMT_EXPR) {
+        *v = &undefined;
     }
 
-    return error ? error : exec_cnt;
+    return error ? error : 1;
 }
+

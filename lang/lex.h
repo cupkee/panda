@@ -79,13 +79,13 @@ typedef struct token_t {
     char *text;
 } token_t;
 
-intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size));
-intptr_t lex_init2(lexer_t *lex, const char *input);
+int lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size));
+int lex_init2(lexer_t *lex, const char *input);
 int lex_deinit(lexer_t *lex);
 
-int lex_token(intptr_t lex, token_t *tok);
-int lex_match(intptr_t lex, int tok);
-int lex_position(intptr_t lex, int *line, int *col);
+int lex_token(lexer_t *lex, token_t *tok);
+int lex_match(lexer_t *lex, int tok);
+int lex_position(lexer_t *lex, int *line, int *col);
 
 #endif /* __LANG_LEX_INC__ */
 

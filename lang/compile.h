@@ -47,6 +47,7 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id);
 
 int compile_stmt(compile_t *cpl, stmt_t *stmt);
 int compile_one_stmt(compile_t *cpl, stmt_t *stmt);
+int compile_multi_stmt(compile_t *cpl, stmt_t *stmt);
 
 int compile_code_relocate(compile_t *cpl);
 
