@@ -10,7 +10,7 @@
 
 enum EXPR_TYPE {
     // factor expression
-    EXPR_ID,
+    EXPR_ID = 1,
     EXPR_NUM,
     EXPR_NAN,
     EXPR_UND,
@@ -65,6 +65,8 @@ enum EXPR_TYPE {
     EXPR_FUNCDEF,
     EXPR_FUNCHEAD,
     EXPR_PAIR,
+
+    EXPR_DUMMY
 };
 
 enum STMT_TYPE {
@@ -136,8 +138,6 @@ static inline void ast_expr_set_lft(expr_t *e, expr_t *lft) {
 static inline void ast_expr_set_rht(expr_t *e, expr_t *rht) {
     e->body.child.rht = rht;
 }
-
-void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *ud);
 
 #endif /* __LANG_AST_INC__ */
 

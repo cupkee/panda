@@ -43,9 +43,6 @@ typedef enum bcode_t {
     BC_POP_RESULT,
     BC_POP_VARIABLE,
 
-    BC_ASSIGN,
-    BC_FUNC_CALL,
-
     BC_NEG,
     BC_NOT,
     BC_LOGIC_NOT,
@@ -74,6 +71,10 @@ typedef enum bcode_t {
 
     BC_ELEM,
     BC_ELEM_METH,
+
+    BC_FUNC_CALL,
+
+    BC_ASSIGN,
 } bcode_t;
 
 #endif /* __LANG_BCODE_INC__ */
