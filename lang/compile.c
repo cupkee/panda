@@ -1132,22 +1132,6 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id)
     return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
 }
 
-int compile_vmap_copy(compile_t *cpl, intptr_t *buf, int size)
-{
-    compile_func_t *f = compile_func_cur(cpl);
-    int i;
-
-    if (f->var_num > size) {
-        return -1;
-    }
-
-    for (i = 0; i < f->var_num; i++) {
-        buf[i] = f->var_map[i];
-    }
-
-    return i;
-}
-
 int compile_stmt(compile_t *cpl, stmt_t *stmt)
 {
     if (!cpl || !stmt) {

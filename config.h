@@ -27,12 +27,10 @@
 #define SIZE_ALIGN                  SIZE_ALIGN_8
 #define ADDR_ALING                  ADDR_ALIGN_8
 
-// esbl profile
-#define DEF_VECT_SIZE               (16)
-#define DEF_HTBL_SIZE               (16)
-
 // lang profile
 #define MAGIC_BASE                  (0xE0)
+
+#define TOKEN_MAX_SIZE              (32)
 
 //#define EXECUTABLE_MINI
 #define EXECUTABLE_SMALL

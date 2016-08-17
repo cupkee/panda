@@ -8,14 +8,6 @@
 
 #include "val.h"
 
-typedef struct module_t {
-    double      *numbers;
-    intptr_t    *natives;
-    intptr_t    *strings;
-
-    int entry;
-} module_t;
-
 typedef struct executable_t {
     uint32_t  memory_size;
 
@@ -60,23 +52,6 @@ int executable_number_find_add(executable_t *exe, double n);
 int executable_string_find_add(executable_t *exe, intptr_t s);
 int executable_native_add(executable_t *exe, intptr_t sym_id, intptr_t entry);
 int executable_native_find(executable_t *exe, intptr_t sym_id);
-
-/*
-int executable_string_add(executable_t *exe, const char *s);
-int executable_string_get(executable_t *exe, int id, const char **p);
-int executable_string_lookup(executable_t *exe, const char *p);
-
-int executable_number_add(executable_t *exe, double n);
-int executable_number_get(executable_t *exe, int id, double *p);
-int executable_number_lookup(executable_t *exe, double n);
-
-int executable_native_add(executable_t *exe, intptr_t fn);
-int executable_native_get(executable_t *exe, int id, intptr_t *p);
-int executable_native_lookup(executable_t *exe, intptr_t fn);
-
-int executable_function_add(executable_t *exe, int id, uint8_t *code, uint16_t size, uint8_t vc, uint8_t ac);
-int executable_function_get(executable_t *exe, int id, uint8_t **code, uint16_t *size, uint8_t *vc, uint8_t *ac);
-*/
 
 #endif /* __LANG_EXECUTABLE_INC__ */
 

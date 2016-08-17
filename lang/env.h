@@ -80,19 +80,23 @@ void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
 int  env_native_frame_setup(env_t *env, int vc);
 void env_native_return(env_t *env, val_t res);
 
-static inline void env_set_error(env_t *env, int error) {
+static inline
+void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
 }
 
-static inline heap_t *env_heap_get_free(env_t *env) {
+static inline
+heap_t *env_heap_get_free(env_t *env) {
     return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
 }
 
-static inline val_t *env_stack_push(env_t *env) {
+static inline
+val_t *env_stack_push(env_t *env) {
     return env->sb + (--env->sp);
 }
 
-static inline val_t *env_get_var_ref(env_t *env, int index) {
+static inline
+val_t *env_get_var_ref(env_t *env, int index) {
     if (index < 256) {
         return env->scope->var_buf + index;
     } else {
@@ -108,12 +112,16 @@ static inline val_t *env_get_var_ref(env_t *env, int index) {
     }
 }
 
-static inline void env_return_noframe(env_t *env, int ac, val_t res)
-{
+static inline
+void env_return_noframe(env_t *env, int ac, val_t res) {
     env->sp += ac + 1; // release arguments & fobj in stack
     *env_stack_push(env) = res;
 }
 
+static inline
+uint8_t *env_get_main_entry(env_t *env) {
+    return env->exe.func_map[0];
+}
 
 #endif /* __LANG_ENV_INC__ */
 

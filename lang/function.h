@@ -37,11 +37,13 @@ int function_destroy(intptr_t func);
 int function_call(val_t *fv, env_t *env, int ac, val_t *av, uint8_t **pc);
 int function_call_native(val_t * fv, env_t *env, int ac, val_t *av);
 
-static inline int function_mem_space(function_t *f) {
+static inline
+int function_mem_space(function_t *f) {
     return SIZE_ALIGN(sizeof(function_t));
 }
 
-static inline void function_info_read(uint8_t *data, function_info_t *info) {
+static inline
+void function_info_read(uint8_t *data, function_info_t *info) {
     info->var_num = data[0];
     info->arg_num = data[1];
     info->size = data[2] * 256 + data[3];

@@ -1,15 +1,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "lang/exec.h"
+#include "lang/interp.h"
 
 #define HEAP_SIZE     (1024 * 480)
 #define STACK_SIZE    (1024)
 #define MEM_SIZE      (STACK_SIZE * sizeof(val_t) + HEAP_SIZE + EXE_MEM_SPACE + SYMBAL_MEM_SPACE)
 
-void *MEM_PTR[MEM_SIZE];
-
-char eval_buf[128];
+void *memory[MEM_SIZE];
 
 static void print_value(val_t *v)
 {
@@ -39,7 +37,7 @@ int main(int ac, char **av)
     val_t *res;
     char *line;
 
-    if(0 != exec_env_init(&env_st, MEM_PTR, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
+    if(0 != interp_env_init_interactive(&env_st, memory, MEM_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE)) {
         printf("env_init fail\n");
         return -1;
     }
@@ -47,7 +45,7 @@ int main(int ac, char **av)
     printf("LEO V0.1\n\n");
 
     while ((line = readline("> ")) != NULL) {
-        int err = exec_string(env, eval_buf, 128, line, &res);
+        int err = interp_execute_string(env, line, &res);
 
         if (err < 0) {
             printf("Fail: %d\n", err);

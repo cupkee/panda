@@ -238,15 +238,10 @@ TOKEN_LOCATE:
 intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size))
 {
     if (lex && memory && size && getline) {
-        int line_size, tok_size;
-
-        tok_size = SIZE_ALIGN_16(size / 8);
-        line_size = size - tok_size;
-
-        lex->line_buf_size = line_size;
-        lex->token_buf_size = tok_size;
+        lex->line_buf_size = size;
         lex->line_buf = memory;
-        lex->token_buf = memory + line_size;
+        lex->token_buf_size = TOKEN_MAX_SIZE;
+        lex->token_buf = lex->token_buf_mem;
 
         lex->line_end = 0;
         lex->line_pos = 0;
@@ -266,13 +261,13 @@ intptr_t lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, i
     return 0;
 }
 
-intptr_t lex_init2(lexer_t *lex, void *mem_ptr, int mem_size, const char *input)
+intptr_t lex_init2(lexer_t *lex, const char *input)
 {
-    if (lex && mem_ptr && mem_size && input) {
+    if (lex && input) {
         lex->line_buf_size = strlen(input);
         lex->line_buf = (char *)input;
-        lex->token_buf_size = mem_size;
-        lex->token_buf = mem_ptr;
+        lex->token_buf_size = TOKEN_MAX_SIZE;
+        lex->token_buf = lex->token_buf_mem;
 
         lex->line_end = lex->line_buf_size;
         lex->line_pos = 0;
