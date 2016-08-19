@@ -601,7 +601,7 @@ static void parse_callback(void *u, parse_event_t *e)
 //        printf("leave block\n");
     } else
     if (e->type == PARSE_FAIL) {
-        *error = -e->error.code;
+        *error = e->error.code;
 //        printf("Parse fail: %d, line:%d, col:%d\n", e->error.code, e->error.line, e->error.col);
     }
 }
@@ -644,7 +644,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     // The free heap can be used for parse and compile process
     lex_init2(&lex, input);
     parse_init(&psr, &lex, heap);
-    stmt = parse_stmt_list(&psr, parse_callback, &error);
+    stmt = parse_stmt_multi(&psr, parse_callback, &error);
     if (!stmt) {
         return error ? -error : 0;
     }

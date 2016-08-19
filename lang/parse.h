@@ -45,6 +45,7 @@ static inline int parse_init(parser_t *psr, lexer_t *lex, heap_t *heap) {
 
 expr_t *parse_expr(parser_t *psr, parse_callback_t cb, void *u);
 stmt_t *parse_stmt(parser_t *psr, parse_callback_t cb, void *u);
+stmt_t *parse_stmt_multi(parser_t *psr, parse_callback_t cb, void *ud);
 stmt_t *parse_stmt_list(parser_t *psr, parse_callback_t cb, void *u);
 
 static inline int parse_position(parser_t *psr, int *line, int *col) {

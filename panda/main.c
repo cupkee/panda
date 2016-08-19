@@ -49,7 +49,6 @@ int main(int ac, char **av)
 
         if (err < 0) {
             printf("Fail: %d\n", err);
-            continue;
         } else
         if (err > 0) {
             print_value(res);

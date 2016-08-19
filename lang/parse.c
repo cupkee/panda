@@ -847,12 +847,12 @@ stmt_t *parse_stmt(parser_t *psr, parse_callback_t cb, void *ud)
     }
 }
 
-stmt_t *parse_stmt_list(parser_t *psr, parse_callback_t cb, void *ud)
+stmt_t *parse_stmt_multi(parser_t *psr, parse_callback_t cb, void *ud)
 {
     stmt_t *head = NULL, *last, *curr;
     int tok = parse_token(psr, NULL);
 
-    while (tok != 0 && tok != '}') {
+    while (!psr->error && tok != 0 && tok != '}') {
         while (parse_match(psr, ';'));
 
         if (!(curr = parse_stmt(psr, cb, ud))) {
@@ -868,7 +868,14 @@ stmt_t *parse_stmt_list(parser_t *psr, parse_callback_t cb, void *ud)
         tok = parse_token(psr, NULL);
     }
 
-    if (!head) {
+    return head;
+}
+
+stmt_t *parse_stmt_list(parser_t *psr, parse_callback_t cb, void *ud)
+{
+    stmt_t *head = parse_stmt_multi(psr, cb, ud);
+
+    if (!psr->error && !head) {
         if (!(head = parse_stmt_alloc_0(psr, STMT_PASS))) {
             parse_fail(psr, ERR_NotEnoughMemory, cb, ud);
         }
