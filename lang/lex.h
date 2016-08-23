@@ -67,9 +67,8 @@ typedef struct lexer_t {
 
     heap_t heap;
     char *line_buf;
-    int  (*getline)(void *, int);
-    char *token_buf;
-    char token_buf_mem[TOKEN_MAX_SIZE];
+    char *(*line_more)(void);
+    char token_buf[TOKEN_MAX_SIZE];
 } lexer_t;
 
 typedef struct token_t {
@@ -79,8 +78,7 @@ typedef struct token_t {
     char *text;
 } token_t;
 
-int lex_init(lexer_t *lex, void *memory, int size, int getline(void *buf, int size));
-int lex_init2(lexer_t *lex, const char *input);
+int lex_init(lexer_t *lex, const char *input, char *(*more)(void));
 int lex_deinit(lexer_t *lex);
 
 int lex_token(lexer_t *lex, token_t *tok);

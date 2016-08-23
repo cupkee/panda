@@ -1,7 +1,6 @@
 
 #include "err.h"
 #include "val.h"
-#include "lex.h"
 #include "bcode.h"
 #include "parse.h"
 #include "compile.h"
@@ -403,9 +402,10 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
     intptr_t *strings = env->exe.string_map;
     intptr_t *natives = env->exe.native_entry;
     uint8_t  **functions = env->exe.func_map;
+    uint8_t *base, *pc;
 
-    uint8_t *base = entry;
-    uint8_t *pc = base;
+    env_entry_setup(env, entry, 0, NULL, &pc);
+    base = pc;
 
     int index;
     while(!env->error) {
@@ -589,20 +589,15 @@ DO_END:
 
 static void parse_callback(void *u, parse_event_t *e)
 {
-    int *error = (int *)u;
-
     if (e->type == PARSE_EOF) {
-        //printf("Parse end\n");
+    } else
+    if (e->type == PARSE_SIMPLE) {
     } else
     if (e->type == PARSE_ENTER_BLOCK) {
-//        printf("enter block\n");
     } else
     if (e->type == PARSE_LEAVE_BLOCK) {
-//        printf("leave block\n");
     } else
     if (e->type == PARSE_FAIL) {
-        *error = e->error.code;
-//        printf("Parse fail: %d, line:%d, col:%d\n", e->error.code, e->error.line, e->error.col);
     }
 }
 
@@ -627,9 +622,16 @@ int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *h
                 EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 1);
 }
 
+int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
+{
+    return env_init(env, mem_ptr, mem_size,
+                heap_ptr, heap_size, stack_ptr, stack_size,
+                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, EXE_FUNCTION_MAX,
+                EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 0);
+}
+
 int interp_execute_string(env_t *env, const char *input, val_t **v)
 {
-    lexer_t lex;
     stmt_t  *stmt;
     heap_t *heap = env_heap_get_free((env_t*)env);
     parser_t psr;
@@ -642,14 +644,13 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     }
 
     // The free heap can be used for parse and compile process
-    lex_init2(&lex, input);
-    parse_init(&psr, &lex, heap);
-    stmt = parse_stmt_multi(&psr, parse_callback, &error);
+    parse_init(&psr, input, NULL, heap->base, heap->size);
+    stmt = parse_stmt_multi(&psr, parse_callback, NULL);
     if (!stmt) {
-        return error ? -error : 0;
+        return psr.error ? -psr.error : 0;
     }
 
-    compile_init(&cpl, env, heap_free_addr(heap), heap_free_size(heap));
+    compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
         while (stmt) {
             if (!stmt->next) {
@@ -657,6 +658,44 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
             }
             stmt = stmt->next;
         }
+
+        if (0 != interp_run(env, env_get_main_entry(env), v)) {
+            error = -env->error;
+        }
+    } else {
+        error = -cpl.error;
+    }
+
+    if (!error && stmt_type != STMT_EXPR) {
+        *v = &undefined;
+    }
+
+    return error ? error : 1;
+}
+
+int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v)
+{
+    stmt_t  *stmt;
+    heap_t *heap = env_heap_get_free((env_t*)env);
+    parser_t psr;
+    compile_t cpl;
+    int error = 0, stmt_type;
+    static val_t undefined = TAG_UNDEFINED;
+
+    if (!env || !input) {
+        return -1;
+    }
+
+    // The free heap can be used for parse and compile process
+    parse_init(&psr, input, input_more, heap->base, heap->size);
+    stmt = parse_stmt(&psr, parse_callback, NULL);
+    if (!stmt) {
+        return psr.error ? -psr.error : 0;
+    }
+
+    compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
+    if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
+        stmt_type = stmt->type;
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
             error = -env->error;

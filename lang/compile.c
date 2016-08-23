@@ -3,6 +3,8 @@
 #include "bcode.h"
 #include "compile.h"
 
+#define FUNC_HEAD_SIZE 4
+
 void compile_code_dump(compile_t *cpl);
 
 static inline void swap(intptr_t *buf, uint32_t a, uint32_t b) {
@@ -1015,10 +1017,6 @@ static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
     compile_code_append_jmp(cpl, BC_JMP, -total);
 }
 
-static inline int env_is_interactive(env_t *env) {
-    return env->main_var_map != NULL;
-}
-
 static int compile_save_main_vmap(compile_t *cpl)
 {
     compile_func_t *f = compile_func_cur(cpl);
@@ -1206,23 +1204,35 @@ int compile_code_relocate(compile_t *cpl)
     exe = &cpl->env->exe;
     fp  = cpl->func_buf;
 
+    /*
+     * Main entry function relocation
+     */
+
     // interactive mode, history of main code should be clear to save space
-    if (cpl->env->main_var_map) {
+    if (env_is_interactive(cpl->env)) {
         exe->main_code_end = 0;
     }
 
-    if (exe->main_code_end + fp->code_num >= exe->main_code_max) {
+    if (exe->main_code_end + fp->code_num + FUNC_HEAD_SIZE >= exe->main_code_max) {
         cpl->error = ERR_NotEnoughMemory;
         return -1;
     }
+
     exe->func_map[0] = exe->main_code + exe->main_code_end;
+    exe->main_code[exe->main_code_end++] = fp->var_num;
+    exe->main_code[exe->main_code_end++] = fp->arg_num;
+    exe->main_code[exe->main_code_end++] = fp->code_num >> 8;
+    exe->main_code[exe->main_code_end++] = fp->code_num & 0xFF;
     memcpy(exe->main_code + exe->main_code_end, fp->code_buf, fp->code_num);
     exe->main_code_end += fp->code_num;
 
+    /*
+     * Function relocation
+     */
     for (i = 1; i < cpl->func_num; i++) {
         fp = cpl->func_buf + i;
 
-        if (exe->func_code_end + fp->code_num >= exe->func_code_max) {
+        if (exe->func_code_end + fp->code_num + FUNC_HEAD_SIZE >= exe->func_code_max) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }

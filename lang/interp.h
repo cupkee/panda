@@ -10,19 +10,12 @@
 #include "env.h"
 #include "executable.h"
 
-typedef struct interp_t {
-    int error;
-
-    int fp;
-    int ss;
-    int sp;
-    val_t *sb;
-    val_t *result;
-} interp_t;
-
-int interp_env_init(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size);
 int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size);
+int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size);
+int interp_env_init_executable(env_t *env, void *exe_ptr, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size);
+
 int interp_execute_string(env_t *env, const char *input, val_t **result);
+int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v);
 
 static inline void interp_stack_alloc(env_t *env, int n) {
     env->sp -= n;

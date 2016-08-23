@@ -38,6 +38,7 @@ lang:
 test: clean cunit lang panda
 	${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub
 	${TEST_DIR}/test
+	./panda/panda ${TEST_DIR}/scripts/*
 
 panda: lang
 	${MAKE} -C panda -f ${MAKE_DIR}/Makefile.pub

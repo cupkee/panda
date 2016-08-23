@@ -80,6 +80,8 @@ void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
 int  env_native_frame_setup(env_t *env, int vc);
 void env_native_return(env_t *env, val_t res);
 
+int env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av, uint8_t **pc);
+
 static inline
 void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
@@ -121,6 +123,11 @@ void env_return_noframe(env_t *env, int ac, val_t res) {
 static inline
 uint8_t *env_get_main_entry(env_t *env) {
     return env->exe.func_map[0];
+}
+
+static inline
+int env_is_interactive(env_t *env) {
+    return env->main_var_map != NULL;
 }
 
 #endif /* __LANG_ENV_INC__ */

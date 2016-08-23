@@ -18,26 +18,23 @@ static int test_clean()
     return 0;
 }
 
-static uint8_t memory[8192];
-
 static void test_common(void)
 {
     lexer_t lex;
     token_t tok;
+    char *input =  "\
+    \t    \r \n\
+    # comments 1\r\n\
+    +-*/%\n\
+    // comments 2\r\n\
+    += -= *= /= %= &= |= ^= ~= >>= <<= >> << && ||\n\
+    ' bbbb\" ' \" abcd' &$|!\" \n\
+    12345 09876\n\
+    /* comments 3\r\n comments 3 continue*/\
+    abc a12 _11 a_b _a_ $1 $_a \n\
+    undefined null NaN true false var def return while break continue in if elif else\n";
 
-    test_clr_line();
-    test_set_line(" \t    \r \n");
-    test_set_line("# comments 1\r\n");
-    test_set_line("+-*/%\n");
-    test_set_line("// comments 2\r\n");
-    test_set_line("+= -= *= /= %= &= |= ^= ~= >>= <<= >> << && ||\n");
-    test_set_line("' bbbb\" ' \" abcd' &$|!\" \n");
-    test_set_line("12345 09876\n");
-    test_set_line("/* comments 3\r\n comments 3 continue*/");
-    test_set_line("abc a12 _11 a_b _a_ $1 $_a \n");
-    test_set_line("undefined null NaN true false var def return while break continue in if elif else\n");
-
-    CU_ASSERT(0 == lex_init(&lex, memory, 8192, test_get_line));
+    CU_ASSERT(0 == lex_init(&lex, input, NULL));
 
     CU_ASSERT(lex_match(&lex, '+'));
     CU_ASSERT(lex_match(&lex, '-'));

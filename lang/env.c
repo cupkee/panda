@@ -208,13 +208,13 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     env->symbal_buf_end = mem_size - mem_offset;
     env->symbal_buf_used = 0;
 
-    /*
+#if 0
     printf("memory total: %d\n", mem_size);
     printf("stack: %d\n", mem_offset - exe_size - heap_size);
     printf("heap:  %d\n", heap_size);
     printf("exe:   %d\n", exe_size);
     printf("left:  %d\n", mem_size - mem_offset);
-    */
+#endif
 
     env->scope = NULL;
     if (interactive && (NULL == (env->scope = env_scope_create(env, NULL, INTERACTIVE_VAR_MAX, 0, NULL)))) {
@@ -223,7 +223,7 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
 
     env->result = NULL;
 
-    if (0 != objects_env_init((env_t *)env)) {
+    if (0 != objects_env_init(env)) {
         return -1;
     } else {
         return 0;
@@ -282,6 +282,29 @@ int env_scope_get(env_t *env, int id, val_t **v) {
         return 0;
     }
     return -1;
+}
+
+int env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av, uint8_t **pc)
+{
+    function_info_t info;
+    scope_t *scope;
+
+    function_info_read(entry, &info);
+
+    if (env_is_interactive(env)) {
+        // main scope already created, if in interactive mode
+        scope = env->scope;
+    } else {
+        scope = env_scope_create(env, NULL, info.var_num, ac, av);
+    }
+
+    if (!scope) {
+        return -1;
+    }
+    env->scope = scope;
+    *pc = info.code;
+
+    return 0;
 }
 
 int env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av)
