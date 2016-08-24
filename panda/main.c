@@ -7,13 +7,12 @@
 
 char *MEM_PTR[MEM_SIZE];
 
-
 int main(int ac, char **av)
 {
     int i;
 
     if (ac == 1) {
-        return interactive_panda(MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
+        return panda_interactive(MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
     }
 
     for (i = 1; i < ac; i++) {
@@ -22,9 +21,9 @@ int main(int ac, char **av)
         int   error;
 
         if (suffix && !strcmp(suffix, ".pdc")) {
-            error = binary_panda(input, MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
+            error = panda_binary(input, MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
         } else {
-            error = string_panda(input, MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
+            error = panda_string(input, MEM_PTR, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
         }
 
         if (error) {

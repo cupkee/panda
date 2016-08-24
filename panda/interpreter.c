@@ -36,12 +36,12 @@ static void file_release(void *addr, int size)
     munmap(addr, size);
 }
 
-int binary_panda(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
+int panda_binary(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
     return 0;
 }
 
-int string_panda(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
+int panda_string(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
     env_t env;
     val_t *res;

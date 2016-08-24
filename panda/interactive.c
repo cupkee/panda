@@ -100,7 +100,7 @@ static void print_value(val_t *v)
     }
 }
 
-int interactive_panda(void *mem_ptr, int mem_size, int heap_size, int stack_size)
+int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
     env_t env;
 
