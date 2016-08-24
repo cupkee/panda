@@ -111,9 +111,9 @@ static inline uint32_t efh_get_uint32(panda_efh_t *efh, void *addr) {
     }
 }
 
-int executable_save(executable_t *exe, void *memory, int size, int flag)
+int executable_save(executable_t *exe, void *mem_ptr, int mem_size, int flag)
 {
-    panda_efh_t *efh = (panda_efh_t *)memory;
+    panda_efh_t *efh = (panda_efh_t *)mem_ptr;
     int num_ent, str_ent, sec_ent, str_base, sec_base;
     int offset  = SIZE_ALIGN_8(sizeof(panda_efh_t));
     int i;
@@ -141,10 +141,10 @@ int executable_save(executable_t *exe, void *memory, int size, int flag)
     efh_set_uint32(efh, efh->num_ent, num_ent);
     efh_set_uint32(efh, efh->num_cnt, exe->number_num);
     offset = SIZE_ALIGN_8(offset + sizeof(double) * exe->number_num);
-    if (offset >= size) return -1;
+    if (offset >= mem_size) return -1;
 
     for (i = 0; i < exe->number_num; i++) {
-        efh_set_double(efh, memory + num_ent, exe->number_map[i]);
+        efh_set_double(efh, mem_ptr + num_ent, exe->number_map[i]);
         num_ent += sizeof(double);
     }
 
@@ -152,13 +152,13 @@ int executable_save(executable_t *exe, void *memory, int size, int flag)
     efh_set_uint32(efh, efh->str_ent, str_ent);
     efh_set_uint32(efh, efh->str_cnt, exe->string_num);
     offset = SIZE_ALIGN_8(offset + 4 * exe->string_num);
-    if (offset >= size) return -1;
+    if (offset >= mem_size) return -1;
 
     sec_ent = offset;
     efh_set_uint32(efh, efh->sec_ent, sec_ent);
     efh_set_uint32(efh, efh->sec_cnt, exe->func_num);
     offset = SIZE_ALIGN_8(offset + 4 * exe->string_num);
-    if (offset >= size) return -1;
+    if (offset >= mem_size) return -1;
 
     str_base = offset;
     efh_set_uint32(efh, efh->str_base, str_base);
@@ -166,12 +166,12 @@ int executable_save(executable_t *exe, void *memory, int size, int flag)
         char *str = (char *)exe->string_map[i];
         int len = strlen(str) + 1;
 
-        if (offset + len >= size) return -1;
+        if (offset + len >= mem_size) return -1;
 
-        efh_set_uint32(efh, memory + str_ent, offset);
+        efh_set_uint32(efh, mem_ptr + str_ent, offset);
         str_ent += 4;
 
-        memcpy(memory + offset, str, len);
+        memcpy(mem_ptr + offset, str, len);
         offset += len;
     }
 
@@ -185,19 +185,19 @@ int executable_save(executable_t *exe, void *memory, int size, int flag)
 
         function_info_read(entry, &fi);
         len = fi.size + FUNC_HEAD_SIZE;
-        if (offset + len >= size) return -1;
+        if (offset + len >= mem_size) return -1;
 
-        efh_set_uint32(efh, memory + sec_ent, offset);
+        efh_set_uint32(efh, mem_ptr + sec_ent, offset);
         sec_ent += 4;
 
-        memcpy(memory + offset, entry, len);
+        memcpy(mem_ptr + offset, entry, len);
         offset = SIZE_ALIGN_8(offset + len);
     }
 
     return offset;
 }
 
-int executable_load(executable_t *exe, void *memory, int size, void *input, int input_size)
+int executable_load(executable_t *exe, void *mem_ptr, int mem_size, void *input, int input_size)
 {
     panda_efh_t *efh = (panda_efh_t *) input;
     int mem_offset = 0, i;
@@ -246,9 +246,9 @@ int executable_load(executable_t *exe, void *memory, int size, void *input, int 
     // static string buffer init
     exe->string_max = str_cnt;
     exe->string_num = str_cnt;
-    exe->string_map = (intptr_t *) (memory + mem_offset);
+    exe->string_map = (intptr_t *) (mem_ptr + mem_offset);
     mem_offset += sizeof(intptr_t) * str_cnt;
-    if (mem_offset > size) return -1;
+    if (mem_offset > mem_size) return -1;
     for (i = 0; i < str_ent; i++) {
         uint32_t str_offset = efh_get_uint32(efh, input + str_ent + i * 4);
         exe->string_map[i] = (intptr_t) (input + str_base + str_offset);
@@ -257,9 +257,9 @@ int executable_load(executable_t *exe, void *memory, int size, void *input, int 
     // script function buffer init
     exe->func_max = func_cnt;
     exe->func_num = func_cnt;
-    exe->func_map = (uint8_t **) (memory + mem_offset);
+    exe->func_map = (uint8_t **) (mem_ptr + mem_offset);
     mem_offset += sizeof(uint8_t **) * func_cnt;
-    if (mem_offset > size) return -1;
+    if (mem_offset > mem_size) return -1;
     for (i = 0; i < func_ent; i++) {
         uint32_t func_offset = efh_get_uint32(efh, input + func_ent + i * 4);
         exe->func_map[i] = (uint8_t *) (input + func_base + func_offset);
