@@ -59,8 +59,8 @@ typedef struct panda_efh_t {
 int executable_init(executable_t *exe, void *memory, int size,
                     int number_max, int string_max, int func_max,
                     int main_code_max, int func_code_max);
-int executable_save(executable_t *exe, void *memory, int size, int flag);
-int executable_load(executable_t *exe, void *memory, int size, void *input, int input_size);
+int executable_save(executable_t *exe, void *mem_ptr, int mem_size, int flag);
+int executable_load(executable_t *exe, void *mem_prt, int mem_size, void *input, int input_size);
 
 int executable_number_find_add(executable_t *exe, double n);
 int executable_string_find_add(executable_t *exe, intptr_t s);
