@@ -400,7 +400,7 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
     double   *numbers = env->exe.number_map;
     intptr_t *strings = env->exe.string_map;
-    intptr_t *natives = env->exe.native_entry;
+    intptr_t *natives = env->native_entry;
     uint8_t  **functions = env->exe.func_map;
     uint8_t *base, *pc;
 

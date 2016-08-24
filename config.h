@@ -12,6 +12,15 @@
 # define NULL ((void *)0)
 #endif
 
+#define LE                          1
+#define BE                          2
+
+#define ADDRSIZE_32                 1
+#define ADDRSIZE_64                 2
+
+#define SYS_BYTE_ORDER              (BYTE_ORDER == LITTLE_ENDIAN ? LE : BE)
+#define SYS_ADDR_SIZE               ADDRSIZE_64
+
 #define ADDR_ALIGN_4(a)             ((void *)((((intptr_t)(a)) +  3) & ~0x03L))
 #define ADDR_ALIGN_8(a)             ((void *)((((intptr_t)(a)) +  7) & ~0x07L))
 #define ADDR_ALIGN_16(a)            ((void *)((((intptr_t)(a)) + 15) & ~0x0FL))

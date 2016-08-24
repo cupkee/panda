@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static char *input_load(const char *name)
+static char *file_load(const char *name, int *size)
 {
 
     char *addr;
@@ -23,11 +23,17 @@ static char *input_load(const char *name)
         close(fd);
         return NULL;
     }
-    length = sb.st_size;
+    length = sb.st_size + 1;
 
-    addr = mmap(NULL, length + 1, PROT_READ, MAP_PRIVATE, fd, 0);
+    addr = mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, 0);
+    *size = length;
 
     return addr;
+}
+
+static void file_release(void *addr, int size)
+{
+    munmap(addr, size);
 }
 
 int binary_panda(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
@@ -39,24 +45,24 @@ int string_panda(const char *input, void *mem_ptr, int mem_size, int heap_size, 
 {
     env_t env;
     val_t *res;
-    int err;
+    int err, size;
 
-    input = input_load(input);
+    input = file_load(input, &size);
     if (!input) {
         return -1;
     }
-    //printf("input:\n%s\n", input);
 
     if(0 != interp_env_init_interpreter(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size)) {
         return -1;
     }
-
     panda_native_init(&env);
 
     err = interp_execute_string(&env, input, &res);
+
+    file_release((void *)input, size);
+
     if (err < 0) {
         printf("error: %d\n", err);
-        //print_error(-err);
         return -1;
     } else {
         return 0;

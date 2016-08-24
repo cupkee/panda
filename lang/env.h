@@ -37,12 +37,18 @@ typedef struct env_t {
     scope_t *scope;
     val_t *result;
 
+    uint16_t  native_max;
+    uint16_t  native_num;
+
     uint16_t symbal_tbl_size;
     uint16_t symbal_tbl_hold;
     uint16_t symbal_buf_end;
     uint16_t symbal_buf_used;
     intptr_t *symbal_tbl;
     char     *symbal_buf;
+
+    intptr_t *native_map;
+    intptr_t *native_entry;
 
     intptr_t *main_var_map;
 

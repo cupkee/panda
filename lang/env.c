@@ -186,9 +186,17 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     }
     env->main_var_num = 0;
 
+    // native init
+    env->native_max = native_max;
+    env->native_num = 0;
+    env->native_map = (intptr_t *) (mem_ptr + mem_offset);
+    mem_offset += sizeof(intptr_t) * native_max;
+    env->native_entry = (intptr_t *) (mem_ptr + mem_offset);
+    mem_offset += sizeof(intptr_t) * native_max;
+
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
-                    number_max, string_max, native_max, func_max, main_code_max, func_code_max);
+                    number_max, string_max, func_max, main_code_max, func_code_max);
     if (exe_size < 0) {
         return -1;
     }
@@ -600,9 +608,23 @@ int env_string_find_add(env_t *env, intptr_t s)
     return executable_string_find_add(&env->exe, s);
 }
 
+int env_native_find(env_t *env, intptr_t sym_id)
+{
+    int i;
+
+    for (i = 0; i < env->native_num; i++) {
+        if (sym_id == env->native_map[i]) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, val_t *av))
 {
     intptr_t sym_id;
+    int i;
 
     // Note: sym_id is a string point of symbal, should not be 0!
     if (env->error || 0 == (sym_id = env_symbal_add(env, name))) {
@@ -610,10 +632,21 @@ int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, va
         return -1;
     }
 
-    return executable_native_add(&env->exe, sym_id, (intptr_t) fn);
+
+    for (i = 0; i < env->native_num; i++) {
+        if (sym_id == env->native_map[i]) {
+            // already exist!
+            return 0;
+        }
+    }
+
+    if (i >= env->native_max) {
+        return -1;
+    }
+
+    env->native_map[i] = sym_id;
+    env->native_entry[i] = (intptr_t)fn;
+
+    return env->native_num++;
 }
 
-int env_native_find(env_t *env, intptr_t sym_id)
-{
-    return executable_native_find(&env->exe, sym_id);
-}

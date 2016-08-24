@@ -3,7 +3,6 @@
 #include "bcode.h"
 #include "compile.h"
 
-#define FUNC_HEAD_SIZE 4
 
 void compile_code_dump(compile_t *cpl);
 
