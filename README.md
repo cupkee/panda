@@ -14,9 +14,9 @@ $ make panda
 run panda:
 ````
 $ ./panda/panda               // interactive mode
-$ ./panda/panda input.pd      // interpreter mode, string file
+$ ./panda/panda input.pd      // interpreter mode, execute string file
 $ ./panda/panda -c input.pd   // compile input.pd, output name is: input.pdc
-$ ./panda/panda input.pdc     // interpreter mode, compiled file
+$ ./panda/panda input.pdc     // interpreter mode, execute compiled file
 ````
 
 panda language:
@@ -33,3 +33,4 @@ print(a, b, c);               // call native function "print"
 print(add(1, b));
 print(add(c, ", bye"));
 ````
+
