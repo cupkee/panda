@@ -47,10 +47,12 @@ static val_t panda_print(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
+static native_t native_entry[] = {
+    {"print", panda_print}
+};
+
 int panda_native_init(env_t *env)
 {
-    env_native_add(env, "print", panda_print);
-
-    return 0;
+    return env_native_add(env, 1, native_entry);
 }
 

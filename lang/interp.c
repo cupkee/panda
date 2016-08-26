@@ -416,7 +416,8 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
     double   *numbers = env->exe.number_map;
     intptr_t *strings = env->exe.string_map;
-    intptr_t *natives = env->native_entry;
+    native_t *natives = env->native_ent;
+    //intptr_t *natives = env->native_entry;
     uint8_t  **functions = env->exe.func_map;
     uint8_t *base, *pc;
 
@@ -532,7 +533,7 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                             break;
 
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_push_native(env, (intptr_t) natives[index]);
+                            interp_push_native(env, (intptr_t) natives[index].fn);
                             break;
 
         case BC_POP:        interp_stack_pop(env); break;

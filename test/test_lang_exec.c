@@ -452,12 +452,15 @@ static void test_exec_native(void)
 {
     env_t env_st, *env = &env_st;
     val_t *res;
+    native_t native_entry[] = {
+        {"one", test_native_one},
+        {"add", test_native_add},
+        {"fib", test_native_fib}
+    };
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env_st, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 <= env_native_add(env, "one", test_native_one));
-    CU_ASSERT(0 <= env_native_add(env, "add", test_native_add));
-    CU_ASSERT(0 <= env_native_add(env, "fib", test_native_fib));
+    CU_ASSERT(0 == env_native_add(env, 3, native_entry));
 
     CU_ASSERT(0 < interp_execute_string(env, "var a = 1, b = 1;", &res));
     CU_ASSERT(0 < interp_execute_string(env, "b = a + one()", &res) && val_is_number(res) && 2 == val_2_double(res));

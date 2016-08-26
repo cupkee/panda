@@ -91,7 +91,7 @@ static int env_symbal_lookup(env_t *env, const char *symbal, char **res)
     return 0;
 }
 
-static intptr_t env_symbal_insert(env_t *env, const char *symbal)
+intptr_t env_symbal_insert(env_t *env, const char *symbal, int alloc)
 {
     uint32_t size, pos, i, hash;
     intptr_t *tbl = env->symbal_tbl;
@@ -112,7 +112,7 @@ static intptr_t env_symbal_insert(env_t *env, const char *symbal)
         pos = htbl_key(size, hash, i) % size;
 
         if (tbl[pos] == 0 || tbl[pos] == VACATED) {
-            p = env_symbal_put(env, symbal);
+            p = alloc ? env_symbal_put(env, symbal) : (char *)symbal;
             tbl[pos] = (intptr_t)p;
             env->symbal_tbl_hold++;
             return (intptr_t)p;
@@ -120,10 +120,6 @@ static intptr_t env_symbal_insert(env_t *env, const char *symbal)
     }
 
     return 0;
-}
-
-intptr_t env_symbal_add(env_t *env, const char *name) {
-    return env_symbal_insert(env, name);
 }
 
 intptr_t env_symbal_get(env_t *env, const char *name) {
@@ -187,12 +183,8 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     env->main_var_num = 0;
 
     // native init
-    env->native_max = native_max;
     env->native_num = 0;
-    env->native_map = (intptr_t *) (mem_ptr + mem_offset);
-    mem_offset += sizeof(intptr_t) * native_max;
-    env->native_entry = (intptr_t *) (mem_ptr + mem_offset);
-    mem_offset += sizeof(intptr_t) * native_max;
+    env->native_ent = NULL;
 
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
@@ -569,12 +561,14 @@ static void env_heap_gc_scan(env_t *env)
         case MAGIC_STRING:
             scan += string_mem_space((intptr_t)(base + scan));
             break;
+
         case MAGIC_FUNCTION: {
             function_t *func = (function_t *)(base + scan);
             func->super = env_heap_copy_scope(heap, func->super);
 
             scan += function_mem_space(func);
-        } break;
+            break;
+            }
         case MAGIC_SCOPE: {
             scope_t *scope = (scope_t *) (base + scan);
 
@@ -582,7 +576,8 @@ static void env_heap_gc_scan(env_t *env)
             scope->super = env_heap_copy_scope(heap, scope->super);
 
             scan += scope_mem_space(scope);
-        } break;
+            break;
+            }
         }
     }
 }
@@ -613,7 +608,7 @@ int env_native_find(env_t *env, intptr_t sym_id)
     int i;
 
     for (i = 0; i < env->native_num; i++) {
-        if (sym_id == env->native_map[i]) {
+        if (sym_id == (intptr_t) env->native_ent[i].name) {
             return i;
         }
     }
@@ -621,17 +616,32 @@ int env_native_find(env_t *env, intptr_t sym_id)
     return -1;
 }
 
+int env_native_add(env_t *env, int cnt, native_t *ent)
+{
+    int i;
+
+    for (i = 0; i < cnt; i++) {
+        if (0 == env_symbal_add_static(env, ent[i].name)) {
+            return -1;
+        }
+    }
+
+    env->native_num = cnt;
+    env->native_ent = ent;
+    return 0;
+}
+
+/*
 int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, val_t *av))
 {
     intptr_t sym_id;
     int i;
 
     // Note: sym_id is a string point of symbal, should not be 0!
-    if (env->error || 0 == (sym_id = env_symbal_add(env, name))) {
+    if (env->error || 0 == (sym_id = env_symbal_add_static(env, name))) {
         env_set_error(env, ERR_SysError);
         return -1;
     }
-
 
     for (i = 0; i < env->native_num; i++) {
         if (sym_id == env->native_map[i]) {
@@ -649,4 +659,5 @@ int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, va
 
     return env->native_num++;
 }
+*/
 

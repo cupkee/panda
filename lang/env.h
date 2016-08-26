@@ -19,6 +19,8 @@ typedef struct scope_t {
     struct scope_t *super;
 } scope_t;
 
+struct native_t;
+
 typedef struct env_t {
     int16_t error;
     int16_t main_var_num;
@@ -37,7 +39,6 @@ typedef struct env_t {
     scope_t *scope;
     val_t *result;
 
-    uint16_t  native_max;
     uint16_t  native_num;
 
     uint16_t symbal_tbl_size;
@@ -47,13 +48,18 @@ typedef struct env_t {
     intptr_t *symbal_tbl;
     char     *symbal_buf;
 
-    intptr_t *native_map;
-    intptr_t *native_entry;
+    struct native_t *native_ent;
 
     intptr_t *main_var_map;
 
     executable_t exe;
 } env_t;
+
+typedef struct native_t {
+    const char *name;
+    val_t (*fn)(env_t *, int ac, val_t *av);
+} native_t;
+
 
 int env_init(env_t *env, void * mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
@@ -67,18 +73,24 @@ void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
 
 scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
-int env_scope_extend(env_t *env, val_t *v);
-int env_scope_extend_to(env_t *env, int size);
 int env_scope_get(env_t *env, int id, val_t **v);
 int env_scope_set(env_t *env, int id, val_t *v);
 
-intptr_t env_symbal_add(env_t *env, const char *name);
+intptr_t env_symbal_insert(env_t *env, const char *symbal, int alloc);
 intptr_t env_symbal_get(env_t *env, const char *name);
+static inline
+intptr_t env_symbal_add(env_t *env, const char *name) {
+    return env_symbal_insert(env, name, 1);
+}
+static inline
+intptr_t env_symbal_add_static(env_t *env, const char *name) {
+    return env_symbal_insert(env, name, 0);
+}
 
 int env_string_find_add(env_t *env, intptr_t s);
 int env_number_find_add(env_t *env, double);
 
-int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, val_t *av));
+int env_native_add(env_t *env, int cnt, native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
 int  env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av);
