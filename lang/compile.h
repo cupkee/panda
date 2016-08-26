@@ -5,8 +5,8 @@
 
 #include "config.h"
 
-#include "env.h"
 #include "ast.h"
+#include "env.h"
 #include "interp.h"
 #include "function.h"
 
@@ -41,39 +41,20 @@ typedef struct compile_t {
 int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size);
 int compile_deinit(compile_t *cpl);
 
+/*
 int compile_arg_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_add(compile_t *cpl, intptr_t sym_id);
 int compile_var_get(compile_t *cpl, intptr_t sym_id);
+*/
 
 int compile_stmt(compile_t *cpl, stmt_t *stmt);
 int compile_one_stmt(compile_t *cpl, stmt_t *stmt);
 int compile_multi_stmt(compile_t *cpl, stmt_t *stmt);
 
-int compile_code_relocate(compile_t *cpl);
+int compile_update(compile_t *cpl);
 
-static inline
-intptr_t compile_sym_add(compile_t *cpl, const char *sym)
-{
-    return env_symbal_add(cpl->env, sym);
-}
-
-static inline
-intptr_t compile_sym_find(compile_t *cpl, const char *sym)
-{
-    return env_symbal_get(cpl->env, sym);
-}
-
-static inline
-int compile_var_num(compile_t *cpl) {
-    return (cpl && cpl->func_buf && cpl->func_num) ?
-            cpl->func_buf[cpl->func_cur].var_num : 0;
-}
-
-static inline
-int compile_arg_num(compile_t *cpl) {
-    return (cpl && cpl->func_buf && cpl->func_num) ?
-            cpl->func_buf[cpl->func_cur].arg_num : 0;
-}
+int compile_env_init(env_t *env, void *mem_ptr, int mem_size);
+int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size);
 
 
 #endif /* __LANG_COMPILE_INC__ */

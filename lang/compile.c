@@ -1,10 +1,16 @@
 
 #include "err.h"
 #include "bcode.h"
+#include "parse.h"
 #include "compile.h"
 
 
 void compile_code_dump(compile_t *cpl);
+/*
+int compile_arg_add(compile_t *cpl, intptr_t sym_id);
+int compile_var_add(compile_t *cpl, intptr_t sym_id);
+int compile_var_get(compile_t *cpl, intptr_t sym_id);
+*/
 
 static inline void swap(intptr_t *buf, uint32_t a, uint32_t b) {
     intptr_t tmp = buf[a];
@@ -47,13 +53,37 @@ static void heap_sort(intptr_t *buf, int num)
     }
 }
 
+static inline
+intptr_t compile_sym_add(compile_t *cpl, const char *sym)
+{
+    return env_symbal_add(cpl->env, sym);
+}
+
+static inline
+intptr_t compile_sym_find(compile_t *cpl, const char *sym)
+{
+    return env_symbal_get(cpl->env, sym);
+}
+
+static inline
+int compile_var_num(compile_t *cpl) {
+    return (cpl && cpl->func_buf && cpl->func_num) ?
+            cpl->func_buf[cpl->func_cur].var_num : 0;
+}
+
+static inline
+int compile_arg_num(compile_t *cpl) {
+    return (cpl && cpl->func_buf && cpl->func_num) ?
+            cpl->func_buf[cpl->func_cur].arg_num : 0;
+}
+
 static void compile_gc(compile_t *cpl);
 
 /* alloced memory:
  * head   +--------------+
- *        | memory size  |
- *        +--------------+
- *        | new address  |  <- used by gc
+ *        | memory size  | \
+ *        +--------------+  <- used by gc
+ *        | new address  | /
  * user   +--------------+
  *        |              |
  *        |  user memory |
@@ -295,6 +325,57 @@ static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id)
 
     return -1;
 }
+
+static int compile_arg_add(compile_t *cpl, intptr_t sym_id)
+{
+    int var_id, var_max;
+    if (cpl->error) {
+        return -1;
+    }
+
+    // Should not add local variable before argument !
+    if (compile_arg_num(cpl) != compile_var_num(cpl)) {
+        return -1;
+    }
+
+    var_max = compile_var_num(cpl);
+    var_id  = compile_varmap_find_add(cpl, sym_id);
+    if (var_id < var_max) {
+        // named arguments should not be redefined!
+        return -1;
+    }
+    compile_func_cur(cpl)->arg_num++;
+
+    return 0;
+}
+
+static int compile_var_add(compile_t *cpl, intptr_t sym_id)
+{
+    int var_id, var_max;
+    if (cpl->error) {
+        return -1;
+    }
+
+    var_max = compile_var_num(cpl);
+    var_id  = compile_varmap_find_add(cpl, sym_id);
+    // -1 is invalid id, and
+    // named arguments should not be redefined!
+    if (var_id < compile_arg_num(cpl)) {
+        // named arguments should not be redefined!
+        return -1;
+    }
+
+    // 0 : redefined variable
+    // 1 : new variable
+    return var_id < var_max ? 0 : 1;
+}
+
+/*
+int compile_var_get(compile_t *cpl, intptr_t sym_id)
+{
+    return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
+}
+*/
 
 static inline int compile_varmap_lookup_name(compile_t *cpl, const char *name) {
     return compile_varmap_lookup(cpl, compile_sym_find(cpl, name));
@@ -1091,55 +1172,6 @@ int compile_deinit(compile_t *cpl)
     return -1;
 }
 
-int compile_arg_add(compile_t *cpl, intptr_t sym_id)
-{
-    int var_id, var_max;
-    if (!cpl || cpl->error) {
-        return -1;
-    }
-
-    // Should not add local variable before argument !
-    if (compile_arg_num(cpl) != compile_var_num(cpl)) {
-        return -1;
-    }
-
-    var_max = compile_var_num(cpl);
-    var_id  = compile_varmap_find_add(cpl, sym_id);
-    if (var_id < var_max) {
-        // named arguments should not be redefined!
-        return -1;
-    }
-    compile_func_cur(cpl)->arg_num++;
-
-    return 0;
-}
-
-int compile_var_add(compile_t *cpl, intptr_t sym_id)
-{
-    int var_id, var_max;
-    if (!cpl || cpl->error) {
-        return -1;
-    }
-
-    var_max = compile_var_num(cpl);
-    var_id  = compile_varmap_find_add(cpl, sym_id);
-    // -1 is invalid id, and
-    // named arguments should not be redefined!
-    if (var_id < compile_arg_num(cpl)) {
-        // named arguments should not be redefined!
-        return -1;
-    }
-
-    // 0 : redefined variable
-    // 1 : new variable
-    return var_id < var_max ? 0 : 1;
-}
-
-int compile_var_get(compile_t *cpl, intptr_t sym_id)
-{
-    return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
-}
-
 int compile_stmt(compile_t *cpl, stmt_t *stmt)
 {
     if (!cpl || !stmt) {
@@ -1190,7 +1222,7 @@ int compile_multi_stmt(compile_t *cpl, stmt_t *stmt)
     return compile_save_main_vmap(cpl);
 }
 
-int compile_code_relocate(compile_t *cpl)
+static int compile_code_relocate(compile_t *cpl)
 {
     executable_t   *exe;
     compile_func_t *fp;
@@ -1243,6 +1275,19 @@ int compile_code_relocate(compile_t *cpl)
         exe->func_code[exe->func_code_end++] = fp->code_num & 0xFF;
         memcpy(exe->func_code + exe->func_code_end, fp->code_buf, fp->code_num);
         exe->func_code_end += fp->code_num;
+    }
+
+    return 0;
+}
+
+int compile_update(compile_t *cpl)
+{
+    if (!cpl || !cpl->env) {
+        return -1;
+    }
+
+    if (0 != compile_code_relocate(cpl)) {
+        return -1;
     }
 
     return 0;
@@ -1366,3 +1411,63 @@ void compile_code_dump(compile_t *cpl)
     }
     printf("-------------------------------\n");
 }
+
+int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
+{
+    return env_init(env, mem_ptr, mem_size, NULL, 0, NULL, 0,
+                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, 0, 0, 0, 0);
+}
+
+static void parse_callback(void *ud, parse_event_t *e)
+{
+
+}
+
+static int compile_map_ef(compile_t *cpl, void *mem_ptr, int mem_size)
+{
+    executable_file_t ef;
+    executable_t *exe = &cpl->env->exe;
+    int i;
+
+    executable_file_init(&ef, mem_ptr, mem_size,
+            LE, exe->number_num, exe->string_num, cpl->func_num);
+
+    executable_file_fill_data(&ef, exe->number_num, exe->number_map,
+                exe->string_num, exe->string_map);
+
+    for (i = 0; i < cpl->func_num; i++) {
+        executable_file_fill_code(&ef, i, cpl->func_buf[i].var_num, cpl->func_buf[i].arg_num,
+                cpl->func_buf[i].code_buf, cpl->func_buf[i].code_num);
+    }
+
+    return executable_file_size(&ef);
+}
+
+int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
+{
+    parser_t psr;
+    compile_t cpl;
+    stmt_t  *stmt;
+
+    if (!env || !input) {
+        return -1;
+    }
+
+    // The free heap can be used for parse and compile process
+    parse_init(&psr, input, NULL, mem_ptr, mem_size);
+    stmt = parse_stmt_multi(&psr, parse_callback, NULL);
+    if (!stmt) {
+        return psr.error ? -psr.error : 0;
+    }
+
+    compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
+
+    if (0 != compile_multi_stmt(&cpl, stmt)) {
+        printf("wawa : %d\n", cpl.error);
+        return -cpl.error;
+    }
+
+
+    return compile_map_ef(&cpl, mem_ptr, mem_size);
+}
+

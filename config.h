@@ -2,8 +2,8 @@
 #ifndef __CUPKEE_CONFIG__
 #define __CUPKEE_CONFIG__
 
-#include <stdint.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

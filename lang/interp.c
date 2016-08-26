@@ -9,8 +9,7 @@
 #include "function.h"
 #include "string.h"
 
-//#define SHOW(...) printf(__VA_ARGS__)
-#define SHOW(...) //
+static val_t undefined = TAG_UNDEFINED;
 
 static inline void interp_set_error(env_t *env, int error) {
     env->error = error;
@@ -396,6 +395,23 @@ static inline void interp_elem_call(env_t *env) {
     // no pop
 }
 
+#if 0
+static inline void interp_show(uint8_t *pc, int sp) {
+    const char *cmd;
+    int param, n;
+
+    n = bcode_parse(pc, NULL, &cmd, &param);
+
+    if (n == 0) {
+        printf("[PC: %p, SP: %d] %s\n", pc, sp, cmd);
+    } else {
+        printf("[PC: %p, SP: %d] %s %d\n", pc, sp, cmd, param);
+    }
+}
+#else
+static inline void interp_show(uint8_t *pc, int sp) {}
+#endif
+
 static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
     double   *numbers = env->exe.number_map;
@@ -409,103 +425,96 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 
     int index;
     while(!env->error) {
-        uint8_t code = *pc++;
-        SHOW("pc: %ld, sp: %d, code: %x\n", pc - base, env->sp, code);
+        uint8_t code;
+
+        interp_show(pc, env->sp);
+        code = *pc++;
         switch(code) {
-        case BC_STOP:       SHOW("STOP\n"); goto DO_END;
-        case BC_PASS:       SHOW("PASS\n"); break;
+        case BC_STOP:       goto DO_END;
+        case BC_PASS:       break;
 
         /* Return instruction */
         case BC_RET0:       env_frame_restore(env, &pc, &env->scope);
                             interp_push_undefined(env);
-                            SHOW("RET0\n"); break;
+                            break;
 
         case BC_RET:        {
                                 val_t *res = interp_stack_peek(env);
                                 env_frame_restore(env, &pc, &env->scope);
                                 *interp_stack_push(env) = *res;
                             }
-                            SHOW("RET\n"); break;
+                            break;
 
         /* Jump instruction */
-        case BC_SJMP:       index = (int8_t) (*pc++);
-                            pc += index;
-                            SHOW("SJMP: %d\n", index); break;
+        case BC_SJMP:       index = (int8_t) (*pc++); pc += index;
+                            break;
 
-        case BC_JMP:        index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            pc += index;
-                            SHOW("JMP: %d\n", index); break;
+        case BC_JMP:        index = (int8_t) (*pc++); index = (index << 8) | (*pc++); pc += index;
+                            break;
 
         case BC_SJMP_T:     index = (int8_t) (*pc++);
                             if (val_is_true(interp_stack_peek(env))) {
                                 pc += index;
                             }
-                            SHOW("SJMP_T: %d\n", index); break;
+                            break;
 
         case BC_SJMP_F:     index = (int8_t) (*pc++);
-                            SHOW("SJMP_F: %d\n", index);
                             if (!val_is_true(interp_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
 
         case BC_JMP_T:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            SHOW("JMP_T: %d\n", index);
                             if (val_is_true(interp_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            SHOW("JMP_F: %d\n", index);
                             if (!val_is_true(interp_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_T_POP: index = (int8_t) (*pc++);
-                            SHOW("SJMP_T_POP: %d\n", index);
                             if (val_is_true(interp_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_F_POP: index = (int8_t) (*pc++);
-                            SHOW("SJMP_F_POP: %d\n", index);
                             if (!val_is_true(interp_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_T_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            SHOW("JMP_T_POP: %d\n", index);
                             if (val_is_true(interp_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            SHOW("JMP_F_POP: %d(%.4x)\n", index, index);
                             if (!val_is_true(interp_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
 
-        case BC_PUSH_UND:   SHOW("PUSH_UND\n"); interp_push_undefined(env); break;
-        case BC_PUSH_NAN:   SHOW("PUSH_NAN\n"); interp_push_nan(env); break;
-        case BC_PUSH_TRUE:  SHOW("PUSH_TRUE\n"); interp_push_boolean(env, 1); break;
-        case BC_PUSH_FALSE: SHOW("PUSH_FALSE\n"); interp_push_boolean(env, 0); break;
-        case BC_PUSH_ZERO:  SHOW("PUSH_NUM 0\n"); interp_push_number(env, 0); break;
+        case BC_PUSH_UND:   interp_push_undefined(env);  break;
+        case BC_PUSH_NAN:   interp_push_nan(env);        break;
+        case BC_PUSH_TRUE:  interp_push_boolean(env, 1); break;
+        case BC_PUSH_FALSE: interp_push_boolean(env, 0); break;
+        case BC_PUSH_ZERO:  interp_push_number(env, 0);  break;
+
         case BC_PUSH_NUM:   index = (*pc++); index = (index << 8) + (*pc++);
-                            SHOW("PUSH_NUM %f\n", numbers[index]);
-                            interp_push_number(env, numbers[index]); break;
+                            interp_push_number(env, numbers[index]);
+                            break;
         case BC_PUSH_STR:   index = (*pc++); index = (index << 8) + (*pc++);
                             interp_push_string(env, strings[index]);
-                            SHOW("PUSH_STR %s\n", (const char *)strings[index]); break;
+                            break;
 
         case BC_PUSH_VAR:   index = (*pc++);
                             *(interp_stack_push(env)) = env->scope->var_buf[index];
-                            SHOW("PUSH_VAR %d\n", index);
                             break;
 
         case BC_PUSH_VAR_REF:
-                            index = (*pc++); SHOW("PUSH_VAR_REF %d\n", index);
-                            interp_push_ref(env, index); break;
+                            index = (*pc++); interp_push_ref(env, index);
+                            break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             {
@@ -520,43 +529,42 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                     interp_push_script(env, fn);
                                 }
                             }
-                            SHOW("PUSH_SCRIPT %d\n", index);
                             break;
+
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
                             interp_push_native(env, (intptr_t) natives[index]);
-                            SHOW("PUSH_NATIVE %d\n", index);
                             break;
 
-        case BC_POP:        SHOW("POP\n"); interp_stack_pop(env); break;
-        case BC_POP_RESULT: SHOW("POP_RESULT\n"); *result = interp_stack_pop(env); break;
+        case BC_POP:        interp_stack_pop(env); break;
+        case BC_POP_RESULT: *result = interp_stack_pop(env); break;
 
-        case BC_NEG:        SHOW("NEG\n"); interp_neg_stack(env); break;
-        case BC_NOT:        SHOW("NOT\n"); interp_not_stack(env); break;
-        case BC_LOGIC_NOT:  SHOW("LOGIC_NOT\n"); interp_logic_not_stack(env); break;
+        case BC_NEG:        interp_neg_stack(env); break;
+        case BC_NOT:        interp_not_stack(env); break;
+        case BC_LOGIC_NOT:  interp_logic_not_stack(env); break;
 
-        case BC_MUL:        SHOW("MUL\n"); interp_mul_stack(env); break;
-        case BC_DIV:        SHOW("DIV\n"); interp_div_stack(env); break;
-        case BC_MOD:        SHOW("MOD\n"); interp_mod_stack(env); break;
-        case BC_ADD:        SHOW("ADD\n"); interp_add_stack(env); break;
-        case BC_SUB:        SHOW("SUB\n"); interp_sub_stack(env); break;
+        case BC_MUL:        interp_mul_stack(env); break;
+        case BC_DIV:        interp_div_stack(env); break;
+        case BC_MOD:        interp_mod_stack(env); break;
+        case BC_ADD:        interp_add_stack(env); break;
+        case BC_SUB:        interp_sub_stack(env); break;
 
-        case BC_AAND:       SHOW("LOGIC_AND\n"); interp_and_stack(env); break;
-        case BC_AOR:        SHOW("LOGIC_OR\n"); interp_or_stack(env); break;
-        case BC_AXOR:       SHOW("LOGIC_XOR\n"); interp_xor_stack(env); break;
+        case BC_AAND:       interp_and_stack(env); break;
+        case BC_AOR:        interp_or_stack(env);  break;
+        case BC_AXOR:       interp_xor_stack(env); break;
 
-        case BC_LSHIFT:     SHOW("LSHIFT\n"); interp_lshift_stack(env); break;
-        case BC_RSHIFT:     SHOW("RSHIFT\n"); interp_rshift_stack(env); break;
+        case BC_LSHIFT:     interp_lshift_stack(env); break;
+        case BC_RSHIFT:     interp_rshift_stack(env); break;
 
-        case BC_TEQ:        interp_teq_stack(env); SHOW("TEQ\n"); break;
-        case BC_TNE:        interp_tne_stack(env); SHOW("TNE\n"); break;
-        case BC_TGT:        interp_tgt_stack(env); SHOW("TGT\n"); break;
-        case BC_TGE:        interp_tge_stack(env); SHOW("TGE\n"); break;
-        case BC_TLT:        interp_tlt_stack(env); SHOW("TLT\n"); break;
-        case BC_TLE:        interp_tle_stack(env); SHOW("TLE\n"); break;
+        case BC_TEQ:        interp_teq_stack(env); break;
+        case BC_TNE:        interp_tne_stack(env); break;
+        case BC_TGT:        interp_tgt_stack(env); break;
+        case BC_TGE:        interp_tge_stack(env); break;
+        case BC_TLT:        interp_tlt_stack(env); break;
+        case BC_TLE:        interp_tle_stack(env); break;
 
-        case BC_TIN:        interp_set_error(env, ERR_InvalidByteCode); SHOW("TIN\n"); break;
+        case BC_TIN:        interp_set_error(env, ERR_InvalidByteCode); break;
 
-        case BC_ASSIGN:     interp_assign(env); SHOW("ASSING\n"); break;
+        case BC_ASSIGN:     interp_assign(env); break;
         case BC_FUNC_CALL:  index = *pc++;
                             {
                                 val_t *fn = interp_stack_peek(env);
@@ -572,13 +580,13 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                     interp_set_error(env, ERR_InvalidCallor);
                                 }
                             }
-                            SHOW("CALL %p:%d\n", pc, index); break;
+                            break;
 
-        case BC_PROP:       interp_prop_get(env); SHOW("PROP\n"); break;
-        case BC_PROP_METH:  interp_prop_call(env); SHOW("PROP_METH\n"); break;
+        case BC_PROP:       interp_prop_get(env);  break;
+        case BC_PROP_METH:  interp_prop_call(env); break;
 
-        case BC_ELEM:       interp_elem_get(env); SHOW("ELEM\n"); break;
-        case BC_ELEM_METH:  interp_elem_call(env); SHOW("ELEM_METH\n"); break;
+        case BC_ELEM:       interp_elem_get(env);  break;
+        case BC_ELEM_METH:  interp_elem_call(env); break;
 
         default:            interp_set_error(env, ERR_InvalidByteCode);
         }
@@ -601,19 +609,6 @@ static void parse_callback(void *u, parse_event_t *e)
     }
 }
 
-static int compile_update(env_t *env, compile_t *cpl)
-{
-
-    if (0 != compile_code_relocate(cpl)) {
-        return -1;
-    }
-
-    // All memory used on parse & compile process can be release here
-    heap_reset(env_heap_get_free(env));
-
-    return 0;
-}
-
 int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
 {
     return env_init(env, mem_ptr, mem_size,
@@ -630,6 +625,54 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
                 EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 0);
 }
 
+int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, executable_file_t *ef)
+{
+    int i;
+    executable_t *exe;
+
+    if (!ef || ef->error || ef->byte_order != SYS_BYTE_ORDER) {
+        return -1;
+    }
+
+    if (0 != env_init(env, mem_ptr, mem_size,
+                    heap_ptr, heap_size, stack_ptr, stack_size,
+                    0, ef->str_cnt, EXE_NATIVE_MAX, ef->fn_cnt, 0, 0, 0)) {
+        return -1;
+    }
+
+    exe = &env->exe;
+    exe->number_map = executable_file_number_entry(ef);
+    exe->number_num = ef->num_cnt;
+
+    for (i = 0; i < ef->str_cnt; i++) {
+        exe->string_map[i] = (intptr_t)executable_file_get_string(ef, i);
+    }
+
+    for (i = 0; i < ef->fn_cnt; i++) {
+        exe->func_map[i] = (uint8_t *)executable_file_get_function(ef, i);
+    }
+
+    return 0;
+}
+
+int interp_execute(env_t *env, val_t **v)
+{
+
+    if (!env) {
+        return -1;
+    }
+
+    if (v) {
+        *v = &undefined;
+    }
+
+    if (0 != interp_run(env, env_get_main_entry(env), v)) {
+        return -env->error;
+    }
+
+    return 0;
+}
+
 int interp_execute_string(env_t *env, const char *input, val_t **v)
 {
     stmt_t  *stmt;
@@ -637,7 +680,6 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     parser_t psr;
     compile_t cpl;
     int error = 0, stmt_type;
-    static val_t undefined = TAG_UNDEFINED;
 
     if (!env || !input) {
         return -1;
@@ -651,7 +693,8 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     }
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
-    if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
+    if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
+        //Todo: get other way!!
         while (stmt) {
             if (!stmt->next) {
                 stmt_type = stmt->type;
@@ -676,11 +719,10 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
 int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v)
 {
     stmt_t  *stmt;
-    heap_t *heap = env_heap_get_free((env_t*)env);
     parser_t psr;
     compile_t cpl;
-    int error = 0, stmt_type;
-    static val_t undefined = TAG_UNDEFINED;
+    int stmt_type;
+    heap_t *heap = env_heap_get_free((env_t*)env);
 
     if (!env || !input) {
         return -1;
@@ -692,22 +734,22 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     if (!stmt) {
         return psr.error ? -psr.error : 0;
     }
+    stmt_type = stmt->type;
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
-    if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(env, &cpl)) {
-        stmt_type = stmt->type;
+    if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
-            error = -env->error;
+            return -env->error;
         }
     } else {
-        error = -cpl.error;
+        return -cpl.error;
     }
 
-    if (!error && stmt_type != STMT_EXPR) {
+    if (stmt_type != STMT_EXPR) {
         *v = &undefined;
     }
 
-    return error ? error : 1;
+    return 1;
 }
 

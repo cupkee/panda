@@ -3,11 +3,6 @@
 
 #include "panda.h"
 
-static int output(const char *s)
-{
-    return printf("%s", s);
-}
-
 static char *input_last = NULL;
 
 static inline void input_release(char *last)
@@ -105,7 +100,7 @@ int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size
     env_t env;
 
     if(0 != interp_env_init_interactive(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size)) {
-        printf("env_init fail\n");
+        output("env_init fail\n");
         return -1;
     }
 

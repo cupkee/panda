@@ -2,11 +2,6 @@
 #include "panda.h"
 
 
-static int output(const char *s)
-{
-    return printf("%s", s);
-}
-
 static void print_value(val_t *v)
 {
     if (val_is_number(v)) {

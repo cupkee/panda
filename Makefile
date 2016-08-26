@@ -4,6 +4,7 @@
 BASE = ${PWD}
 
 MAKE_DIR  = ${BASE}/make
+SAL_DIR   = ${BASE}/sal
 LANG_DIR  = ${BASE}/lang
 CUNIT_DIR = ${BASE}/cunit
 
@@ -18,21 +19,24 @@ MAKE = make
 
 CPPFLAGS = -I${BASE}
 CFLAGS = -g -Wall -Werror
-LDFLAGS = -L${CUNIT_DIR} -L${LANG_DIR}
+LDFLAGS = -L${CUNIT_DIR} -L${LANG_DIR} -L${SAL_DIR}
 
 export CC LD RM ECHO MAKE
 export CPPFLAGS
 export CFLAGS
 export LDFLAGS
 
-.PHONY: all test cunit lang panda
+.PHONY: all test cunit lang sal panda
 
 all: test
 
 cunit:
 	${MAKE} -C cunit -f ${MAKE_DIR}/Makefile.pub
 
-lang:
+sal:
+	${MAKE} -C sal -f ${MAKE_DIR}/Makefile.pub
+
+lang: sal
 	${MAKE} -C lang -f ${MAKE_DIR}/Makefile.pub
 
 test: clean cunit lang panda
@@ -45,7 +49,8 @@ panda: lang
 
 clean:
 	${MAKE} -C cunit clean -f ${MAKE_DIR}/Makefile.pub
-	${MAKE} -C lang clean -f ${MAKE_DIR}/Makefile.pub
-	${MAKE} -C test clean -f ${MAKE_DIR}/Makefile.pub
+	${MAKE} -C sal   clean -f ${MAKE_DIR}/Makefile.pub
+	${MAKE} -C lang  clean -f ${MAKE_DIR}/Makefile.pub
+	${MAKE} -C test  clean -f ${MAKE_DIR}/Makefile.pub
 	${MAKE} -C panda  clean -f ${MAKE_DIR}/Makefile.pub
 

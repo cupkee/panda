@@ -12,5 +12,5 @@ test_SRCS = test.c \
 
 test_CPPFLAGS = -I../cunit
 test_CFLAGS   =
-test_LDFLAGS  = -lcunit -llang
+test_LDFLAGS  = -lcunit -lsal -llang
 

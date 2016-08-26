@@ -79,5 +79,7 @@ typedef enum bcode_t {
     BC_ASSIGN,
 } bcode_t;
 
+int bcode_parse(uint8_t *code, int *offset, const char **name, int *param);
+
 #endif /* __LANG_BCODE_INC__ */
 

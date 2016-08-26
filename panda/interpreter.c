@@ -1,44 +1,37 @@
 #include "panda.h"
 
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-static char *file_load(const char *name, int *size)
-{
-
-    char *addr;
-    int fd;
-    struct stat sb;
-    size_t length;
-
-    fd = open(name, O_RDONLY);
-    if (fd < 0) {
-        return NULL;
-    }
-
-    if (fstat(fd, &sb) == -1) {
-        close(fd);
-        return NULL;
-    }
-    length = sb.st_size + 1;
-
-    addr = mmap(NULL, length, PROT_READ, MAP_PRIVATE, fd, 0);
-    *size = length;
-
-    return addr;
-}
-
-static void file_release(void *addr, int size)
-{
-    munmap(addr, size);
-}
-
 int panda_binary(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
-    return 0;
+    env_t env;
+    val_t *res;
+    int err, size;
+    uint8_t *binary;
+    executable_file_t ef;
+
+    binary = file_load(input, &size);
+    if (!binary) {
+        return -1;
+    }
+
+    if (0 != executable_file_load(&ef, binary, size)) {
+        file_release((void *)input, size);
+        return -1;
+    }
+
+    if (0 != interp_env_init_executable(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size, &ef)) {
+        file_release((void *)input, size);
+        return -1;
+    }
+    panda_native_init(&env);
+
+    err = interp_execute(&env, &res);
+    if (err < 0) {
+        printf("error: %d\n", err);
+    }
+
+    file_release((void *)input, size);
+
+    return err;
 }
 
 int panda_string(const char *input, void *mem_ptr, int mem_size, int heap_size, int stack_size)
@@ -53,19 +46,18 @@ int panda_string(const char *input, void *mem_ptr, int mem_size, int heap_size, 
     }
 
     if(0 != interp_env_init_interpreter(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size)) {
+        file_release((void *)input, size);
         return -1;
     }
     panda_native_init(&env);
 
     err = interp_execute_string(&env, input, &res);
+    if (err < 0) {
+        printf("error: %d\n", err);
+    }
 
     file_release((void *)input, size);
 
-    if (err < 0) {
-        printf("error: %d\n", err);
-        return -1;
-    } else {
-        return 0;
-    }
+    return err;
 }
 
