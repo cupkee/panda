@@ -330,8 +330,8 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
         return NULL;
     }
 
-    // had gc happend? super should be update
-    if (!heap_is_owned(env->heap, fn)) {
+    // GC happend? super should be update
+    if (!env_is_valid_ptr(env, fn)) {
         fn = (function_t *)val_2_intptr(fv); // fv had update, by gc
         scope->super = fn->super;
     }

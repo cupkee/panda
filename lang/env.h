@@ -106,6 +106,11 @@ void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
 }
 
+static inline
+int env_is_valid_ptr(env_t *env, void *p) {
+    return heap_is_owned(env->heap, p);
+}
+
 static inline val_t *env_stack_peek(env_t *env) {
     return env->sb + env->sp;
 }
