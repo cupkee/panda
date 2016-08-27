@@ -260,7 +260,7 @@ scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av)
     }
 
     scope->magic = MAGIC_SCOPE;
-    scope->num = 0;
+    scope->num = vc;
     scope->size = vc;
     scope->super = super;
     scope->var_buf = buf;
@@ -307,19 +307,33 @@ int env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av, uint8_t **pc)
     return 0;
 }
 
-int env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av)
+uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
 {
-    scope_t *scope = env->scope;
+    function_t *fn = (function_t *)val_2_intptr(fv);
+    scope_t *scope;
     frame_t *frame;
     int fp;
 
-    if (env->sp < FRAME_SIZE) {
-        env->error = ERR_StackOverflow;
-        return -1;
+    // empty function
+    if (fn->size == 0) {
+        env->sp += ac + 1; // release arguments & fobj in stack
+        *env_stack_push(env) = val_mk_undefined();
+        return pc;
     }
 
-    if (NULL == (scope = env_scope_create(env, super, vc, ac, av))) {
-        return -1;
+    if (env->sp < FRAME_SIZE) {
+        env->error = ERR_StackOverflow;
+        return NULL;
+    }
+
+    if (NULL == (scope = env_scope_create(env, fn->super, fn->var_num, ac, av))) {
+        return NULL;
+    }
+
+    // had gc happend? super should be update
+    if (!heap_is_owned(env->heap, fn)) {
+        fn = (function_t *)val_2_intptr(fv); // fv had update, by gc
+        scope->super = fn->super;
     }
 
     //skip arguments & function
@@ -338,7 +352,7 @@ int env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val
     env->sp = fp;
     env->scope = scope;
 
-    return 0;
+    return fn->code;
 }
 
 void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
@@ -409,8 +423,8 @@ void *env_heap_alloc(env_t *env, int size)
 
 static scope_t *heap_dup_scope(heap_t *heap, scope_t *scope)
 {
-    scope_t *dup = heap_alloc(heap, sizeof(scope_t));
-    val_t   *buf = heap_alloc(heap, sizeof(val_t) * scope->size);
+    scope_t *dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->size);
+    val_t   *buf = (val_t *)(dup + 1);
 
     //printf("%s: free %d\n", __func__, heap->free);
     memcpy(dup, scope, sizeof(scope_t));
@@ -427,7 +441,9 @@ static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
     void *dup = heap_alloc(heap, size);
 
     //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
+    //printf("[str size: %d, '%s']", size, (char *)str + 3);
     memcpy(dup, (void*)str, size);
+    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
 
     ADDR_VALUE(str) = dup;
     return (intptr_t) dup;
@@ -528,7 +544,9 @@ static void env_heap_gc_init(env_t *env)
     int fp, sp, ss;
 
     heap_reset(heap);
+    //printf("Current socpe: %p", env->scope);
     env->scope = env_heap_copy_scope(heap, env->scope);
+    //printf("\n");
 
     fp = env->fp, sp = env->sp, ss = env->ss;
     sb = env->sb;
@@ -539,7 +557,9 @@ static void env_heap_gc_init(env_t *env)
         } else {
             frame_t *frame = (frame_t *)(sb + fp);
 
+            //printf("frame socpe: %p", (scope_t*)frame->scope);
             frame->scope = (intptr_t)env_heap_copy_scope(heap, (scope_t *)frame->scope);
+            //printf("\n");
             env_heap_copy_vals(heap, fp - sp, sb + sp);
 
             fp = frame->fp;
@@ -564,7 +584,9 @@ static void env_heap_gc_scan(env_t *env)
 
         case MAGIC_FUNCTION: {
             function_t *func = (function_t *)(base + scan);
+            //printf("func super socpe: %p", func->super);
             func->super = env_heap_copy_scope(heap, func->super);
+            //printf("\n");
 
             scan += function_mem_space(func);
             break;
@@ -572,8 +594,10 @@ static void env_heap_gc_scan(env_t *env)
         case MAGIC_SCOPE: {
             scope_t *scope = (scope_t *) (base + scan);
 
-            env_heap_copy_vals(heap, scope->size, scope->var_buf);
+            //printf("super socpe: %p", scope->super);
             scope->super = env_heap_copy_scope(heap, scope->super);
+            //printf("\n");
+            env_heap_copy_vals(heap, scope->size, scope->var_buf);
 
             scan += scope_mem_space(scope);
             break;
@@ -584,13 +608,16 @@ static void env_heap_gc_scan(env_t *env)
 
 void env_heap_gc(env_t *env, int level)
 {
+    //printf("heap used: %d\n", env->heap->free);
     env_heap_gc_init(env);
     env_heap_gc_scan(env);
 
     // Todo: this line is not useable looked, but will cause test fail if deleted! Fix it!
-    heap_reset(env->heap);
+    heap_clean(env->heap);
 
     env->heap = env_heap_get_free(env);
+
+    //printf("heap zipd: %d\n", env->heap->free);
 }
 
 int env_number_find_add(env_t *env, double n)

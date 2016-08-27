@@ -1,10 +1,10 @@
 #include "bcode.h"
 
-int bcode_parse(uint8_t *code, int *offset, const char **name, int *param)
+int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int *param2)
 {
     int shift, index;
 
-    if (!name || !param) {
+    if (!name || !param1 || !param2) {
         return -1;
     }
 
@@ -18,39 +18,39 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param)
     case BC_RET:        *name = "RET";  if(offset) *offset = shift; return 0;
 
     /* Jump instruction */
-    case BC_SJMP:       *param = (int8_t) (code[shift++]);
+    case BC_SJMP:       *param1 = (int8_t) (code[shift++]);
                         *name = "SJMP"; if(offset) *offset = shift; return 1;
 
     case BC_JMP:        index = (int8_t) (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name = "JMP"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_T:     *param = (int8_t) (code[shift++]);
+    case BC_SJMP_T:     *param1 = (int8_t) (code[shift++]);
                         *name  = "SJMP_T"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_F:     *param = (int8_t) (code[shift++]);
+    case BC_SJMP_F:     *param1 = (int8_t) (code[shift++]);
                         *name = "SJMP_F"; if(offset) *offset = shift; return 1;
 
     case BC_JMP_T:      index = (int8_t) (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "JMP_T"; if(offset) *offset = shift; return 1;
 
     case BC_JMP_F:      index = (int8_t) (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "JMP_F"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_T_POP: *param = (int8_t) (code[shift++]);
+    case BC_SJMP_T_POP: *param1 = (int8_t) (code[shift++]);
                         *name  = "SJMP_T_POP"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_F_POP: *param = (int8_t) (code[shift++]);
+    case BC_SJMP_F_POP: *param1 = (int8_t) (code[shift++]);
                         *name  = "SJMP_F_POP"; if(offset) *offset = shift; return 1;
 
     case BC_JMP_T_POP:  index = (int8_t) (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "JMP_T_POP"; if(offset) *offset = shift; return 1;
 
     case BC_JMP_F_POP:  index = (int8_t) (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "JMP_F_POP"; if(offset) *offset = shift; return 1;
 
     case BC_PUSH_UND:   *name = "PUSH_UND"; if(offset) *offset = shift; return 0;
@@ -60,25 +60,27 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param)
     case BC_PUSH_ZERO:  *name = "PUSH_NUM 0"; if(offset) *offset = shift; return 0;
 
     case BC_PUSH_NUM:   index = (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "PUSH_NUM"; if(offset) *offset = shift; return 1;
 
     case BC_PUSH_STR:   index = (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "PUSH_STR"; if(offset) *offset = shift; return 1;
 
-    case BC_PUSH_VAR:   *param = (code[shift++]);
-                        *name  = "PUSH_VAR"; if(offset) *offset = shift; return 1;
+    case BC_PUSH_VAR:   *param1 = (code[shift++]);
+                        *param2 = (code[shift++]);
+                        *name  = "PUSH_VAR"; if(offset) *offset = shift; return 2;
 
-    case BC_PUSH_VAR_REF:*param = (code[shift++]);
-                        *name  = "PUSH_VAR_REF"; if(offset) *offset = shift; return 1;
+    case BC_PUSH_VAR_REF:*param1 = (code[shift++]);
+                        *param2 = (code[shift++]);
+                        *name  = "PUSH_VAR_REF"; if(offset) *offset = shift; return 2;
 
     case BC_PUSH_SCRIPT:index = (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "PUSH_SCRIPT"; if(offset) *offset = shift; return 1;
 
     case BC_PUSH_NATIVE:index = (code[shift++]);
-                        *param = (index << 8) | (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
                         *name  = "PUSH_NATIVE"; if(offset) *offset = shift; return 1;
 
     case BC_POP:        *name  = "POP"; if(offset) *offset = shift; return 0;
@@ -111,7 +113,7 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param)
     case BC_TIN:        *name = "TIN"; if(offset) *offset = shift; return 0;
 
     case BC_ASSIGN:     *name = "ASSING"; if(offset) *offset = shift; return 0;
-    case BC_FUNC_CALL:  *param = code[shift++];
+    case BC_FUNC_CALL:  *param1 = code[shift++];
                         *name = "CALL"; if(offset) *offset = shift; return 1;
 
     case BC_PROP:       *name = "PROP"; if(offset) *offset = shift; return 0;

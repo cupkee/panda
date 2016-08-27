@@ -11,56 +11,8 @@
 
 static val_t undefined = TAG_UNDEFINED;
 
-static inline void interp_set_error(env_t *env, int error) {
-    env->error = error;
-}
-
-static inline val_t *interp_stack_peek(env_t *env) {
-    return env->sb + env->sp;
-}
-
-static inline val_t *interp_stack_pop(env_t *env) {
-    return env->sb + env->sp++;
-}
-
-static inline val_t *interp_stack_push(env_t *env) {
-    return env->sb + (--env->sp);
-}
-
-static inline void interp_push_ref(env_t *env, intptr_t r) {
-    val_set_reference(interp_stack_push(env), r);
-}
-
-static inline void interp_push_undefined(env_t *env) {
-    val_set_undefined(interp_stack_push(env));
-}
-
-static inline void interp_push_nan(env_t *env) {
-    val_set_nan(interp_stack_push(env));
-}
-
-static inline void interp_push_number(env_t *env, double n) {
-    val_set_number(interp_stack_push(env), n);
-}
-
-static inline void interp_push_string(env_t *env, intptr_t s) {
-    val_set_string(interp_stack_push(env), s);
-}
-
-static inline void interp_push_boolean(env_t *env, int b) {
-    val_set_boolean(interp_stack_push(env), b);
-}
-
-static inline void interp_push_script(env_t *env, intptr_t p) {
-    val_set_script(interp_stack_push(env), p);
-}
-
-static inline void interp_push_native(env_t *env, intptr_t p) {
-    val_set_native(interp_stack_push(env), p);
-}
-
-static inline void interp_neg_stack(env_t *env) {
-    val_t *v = interp_stack_peek(env);
+static inline void interp_neg(env_t *env) {
+    val_t *v = env_stack_peek(env);
 
     if (val_is_number(v)) {
         return val_set_number(v, -val_2_double(v));
@@ -69,8 +21,8 @@ static inline void interp_neg_stack(env_t *env) {
     }
 }
 
-static inline void interp_not_stack(env_t *env) {
-    val_t *v = interp_stack_peek(env);
+static inline void interp_not(env_t *env) {
+    val_t *v = env_stack_peek(env);
 
     if (val_is_number(v)) {
         return val_set_number(v, ~val_2_integer(v));
@@ -79,14 +31,14 @@ static inline void interp_not_stack(env_t *env) {
     }
 }
 
-static inline void interp_logic_not_stack(env_t *env) {
-    val_t *v = interp_stack_peek(env);
+static inline void interp_logic_not(env_t *env) {
+    val_t *v = env_stack_peek(env);
 
     val_set_boolean(v, !val_is_true(v));
 }
 
-static inline void interp_mul_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_mul(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -97,8 +49,8 @@ static inline void interp_mul_stack(env_t *env) {
     }
 }
 
-static inline void interp_div_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_div(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -109,8 +61,8 @@ static inline void interp_div_stack(env_t *env) {
     }
 }
 
-static inline void interp_mod_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_mod(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -121,8 +73,8 @@ static inline void interp_mod_stack(env_t *env) {
     }
 }
 
-static inline void interp_add_stack(env_t *env) {
-    val_t *b = interp_stack_peek(env); // Note: keep in stack, deffence GC!
+static inline void interp_add(env_t *env) {
+    val_t *b = env_stack_peek(env); // Note: keep in stack, deffence GC!
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -143,11 +95,11 @@ static inline void interp_add_stack(env_t *env) {
     } else {
         val_set_nan(res);
     }
-    interp_stack_pop(env);
+    env_stack_pop(env);
 }
 
-static inline void interp_sub_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_sub(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -162,8 +114,8 @@ static inline void interp_sub_stack(env_t *env) {
     }
 }
 
-static inline void interp_and_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_and(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -174,8 +126,8 @@ static inline void interp_and_stack(env_t *env) {
     }
 }
 
-static inline void interp_or_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_or(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -186,8 +138,8 @@ static inline void interp_or_stack(env_t *env) {
     }
 }
 
-static inline void interp_xor_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_xor(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -198,8 +150,8 @@ static inline void interp_xor_stack(env_t *env) {
     }
 }
 
-static inline void interp_lshift_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_lshift(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -210,8 +162,8 @@ static inline void interp_lshift_stack(env_t *env) {
     }
 }
 
-static inline void interp_rshift_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_rshift(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -234,24 +186,24 @@ static inline int interp_test_equal(val_t *a, val_t *b) {
     }
 }
 
-static inline void interp_teq_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_teq(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
     val_set_boolean(res, interp_test_equal(a, b));
 }
 
-static inline void interp_tne_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_tne(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
     val_set_boolean(res, !interp_test_equal(a, b));
 }
 
-static inline void interp_tgt_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_tgt(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -270,8 +222,8 @@ static inline void interp_tgt_stack(env_t *env) {
     val_set_boolean(res, 0);
 }
 
-static inline void interp_tge_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_tge(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -290,8 +242,8 @@ static inline void interp_tge_stack(env_t *env) {
     val_set_boolean(res, 0);
 }
 
-static inline void interp_tlt_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_tlt(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -310,8 +262,8 @@ static inline void interp_tlt_stack(env_t *env) {
     val_set_boolean(res, 0);
 }
 
-static inline void interp_tle_stack(env_t *env) {
-    val_t *b = interp_stack_pop(env);
+static inline void interp_tle(env_t *env) {
+    val_t *b = env_stack_pop(env);
     val_t *a = b + 1;
     val_t *res = a;
 
@@ -331,14 +283,21 @@ static inline void interp_tle_stack(env_t *env) {
 }
 
 static inline void interp_assign(env_t *env) {
-    val_t *rht = interp_stack_peek(env);
+    val_t *rht = env_stack_peek(env);
     val_t *lft = rht + 1;
 
     if (val_is_reference(lft)) {
         val_t *res = lft;
+        uint8_t id, generation;
 
-        *res = *env_get_var_ref(env, val_2_intptr(lft)) = *rht;
-        interp_stack_pop(env);
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft) {
+            *res = *lft = *rht;
+            env_stack_pop(env);
+        } else {
+            env_set_error(env, ERR_SysError);
+        }
     } else {
         val_t *obj = lft + 1;
         val_t *res = obj;
@@ -348,49 +307,49 @@ static inline void interp_assign(env_t *env) {
 }
 
 static inline void interp_prop_get(env_t *env) {
-    val_t *key = interp_stack_peek(env);
+    val_t *key = env_stack_peek(env);
     val_t *obj = key + 1;
     val_t *res = obj;
     int err = object_prop_get(env, obj, key, res);
 
     if (err) {
-        interp_set_error(env, err);
+        env_set_error(env, err);
     }
-    interp_stack_pop(env);
+    env_stack_pop(env);
 }
 
 static inline void interp_prop_call(env_t *env) {
-    val_t *key = interp_stack_peek(env);
+    val_t *key = env_stack_peek(env);
     val_t *obj = key + 1; // a as the first argument: self
     val_t *prop = key;
     int err = object_prop_get(env, obj, key, prop);
 
     if (err) {
-        interp_set_error(env, err);
+        env_set_error(env, err);
     }
     // no pop
 }
 
 static inline void interp_elem_get(env_t *env) {
-    val_t *key = interp_stack_peek(env);
+    val_t *key = env_stack_peek(env);
     val_t *obj = key + 1;
     val_t *res = obj;
     int err = object_elem_get(env, obj, key, res);
 
     if (err) {
-        interp_set_error(env, err);
+        env_set_error(env, err);
     }
-    interp_stack_pop(env);
+    env_stack_pop(env);
 }
 
 static inline void interp_elem_call(env_t *env) {
-    val_t *key = interp_stack_peek(env);
+    val_t *key = env_stack_peek(env);
     val_t *obj = key + 1; // a as the first argument: self
     val_t *elem = key;
     int err = object_elem_get(env, obj, key, elem);
 
     if (err) {
-        interp_set_error(env, err);
+        env_set_error(env, err);
     }
     // no pop
 }
@@ -398,14 +357,17 @@ static inline void interp_elem_call(env_t *env) {
 #if 0
 static inline void interp_show(uint8_t *pc, int sp) {
     const char *cmd;
-    int param, n;
+    int param1, param2, n;
 
-    n = bcode_parse(pc, NULL, &cmd, &param);
+    n = bcode_parse(pc, NULL, &cmd, &param1, &param2);
 
     if (n == 0) {
         printf("[PC: %p, SP: %d] %s\n", pc, sp, cmd);
+    } else
+    if (n == 1) {
+        printf("[PC: %p, SP: %d] %s %d\n", pc, sp, cmd, param1);
     } else {
-        printf("[PC: %p, SP: %d] %s %d\n", pc, sp, cmd, param);
+        printf("[PC: %p, SP: %d] %s %d %d\n", pc, sp, cmd, param1, param2);
     }
 }
 #else
@@ -414,10 +376,6 @@ static inline void interp_show(uint8_t *pc, int sp) {}
 
 static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
-    double   *numbers = env->exe.number_map;
-    intptr_t *strings = env->exe.string_map;
-    native_t *natives = env->native_ent;
-    //intptr_t *natives = env->native_entry;
     uint8_t  **functions = env->exe.func_map;
     uint8_t *base, *pc;
 
@@ -436,13 +394,13 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 
         /* Return instruction */
         case BC_RET0:       env_frame_restore(env, &pc, &env->scope);
-                            interp_push_undefined(env);
+                            env_push_undefined(env);
                             break;
 
         case BC_RET:        {
-                                val_t *res = interp_stack_peek(env);
+                                val_t *res = env_stack_peek(env);
                                 env_frame_restore(env, &pc, &env->scope);
-                                *interp_stack_push(env) = *res;
+                                *env_stack_push(env) = *res;
                             }
                             break;
 
@@ -454,67 +412,68 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                             break;
 
         case BC_SJMP_T:     index = (int8_t) (*pc++);
-                            if (val_is_true(interp_stack_peek(env))) {
+                            if (val_is_true(env_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
 
         case BC_SJMP_F:     index = (int8_t) (*pc++);
-                            if (!val_is_true(interp_stack_peek(env))) {
+                            if (!val_is_true(env_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
 
         case BC_JMP_T:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            if (val_is_true(interp_stack_peek(env))) {
+                            if (val_is_true(env_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F:      index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            if (!val_is_true(interp_stack_peek(env))) {
+                            if (!val_is_true(env_stack_peek(env))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_T_POP: index = (int8_t) (*pc++);
-                            if (val_is_true(interp_stack_pop(env))) {
+                            if (val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_SJMP_F_POP: index = (int8_t) (*pc++);
-                            if (!val_is_true(interp_stack_pop(env))) {
+                            if (!val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_T_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            if (val_is_true(interp_stack_pop(env))) {
+                            if (val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
         case BC_JMP_F_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
-                            if (!val_is_true(interp_stack_pop(env))) {
+                            if (!val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
 
-        case BC_PUSH_UND:   interp_push_undefined(env);  break;
-        case BC_PUSH_NAN:   interp_push_nan(env);        break;
-        case BC_PUSH_TRUE:  interp_push_boolean(env, 1); break;
-        case BC_PUSH_FALSE: interp_push_boolean(env, 0); break;
-        case BC_PUSH_ZERO:  interp_push_number(env, 0);  break;
+        case BC_PUSH_UND:   env_push_undefined(env);  break;
+        case BC_PUSH_NAN:   env_push_nan(env);        break;
+        case BC_PUSH_TRUE:  env_push_boolean(env, 1); break;
+        case BC_PUSH_FALSE: env_push_boolean(env, 0); break;
+        case BC_PUSH_ZERO:  env_push_zero(env);  break;
 
         case BC_PUSH_NUM:   index = (*pc++); index = (index << 8) + (*pc++);
-                            interp_push_number(env, numbers[index]);
+                            env_push_number(env, index);
                             break;
+
         case BC_PUSH_STR:   index = (*pc++); index = (index << 8) + (*pc++);
-                            interp_push_string(env, strings[index]);
+                            env_push_string(env, index);
                             break;
 
         case BC_PUSH_VAR:   index = (*pc++);
-                            *(interp_stack_push(env)) = env->scope->var_buf[index];
+                            env_push_var(env, index, *pc++);
                             break;
 
         case BC_PUSH_VAR_REF:
-                            index = (*pc++); interp_push_ref(env, index);
+                            index = (*pc++); env_push_ref(env, index, *pc++);
                             break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
@@ -525,50 +484,50 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                 function_info_read(head, &info);
                                 intptr_t fn = function_create(env, info.code, info.size, info.var_num, info.arg_num);
                                 if (0 == fn) {
-                                    interp_set_error(env, ERR_SysError);
+                                    env_set_error(env, ERR_SysError);
                                 } else {
-                                    interp_push_script(env, fn);
+                                    env_push_script(env, fn);
                                 }
                             }
                             break;
 
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_push_native(env, (intptr_t) natives[index].fn);
+                            env_push_native(env, index);
                             break;
 
-        case BC_POP:        interp_stack_pop(env); break;
-        case BC_POP_RESULT: *result = interp_stack_pop(env); break;
+        case BC_POP:        env_stack_pop(env); break;
+        case BC_POP_RESULT: *result = env_stack_pop(env); break;
 
-        case BC_NEG:        interp_neg_stack(env); break;
-        case BC_NOT:        interp_not_stack(env); break;
-        case BC_LOGIC_NOT:  interp_logic_not_stack(env); break;
+        case BC_NEG:        interp_neg(env); break;
+        case BC_NOT:        interp_not(env); break;
+        case BC_LOGIC_NOT:  interp_logic_not(env); break;
 
-        case BC_MUL:        interp_mul_stack(env); break;
-        case BC_DIV:        interp_div_stack(env); break;
-        case BC_MOD:        interp_mod_stack(env); break;
-        case BC_ADD:        interp_add_stack(env); break;
-        case BC_SUB:        interp_sub_stack(env); break;
+        case BC_MUL:        interp_mul(env); break;
+        case BC_DIV:        interp_div(env); break;
+        case BC_MOD:        interp_mod(env); break;
+        case BC_ADD:        interp_add(env); break;
+        case BC_SUB:        interp_sub(env); break;
 
-        case BC_AAND:       interp_and_stack(env); break;
-        case BC_AOR:        interp_or_stack(env);  break;
-        case BC_AXOR:       interp_xor_stack(env); break;
+        case BC_AAND:       interp_and(env); break;
+        case BC_AOR:        interp_or(env);  break;
+        case BC_AXOR:       interp_xor(env); break;
 
-        case BC_LSHIFT:     interp_lshift_stack(env); break;
-        case BC_RSHIFT:     interp_rshift_stack(env); break;
+        case BC_LSHIFT:     interp_lshift(env); break;
+        case BC_RSHIFT:     interp_rshift(env); break;
 
-        case BC_TEQ:        interp_teq_stack(env); break;
-        case BC_TNE:        interp_tne_stack(env); break;
-        case BC_TGT:        interp_tgt_stack(env); break;
-        case BC_TGE:        interp_tge_stack(env); break;
-        case BC_TLT:        interp_tlt_stack(env); break;
-        case BC_TLE:        interp_tle_stack(env); break;
+        case BC_TEQ:        interp_teq(env); break;
+        case BC_TNE:        interp_tne(env); break;
+        case BC_TGT:        interp_tgt(env); break;
+        case BC_TGE:        interp_tge(env); break;
+        case BC_TLT:        interp_tlt(env); break;
+        case BC_TLE:        interp_tle(env); break;
 
-        case BC_TIN:        interp_set_error(env, ERR_InvalidByteCode); break;
+        case BC_TIN:        env_set_error(env, ERR_InvalidByteCode); break;
 
         case BC_ASSIGN:     interp_assign(env); break;
         case BC_FUNC_CALL:  index = *pc++;
                             {
-                                val_t *fn = interp_stack_peek(env);
+                                val_t *fn = env_stack_peek(env);
                                 val_t *av = fn + 1;
                                 int ac = index;
 
@@ -578,7 +537,7 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                 if (val_is_native(fn)) {
                                     function_call_native(fn, env, ac, av);
                                 } else {
-                                    interp_set_error(env, ERR_InvalidCallor);
+                                    env_set_error(env, ERR_InvalidCallor);
                                 }
                             }
                             break;
@@ -589,7 +548,7 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
         case BC_ELEM:       interp_elem_get(env);  break;
         case BC_ELEM_METH:  interp_elem_call(env); break;
 
-        default:            interp_set_error(env, ERR_InvalidByteCode);
+        default:            env_set_error(env, ERR_InvalidByteCode);
         }
     }
 DO_END:
@@ -704,6 +663,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
         }
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
+            printf("error: %d\n", env->error);
             error = -env->error;
         }
     } else {

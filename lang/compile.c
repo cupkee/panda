@@ -170,6 +170,15 @@ static inline compile_func_t *compile_func_cur(compile_t *cpl) {
     return cpl->func_buf + cpl->func_cur;
 }
 
+static inline compile_func_t *compile_func_parent(compile_t *cpl, compile_func_t *f)
+{
+    if (f->owner < 0) {
+        return NULL;
+    } else {
+        return cpl->func_buf + f->owner;
+    }
+}
+
 static inline uint8_t *compile_code_buf(compile_t *cpl) {
     return cpl->func_buf[cpl->func_cur].code_buf;
 }
@@ -308,19 +317,32 @@ static int compile_varmap_find_add(compile_t *cpl, intptr_t sym_id)
     return i;
 }
 
-static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id)
+static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id, int *generation)
 {
     compile_func_t *func;
-    int i, num;
 
     if (cpl->error || sym_id == 0) {
         return -1;
     }
 
+    if (generation)
+        *generation = 0;
+
     func = compile_func_cur(cpl);
-    num = func->var_num;
-    for (i = 0; i < num; i++) {
-        if (sym_id == func->var_map[i]) return i; // already exist!
+    while (func) {
+        int i, num = func->var_num;
+        for (i = 0; i < num; i++) {
+            if (sym_id == func->var_map[i]) {
+                return i;
+            }
+        }
+
+        if (generation) {
+            func = compile_func_parent(cpl, func);
+            (*generation)++;
+        } else {
+            func = NULL;
+        }
     }
 
     return -1;
@@ -377,8 +399,8 @@ int compile_var_get(compile_t *cpl, intptr_t sym_id)
 }
 */
 
-static inline int compile_varmap_lookup_name(compile_t *cpl, const char *name) {
-    return compile_varmap_lookup(cpl, compile_sym_find(cpl, name));
+static inline int compile_varmap_lookup_name(compile_t *cpl, const char *name, int *generation) {
+    return compile_varmap_lookup(cpl, compile_sym_find(cpl, name), generation);
 }
 
 static inline int compile_var_add_name(compile_t *cpl, const char *name) {
@@ -532,7 +554,7 @@ static inline int compile_code_append_native(compile_t *cpl, int id)
         return 1;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
+    func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = BC_PUSH_NATIVE;
     func->code_buf[func->code_num++] = id >> 8;
     func->code_buf[func->code_num++] = id;
@@ -540,17 +562,18 @@ static inline int compile_code_append_native(compile_t *cpl, int id)
     return 0;
 }
 
-static inline int compile_code_append_var(compile_t *cpl, int id)
+static inline int compile_code_append_var(compile_t *cpl, int id, int generation)
 {
     compile_func_t *func;
 
-    if (cpl->error || 0 > compile_code_check_extend(cpl, 2)) {
+    if (cpl->error || 0 > compile_code_check_extend(cpl, 3)) {
         return 1;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
+    func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = BC_PUSH_VAR;
     func->code_buf[func->code_num++] = id;
+    func->code_buf[func->code_num++] = generation;
 
     return 0;
 }
@@ -563,7 +586,7 @@ static inline int compile_code_append_call(compile_t *cpl, int ac)
         return 1;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
+    func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = BC_FUNC_CALL;
     func->code_buf[func->code_num++] = ac;
 
@@ -698,10 +721,11 @@ static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
 void compile_expr_id(compile_t *cpl, expr_t *e)
 {
     intptr_t sym_id = compile_sym_add(cpl, ast_expr_text(e));
-    int id = compile_varmap_lookup(cpl, sym_id);
+    int generation, id;
 
+    id = compile_varmap_lookup(cpl, sym_id, &generation);
     if (id >= 0) {
-        compile_code_append_var(cpl, id);
+        compile_code_append_var(cpl, id, generation);
     } else {
         id = compile_native_lookup(cpl, sym_id);
 
@@ -717,14 +741,16 @@ static void compile_expr_lft(compile_t *cpl, expr_t *e)
 {
     switch (e->type) {
     case EXPR_ID: {
-                    int var_id = compile_varmap_lookup_name(cpl, ast_expr_text(e));
+                    int generation;
+                    int var_id = compile_varmap_lookup_name(cpl, ast_expr_text(e), &generation);
                     if (var_id < 0) {
                         cpl->error = ERR_NotDefinedId;
                     } else {
-                        uint8_t code[2];
+                        uint8_t code[3];
                         code[0] = BC_PUSH_VAR_REF;
                         code[1] = var_id;
-                        compile_code_appends(cpl, 2, code);
+                        code[2] = generation;
+                        compile_code_appends(cpl, 3, code);
                     }
                   }
                   break;
@@ -821,6 +847,10 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     args = ast_expr_lft(e) ? ast_expr_rht(ast_expr_lft(e)) : NULL;
     block = ast_expr_rht(e) ? ast_expr_stmt(ast_expr_rht(e)) : NULL;
 
+    if (name) {
+        compile_var_def(cpl, name);
+    }
+
     owner = cpl->func_cur;
     if (0 > (curr = compile_func_append(cpl, owner))) {
         return;
@@ -828,11 +858,11 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     cpl->func_cur = curr;
     compile_arg_def_list(cpl, args);
     compile_stmt_block(cpl, block);
+    compile_code_append(cpl, BC_RET0);
     cpl->func_cur = owner;
 
     func_id = curr + cpl->func_offset;
     if (name) {
-        compile_var_def(cpl, name);
         compile_expr_lft(cpl, name);
         compile_code_append_func(cpl, func_id);
         compile_code_append(cpl, BC_ASSIGN);
@@ -1470,4 +1500,3 @@ int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
 
     return compile_map_ef(&cpl, mem_ptr, mem_size);
 }
-

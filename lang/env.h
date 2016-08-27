@@ -6,6 +6,7 @@
 #include "config.h"
 
 #include "val.h"
+#include "err.h"
 #include "heap.h"
 #include "executable.h"
 
@@ -93,7 +94,7 @@ int env_number_find_add(env_t *env, double);
 int env_native_add(env_t *env, int cnt, native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
-int  env_frame_setup(env_t *env, uint8_t *pc, scope_t *super, int vc, int ac, val_t *av);
+uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av);
 void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
 int  env_native_frame_setup(env_t *env, int vc);
 void env_native_return(env_t *env, val_t res);
@@ -105,9 +106,12 @@ void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
 }
 
-static inline
-heap_t *env_heap_get_free(env_t *env) {
-    return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
+static inline val_t *env_stack_peek(env_t *env) {
+    return env->sb + env->sp;
+}
+
+static inline val_t *env_stack_pop(env_t *env) {
+    return env->sb + env->sp++;
 }
 
 static inline
@@ -115,27 +119,81 @@ val_t *env_stack_push(env_t *env) {
     return env->sb + (--env->sp);
 }
 
-static inline
-val_t *env_get_var_ref(env_t *env, int index) {
-    if (index < 256) {
-        return env->scope->var_buf + index;
-    } else {
-        int loop = index >> 8;
+static inline val_t *env_get_var(env_t *env, uint8_t id, uint8_t generation) {
+    scope_t *scope = env->scope;
 
-        index &= 0xff;
-        scope_t *scope = env->scope;
-        while(loop) {
-            loop--;
-            scope = scope->super;
-        }
-        return env->scope->var_buf + index;
+    while(scope && generation--) {
+        scope = scope->super;
+    }
+
+    if (scope && id < scope->num) {
+        return scope->var_buf + id;
+    } else {
+        return NULL;
+    }
+}
+
+static inline void env_push_var(env_t *env, uint8_t id, uint8_t generation) {
+    val_t *v = env_get_var(env, id, generation);
+
+    if (v) {
+        *(env_stack_push(env)) = *v;
+    } else {
+        env->error = ERR_SysError;
+    }
+}
+
+static inline void env_push_ref(env_t *env, uint8_t id, uint8_t generation) {
+    val_set_reference(env_stack_push(env), id, generation);
+}
+
+static inline void env_push_undefined(env_t *env) {
+    val_set_undefined(env_stack_push(env));
+}
+
+static inline void env_push_nan(env_t *env) {
+    val_set_nan(env_stack_push(env));
+}
+
+static inline void env_push_zero(env_t *env) {
+    val_set_number(env_stack_push(env), 0);
+}
+
+static inline void env_push_number(env_t *env, int id) {
+    if (env->exe.number_num > id) {
+        val_set_number(env_stack_push(env), env->exe.number_map[id]);
+    } else {
+        env_set_error(env, ERR_SysError);
+    }
+}
+
+static inline void env_push_string(env_t *env, int id) {
+    if (env->exe.string_num > id) {
+        val_set_string(env_stack_push(env), env->exe.string_map[id]);
+    } else {
+        env_set_error(env, ERR_SysError);
+    }
+}
+
+static inline void env_push_boolean(env_t *env, int b) {
+    val_set_boolean(env_stack_push(env), b);
+}
+
+static inline void env_push_script(env_t *env, intptr_t p) {
+    val_set_script(env_stack_push(env), p);
+}
+
+static inline void env_push_native(env_t *env, int id) {
+    if (env->native_num > id) {
+        val_set_native(env_stack_push(env), (intptr_t)(env->native_ent[id].fn));
+    } else {
+        env_set_error(env, ERR_SysError);
     }
 }
 
 static inline
-void env_return_noframe(env_t *env, int ac, val_t res) {
-    env->sp += ac + 1; // release arguments & fobj in stack
-    *env_stack_push(env) = res;
+heap_t *env_heap_get_free(env_t *env) {
+    return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
 }
 
 static inline

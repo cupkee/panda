@@ -58,4 +58,3 @@ int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size);
 
 
 #endif /* __LANG_COMPILE_INC__ */
-

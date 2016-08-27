@@ -71,6 +71,16 @@ static inline intptr_t val_2_intptr(val_t *v) {
     return (intptr_t)(*v & VAR_MASK);
 }
 
+static inline void val_2_reference(val_t *v, uint8_t *id, uint8_t *generation) {
+#if SYS_BYTE_ORDER == LE
+    *id = *(((uint8_t *)v) + 1);
+    *generation = *((uint8_t *)v);
+#else
+    *id = *(((uint8_t *)v) + 6);
+    *generation = *(((uint8_t *)v) + 7);
+#endif
+}
+
 static inline val_t double_2_val(double d) {
     return ((valnum_t*)&d)->v;
 }
@@ -189,10 +199,6 @@ static inline val_t val_mk_owned_string(intptr_t s) {
     return TAG_STRING_O | s;
 }
 
-static inline val_t val_mk_reference(intptr_t ref) {
-    return TAG_REFERENCE | (val_t) ref;
-}
-
 static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (val_t) ptr;
 }
@@ -213,8 +219,8 @@ static inline void val_set_number(val_t *p, double d) {
     *((double *)p) = d;
 }
 
-static inline void val_set_reference(val_t *p, intptr_t r) {
-    *((uint64_t *)p) = TAG_REFERENCE | (val_t) r;
+static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
+    *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
 static inline void val_set_string(val_t *p, intptr_t s) {
