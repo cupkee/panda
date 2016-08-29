@@ -392,6 +392,7 @@ static void test_exec_function(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env_st, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
+    //printf("-------------------------------------------\n");
     CU_ASSERT(0 < interp_execute_string(env, "var a = 1, b = 0;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(env, "def zero() return 0", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(env, "b = a + zero() + 2", &res) && val_is_number(res) && 3 == val_2_double(res));
@@ -405,6 +406,8 @@ static void test_exec_function(void)
 
     CU_ASSERT(0 < interp_execute_string(env, fib, &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(env, "a = fib(1000)", &res) && val_is_number(res) && 1597 == val_2_double(res));
+    if (0) {
+    }
 
     // closure & recursion
     // CU_ASSERT(0 < interp_execute_string(env, fff, &res) && val_is_function(*res));
@@ -572,7 +575,6 @@ static void test_exec_gc(void)
 
     CU_ASSERT(0 < interp_execute_string(&env, "def join(){return e + c}", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = 0", &res) && val_is_number(res));
-    printf("-------------------------------------------\n");
     CU_ASSERT(0 < interp_execute_string(&env, "while (a < 1000) { f = join(); a = a + 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "join() == 'world.hello'", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "join() == e + c", &res) && val_is_true(res));

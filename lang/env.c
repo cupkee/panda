@@ -241,10 +241,6 @@ scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av)
     val_t   *buf;
     int      i;
 
-    if (!env) {
-        return NULL;
-    }
-
     if (!(scope = (scope_t *) env_heap_alloc(env, sizeof(scope_t) + sizeof(val_t) * vc))) {
         env_set_error(env, ERR_NotEnoughMemory);
         return NULL;
@@ -284,25 +280,32 @@ int env_scope_get(env_t *env, int id, val_t **v) {
     return -1;
 }
 
-int env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av, uint8_t **pc)
+int env_entry_setup(env_t *env, uint8_t *entry, int an, val_t *av, uint8_t **pc)
 {
-    function_info_t info;
+    uint8_t  vc, ac;
     scope_t *scope;
 
-    function_info_read(entry, &info);
+    vc = executable_func_get_var_cnt(entry);
+    ac = executable_func_get_arg_cnt(entry);
+
+    if (an < ac) {
+        // Todo: support variable count arguments
+        env_set_error(env, ERR_NotImplemented);
+        return -1;
+    }
 
     if (env_is_interactive(env)) {
         // main scope already created, if in interactive mode
         scope = env->scope;
     } else {
-        scope = env_scope_create(env, NULL, info.var_num, ac, av);
+        scope = env_scope_create(env, NULL, vc, an, av);
     }
 
     if (!scope) {
         return -1;
     }
     env->scope = scope;
-    *pc = info.code;
+    *pc = executable_func_get_code(entry);
 
     return 0;
 }

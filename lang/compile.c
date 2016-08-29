@@ -257,6 +257,8 @@ static int compile_func_append(compile_t *cpl, int owner)
 
     func_id = cpl->func_num++;
     cpl->func_buf[func_id].owner = owner;
+    cpl->func_buf[func_id].stack_space = 0;
+    cpl->func_buf[func_id].closure = 0;
     cpl->func_buf[func_id].var_max = 0;
     cpl->func_buf[func_id].var_num = 0;
     cpl->func_buf[func_id].arg_num = 0;
@@ -340,6 +342,8 @@ static int compile_varmap_lookup(compile_t *cpl, intptr_t sym_id, int *generatio
         if (generation) {
             func = compile_func_parent(cpl, func);
             (*generation)++;
+            // Mark the closure flag
+            if (func) func->closure = 1;
         } else {
             func = NULL;
         }
@@ -1161,7 +1165,12 @@ int compile_init(compile_t *cpl, env_t *env, void *heap_ptr, int heap_size)
     cpl->func_cur = 0;
     cpl->func_num = 0;
     cpl->func_buf = NULL;
-    cpl->func_offset = env->exe.func_num;
+
+    if (env->exe.func_num > 0) {
+        cpl->func_offset = env->exe.func_num - 1;
+    } else {
+        cpl->func_offset = 0;
+    }
 
     cpl->env = env;
 
@@ -1280,12 +1289,13 @@ static int compile_code_relocate(compile_t *cpl)
     }
 
     exe->func_map[0] = exe->main_code + exe->main_code_end;
-    exe->main_code[exe->main_code_end++] = fp->var_num;
-    exe->main_code[exe->main_code_end++] = fp->arg_num;
-    exe->main_code[exe->main_code_end++] = fp->code_num >> 8;
-    exe->main_code[exe->main_code_end++] = fp->code_num & 0xFF;
-    memcpy(exe->main_code + exe->main_code_end, fp->code_buf, fp->code_num);
-    exe->main_code_end += fp->code_num;
+    executable_func_set_head(exe->main_code + exe->main_code_end,
+            fp->var_num, fp->arg_num, fp->code_num, 0, fp->closure);
+    memcpy(exe->main_code + exe->main_code_end + FUNC_HEAD_SIZE, fp->code_buf, fp->code_num);
+    exe->main_code_end += FUNC_HEAD_SIZE + fp->code_num;
+    if (exe->func_num == 0) {
+        exe->func_num = 1;
+    }
 
     /*
      * Function relocation
@@ -1298,13 +1308,11 @@ static int compile_code_relocate(compile_t *cpl)
             return -1;
         }
 
-        exe->func_map[++exe->func_num] = exe->func_code + exe->func_code_end;
-        exe->func_code[exe->func_code_end++] = fp->var_num;
-        exe->func_code[exe->func_code_end++] = fp->arg_num;
-        exe->func_code[exe->func_code_end++] = fp->code_num >> 8;
-        exe->func_code[exe->func_code_end++] = fp->code_num & 0xFF;
-        memcpy(exe->func_code + exe->func_code_end, fp->code_buf, fp->code_num);
-        exe->func_code_end += fp->code_num;
+        exe->func_map[exe->func_num++] = exe->func_code + exe->func_code_end;
+        executable_func_set_head(exe->func_code + exe->func_code_end,
+                fp->var_num, fp->arg_num, fp->code_num, 0, fp->closure);
+        memcpy(exe->func_code + exe->func_code_end + FUNC_HEAD_SIZE, fp->code_buf, fp->code_num);
+        exe->func_code_end += FUNC_HEAD_SIZE + fp->code_num;
     }
 
     return 0;

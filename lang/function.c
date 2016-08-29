@@ -1,6 +1,6 @@
 #include "function.h"
 
-intptr_t function_create(env_t *env, uint8_t *code, int size, uint8_t vn, uint8_t an)
+intptr_t function_create(env_t *env, uint8_t *code, uint32_t size, uint8_t vn, uint8_t an)
 {
     function_t *fn = (function_t *) env_heap_alloc(env, sizeof(function_t));
 

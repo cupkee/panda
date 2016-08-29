@@ -354,6 +354,32 @@ static inline void interp_elem_call(env_t *env) {
     // no pop
 }
 
+static inline
+void interp_push_function(env_t *env, unsigned int id)
+{
+    uint8_t  *entry;
+    uint8_t  vc, ac;
+    uint16_t stack_size;
+    uint32_t code_size;
+    int closure;
+    intptr_t fn;
+
+    if (id >= env->exe.func_num) {
+        env_set_error(env, ERR_SysError);
+        return;
+    }
+
+    entry = env->exe.func_map[id];
+    executable_func_get_head(entry, &vc, &ac, &code_size, &stack_size, &closure);
+
+    fn = function_create(env, entry + FUNC_HEAD_SIZE, code_size, vc, ac);
+    if (0 == fn) {
+        env_set_error(env, ERR_SysError);
+    } else {
+        env_push_script(env, fn);
+    }
+}
+
 #if 0
 static inline void interp_show(uint8_t *pc, int sp) {
     const char *cmd;
@@ -376,7 +402,6 @@ static inline void interp_show(uint8_t *pc, int sp) {}
 
 static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
-    uint8_t  **functions = env->exe.func_map;
     uint8_t *base, *pc;
 
     env_entry_setup(env, entry, 0, NULL, &pc);
@@ -477,18 +502,7 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                             break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
-                            {
-                                uint8_t *head = functions[index];
-                                function_info_t info;
-
-                                function_info_read(head, &info);
-                                intptr_t fn = function_create(env, info.code, info.size, info.var_num, info.arg_num);
-                                if (0 == fn) {
-                                    env_set_error(env, ERR_SysError);
-                                } else {
-                                    env_push_script(env, fn);
-                                }
-                            }
+                            interp_push_function(env, index);
                             break;
 
         case BC_PUSH_NATIVE:index = (*pc++); index = (index << 8) | (*pc++);
@@ -663,7 +677,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
         }
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
-            printf("error: %d\n", env->error);
+            printf("run error: %d\n", env->error);
             error = -env->error;
         }
     } else {

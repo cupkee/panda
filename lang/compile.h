@@ -12,6 +12,8 @@
 
 typedef struct compile_func_t {
     int16_t owner;
+    uint16_t stack_space;
+    uint8_t closure;
     uint8_t var_max;
     uint8_t var_num;
     uint8_t arg_num;
