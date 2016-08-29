@@ -39,7 +39,7 @@ static inline uint32_t htbl_key(uint32_t size, uint32_t hash, int i) {
 }
 
 static inline int scope_mem_space(scope_t *scope) {
-    return SIZE_ALIGN(sizeof(scope_t)) + SIZE_ALIGN(sizeof(val_t) * scope->size);
+    return SIZE_ALIGN(sizeof(scope_t)) + SIZE_ALIGN(sizeof(val_t) * scope->num);
 }
 
 static inline char *env_symbal_buf_alloc(env_t *env, int size)
@@ -216,11 +216,11 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     printf("left:  %d\n", mem_size - mem_offset);
 #endif
 
-    env->scope = NULL;
-    if (interactive && (NULL == (env->scope = env_scope_create(env, NULL, INTERACTIVE_VAR_MAX, 0, NULL)))) {
-        return -1;
+    if (env_is_interactive(env)) {
+        env->scope = env_scope_create(env, NULL, NULL, 0, NULL);
+    } else {
+        env->scope = NULL;
     }
-
     env->result = NULL;
 
     if (0 != objects_env_init(env)) {
@@ -235,29 +235,51 @@ int env_deinit(env_t *env)
     return 0;
 }
 
-scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av)
+scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av)
 {
     scope_t *scope;
     val_t   *buf;
-    int      i;
+    uint32_t  vn, an, vc;
+    int      i, d;
 
-    if (!(scope = (scope_t *) env_heap_alloc(env, sizeof(scope_t) + sizeof(val_t) * vc))) {
+    if (entry) {
+        vn = executable_func_get_var_cnt(entry);
+        an = executable_func_get_arg_cnt(entry);
+    } else {
+        vn = INTERACTIVE_VAR_MAX;
+        an = 0;
+    }
+
+    d = ac - an;
+    vc = vn + (d > 0 ? d : 0);
+    scope = (scope_t *) env_heap_alloc(env, sizeof(scope_t) + sizeof(val_t) * vc);
+    if (!scope) {
         env_set_error(env, ERR_NotEnoughMemory);
         return NULL;
     }
     buf = (val_t *) (scope + 1);
 
-    for (i = 0; i < ac; i++) {
-        buf[i] = av[i];
+    if (d < 0) {
+        for (i = 0; i < ac; i++) {
+            buf[i] = av[i];
+        }
+    } else {
+        for (i = 0; i < an; i++) {
+            buf[i] = av[i];
+        }
+    }
+    for (; i < vn; i++) {
+        val_set_undefined(buf + i);
     }
 
-    for (; i < vc; i++) {
-        buf[i] = val_mk_undefined();
+    for (i = 0; i < d; i++) {
+        buf[i] = av[an + i];
     }
 
     scope->magic = MAGIC_SCOPE;
+    scope->age = 0;
     scope->num = vc;
-    scope->size = vc;
+    scope->nao = vn;
     scope->super = super;
     scope->var_buf = buf;
 
@@ -287,24 +309,21 @@ int env_entry_setup(env_t *env, uint8_t *entry, int an, val_t *av, uint8_t **pc)
 
     vc = executable_func_get_var_cnt(entry);
     ac = executable_func_get_arg_cnt(entry);
-
     if (an < ac) {
         // Todo: support variable count arguments
         env_set_error(env, ERR_NotImplemented);
         return -1;
     }
 
-    if (env_is_interactive(env)) {
-        // main scope already created, if in interactive mode
-        scope = env->scope;
-    } else {
-        scope = env_scope_create(env, NULL, vc, an, av);
+    // main scope already created, in interactive mode
+    if (!env_is_interactive(env)) {
+        scope = env_scope_create(env, NULL, entry, an, av);
+        if (!scope) {
+            return -1;
+        }
+        env->scope = scope;
     }
 
-    if (!scope) {
-        return -1;
-    }
-    env->scope = scope;
     *pc = executable_func_get_code(entry);
 
     return 0;
@@ -324,8 +343,8 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
         return pc;
     }
 
-    if (NULL == (scope = env_scope_create(env, fn->super, function_varc(fn), ac, av))) {
-        // error had be set in env_scope_create
+    if (NULL == (scope = env_scope_create(env, fn->super, fn->head, ac, av))) {
+        // error had be set in
         return NULL;
     }
 
@@ -426,12 +445,15 @@ void *env_heap_alloc(env_t *env, int size)
 
 static scope_t *heap_dup_scope(heap_t *heap, scope_t *scope)
 {
-    scope_t *dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->size);
-    val_t   *buf = (val_t *)(dup + 1);
+    scope_t *dup;
+    val_t   *buf = NULL;
+
+    dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
+    buf = (val_t *)(dup + 1);
 
     //printf("%s: free %d\n", __func__, heap->free);
     memcpy(dup, scope, sizeof(scope_t));
-    memcpy(buf, scope->var_buf, sizeof(val_t) * scope->size);
+    memcpy(buf, scope->var_buf, sizeof(val_t) * scope->num);
     dup->var_buf = buf;
 
     ADDR_VALUE(scope) = dup;
@@ -600,7 +622,7 @@ static void env_heap_gc_scan(env_t *env)
             //printf("super socpe: %p", scope->super);
             scope->super = env_heap_copy_scope(heap, scope->super);
             //printf("\n");
-            env_heap_copy_vals(heap, scope->size, scope->var_buf);
+            env_heap_copy_vals(heap, scope->num, scope->var_buf);
 
             scan += scope_mem_space(scope);
             break;
