@@ -39,19 +39,19 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
                         *param1 = (index << 8) | (code[shift++]);
                         *name  = "JMP_F"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_T_POP: *param1 = (int8_t) (code[shift++]);
-                        *name  = "SJMP_T_POP"; if(offset) *offset = shift; return 1;
+    case BC_POP_SJMP_T: *param1 = (int8_t) (code[shift++]);
+                        *name  = "POP_SJMP_T"; if(offset) *offset = shift; return 1;
 
-    case BC_SJMP_F_POP: *param1 = (int8_t) (code[shift++]);
-                        *name  = "SJMP_F_POP"; if(offset) *offset = shift; return 1;
+    case BC_POP_SJMP_F: *param1 = (int8_t) (code[shift++]);
+                        *name  = "POP_SJMP_F"; if(offset) *offset = shift; return 1;
 
-    case BC_JMP_T_POP:  index = (int8_t) (code[shift++]);
+    case BC_POP_JMP_T:  index = (int8_t) (code[shift++]);
                         *param1 = (index << 8) | (code[shift++]);
-                        *name  = "JMP_T_POP"; if(offset) *offset = shift; return 1;
+                        *name  = "POP_JMP_T"; if(offset) *offset = shift; return 1;
 
-    case BC_JMP_F_POP:  index = (int8_t) (code[shift++]);
+    case BC_POP_JMP_F:  index = (int8_t) (code[shift++]);
                         *param1 = (index << 8) | (code[shift++]);
-                        *name  = "JMP_F_POP"; if(offset) *offset = shift; return 1;
+                        *name  = "POP_JMP_F"; if(offset) *offset = shift; return 1;
 
     case BC_PUSH_UND:   *name = "PUSH_UND"; if(offset) *offset = shift; return 0;
     case BC_PUSH_NAN:   *name = "PUSH_NAN"; if(offset) *offset = shift; return 0;
@@ -71,9 +71,9 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
                         *param2 = (code[shift++]);
                         *name  = "PUSH_VAR"; if(offset) *offset = shift; return 2;
 
-    case BC_PUSH_VAR_REF:*param1 = (code[shift++]);
+    case BC_PUSH_REF:*param1 = (code[shift++]);
                         *param2 = (code[shift++]);
-                        *name  = "PUSH_VAR_REF"; if(offset) *offset = shift; return 2;
+                        *name  = "PUSH_REF"; if(offset) *offset = shift; return 2;
 
     case BC_PUSH_SCRIPT:index = (code[shift++]);
                         *param1 = (index << 8) | (code[shift++]);

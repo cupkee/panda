@@ -556,6 +556,20 @@ static void test_exec_closure(void)
     env_deinit(&env);
 }
 
+static void test_exec_stack_check(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2, d = 3;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def deep() { return a + b + c + deep()}", &res) && val_is_function(res));
+    CU_ASSERT(-ERR_StackOverflow == interp_execute_string(&env, "deep()", &res));
+
+    env_deinit(&env);
+}
+
 static void test_exec_gc(void)
 {
     env_t env;
@@ -588,20 +602,21 @@ CU_pSuite test_lang_eval_entry()
     CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
 
     if (suite) {
-        CU_add_test(suite, "eval simple",       test_exec_simple);
-        CU_add_test(suite, "eval calculate",    test_exec_calculate);
-        CU_add_test(suite, "eval compare",      test_exec_compare);
-        CU_add_test(suite, "eval logic",        test_exec_logic);
-        CU_add_test(suite, "eval symbal",       test_exec_symbal);
-        CU_add_test(suite, "eval var stmt",     test_exec_var);
-        CU_add_test(suite, "eval if stmt",      test_exec_if);
-        CU_add_test(suite, "eval while stmt",   test_exec_while);
-        CU_add_test(suite, "eval function",     test_exec_function);
-        CU_add_test(suite, "eval native",       test_exec_native);
-        CU_add_test(suite, "eval native call",  test_exec_native_call_script);
-        CU_add_test(suite, "eval string",       test_exec_string);
-        CU_add_test(suite, "eval closure",      test_exec_closure);
-        CU_add_test(suite, "eval gc",           test_exec_gc);
+        CU_add_test(suite, "exec simple",       test_exec_simple);
+        CU_add_test(suite, "exec calculate",    test_exec_calculate);
+        CU_add_test(suite, "exec compare",      test_exec_compare);
+        CU_add_test(suite, "exec logic",        test_exec_logic);
+        CU_add_test(suite, "exec symbal",       test_exec_symbal);
+        CU_add_test(suite, "exec var stmt",     test_exec_var);
+        CU_add_test(suite, "exec if stmt",      test_exec_if);
+        CU_add_test(suite, "exec while stmt",   test_exec_while);
+        CU_add_test(suite, "exec function",     test_exec_function);
+        CU_add_test(suite, "exec native",       test_exec_native);
+        CU_add_test(suite, "exec native call",  test_exec_native_call_script);
+        CU_add_test(suite, "exec string",       test_exec_string);
+        CU_add_test(suite, "exec closure",      test_exec_closure);
+        CU_add_test(suite, "exec gc",           test_exec_gc);
+        CU_add_test(suite, "exec stack check",  test_exec_stack_check);
         if (0) {
         }
     }

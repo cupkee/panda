@@ -120,7 +120,7 @@ uint8_t executable_func_get_arg_cnt(uint8_t *entry) {
 }
 
 static inline
-uint16_t executable_func_get_stack_size(uint8_t *entry) {
+uint16_t executable_func_get_stack_high(uint8_t *entry) {
     return (entry[2] * 0x100 + entry[3]) & 0x7FFF;
 }
 

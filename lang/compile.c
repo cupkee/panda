@@ -6,11 +6,6 @@
 
 
 void compile_code_dump(compile_t *cpl);
-/*
-int compile_arg_add(compile_t *cpl, intptr_t sym_id);
-int compile_var_add(compile_t *cpl, intptr_t sym_id);
-int compile_var_get(compile_t *cpl, intptr_t sym_id);
-*/
 
 static inline void swap(intptr_t *buf, uint32_t a, uint32_t b) {
     intptr_t tmp = buf[a];
@@ -258,6 +253,7 @@ static int compile_func_append(compile_t *cpl, int owner)
     func_id = cpl->func_num++;
     cpl->func_buf[func_id].owner = owner;
     cpl->func_buf[func_id].stack_space = 0;
+    cpl->func_buf[func_id].stack_high  = 0;
     cpl->func_buf[func_id].closure = 0;
     cpl->func_buf[func_id].var_max = 0;
     cpl->func_buf[func_id].var_num = 0;
@@ -682,10 +678,10 @@ static void compile_false_pop_jmp(compile_t *cpl, int from, int to)
     if (!cpl->error && 0 == compile_code_insert(cpl, from, step > 127 ? 3 : 2)) {
         uint8_t *code_buf = compile_code_buf(cpl);
         if (step > 127) {
-            code_buf[from++] = BC_JMP_F_POP;
+            code_buf[from++] = BC_POP_JMP_F;
             code_buf[from++] = step >> 8;
         } else {
-            code_buf[from++] = BC_SJMP_F_POP;
+            code_buf[from++] = BC_POP_SJMP_F;
         }
         code_buf[from++] = step;
     }
@@ -751,7 +747,7 @@ static void compile_expr_lft(compile_t *cpl, expr_t *e)
                         cpl->error = ERR_NotDefinedId;
                     } else {
                         uint8_t code[3];
-                        code[0] = BC_PUSH_VAR_REF;
+                        code[0] = BC_PUSH_REF;
                         code[1] = var_id;
                         code[2] = generation;
                         compile_code_appends(cpl, 3, code);
@@ -1056,7 +1052,7 @@ static void compile_stmt_cond(compile_t *cpl, stmt_t *s)
         compile_code_set_jmp(cpl, skip_pos, BC_JMP, compile_code_pos(cpl) - other);
     }
 
-    compile_code_set_jmp(cpl, test_pos, BC_JMP_F_POP, other - block);
+    compile_code_set_jmp(cpl, test_pos, BC_POP_JMP_F, other - block);
 }
 
 /****************************************************************
@@ -1082,7 +1078,7 @@ static void compile_stmt_cond(compile_t *cpl, stmt_t *s)
 static void compile_stmt_while(compile_t *cpl, stmt_t *s)
 {
     int bgn, skip, end, total, block, bgn_bk, skip_bk;
-    uint8_t code[2] = {BC_SJMP_T_POP, 3};
+    uint8_t code[2] = {BC_POP_SJMP_T, 3};
 
     bgn = compile_code_pos(cpl);
     compile_expr(cpl, s->expr);
@@ -1261,10 +1257,155 @@ int compile_multi_stmt(compile_t *cpl, stmt_t *stmt)
     return compile_save_main_vmap(cpl);
 }
 
+static void compile_func_stack_pop(compile_t *cpl, compile_func_t *fn)
+{
+    if (fn->stack_space > 0) {
+        //means bug, should be assert here.
+        cpl->error = ERR_SysError;
+    } else {
+        fn->stack_space--;
+    }
+
+}
+
+static void compile_func_stack_push(compile_t *cpl, compile_func_t *fn)
+{
+    fn->stack_space++;
+    if (fn->stack_space > fn->stack_high) {
+        fn->stack_high = fn->stack_space;
+    }
+}
+
+static int compile_code_revise(compile_t *cpl, compile_func_t *fn)
+{
+    int off = 0;
+    int end = fn->code_num;
+    uint8_t *code = fn->code_buf;
+
+    while (off < end) {
+        const char *name;
+        int pn, p1, p2;
+        int cp = off;
+
+        pn  = bcode_parse(code, &off, &name, &p1, &p2);
+
+        switch (code[cp]) {
+        case BC_STOP: break;
+        case BC_PASS: break;
+
+        /* Return instruction */
+        case BC_RET0: break;
+        case BC_RET:  break;
+
+        /* Jump instruction */
+        case BC_SJMP: break;
+        case BC_JMP:  break;
+
+        case BC_SJMP_T: break;
+        case BC_SJMP_F: break;
+
+        case BC_JMP_T: break;
+        case BC_JMP_F: break;
+
+        case BC_POP_SJMP_T: compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_POP_SJMP_F: compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_POP_JMP_T:  compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_POP_JMP_F:  compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_POP_RESULT: compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_POP:        compile_func_stack_pop(cpl, fn);
+                            break;
+
+        case BC_PUSH_UND:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_NAN:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_TRUE:  compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_FALSE: compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_ZERO:  compile_func_stack_push(cpl, fn);
+                            break;
+
+        case BC_PUSH_NUM:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_STR:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_VAR:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_REF:   compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_SCRIPT:compile_func_stack_push(cpl, fn);
+                            break;
+        case BC_PUSH_NATIVE:compile_func_stack_push(cpl, fn);
+                            break;
+
+        case BC_NEG:        break;
+        case BC_NOT:
+        case BC_LOGIC_NOT:  break;
+
+        case BC_MUL:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_DIV:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_MOD:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_ADD:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_SUB:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_AAND:       compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_AOR:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_AXOR:       compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_LSHIFT:     compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_RSHIFT:     compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TEQ:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TNE:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TGT:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TGE:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TLT:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TLE:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_TIN:        compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_ASSIGN:     compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_FUNC_CALL:  compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_PROP:       compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_PROP_METH:  compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_ELEM:       compile_func_stack_pop(cpl, fn);
+                            break;
+        case BC_ELEM_METH:  compile_func_stack_pop(cpl, fn);
+                            break;
+        default:            cpl->error = ERR_InvalidByteCode;
+                            break;
+        }
+    }
+
+    return 0;
+}
+
 static int compile_code_relocate(compile_t *cpl)
 {
     executable_t   *exe;
-    compile_func_t *fp;
+    compile_func_t *cfp;
     int i;
 
     if (!cpl || cpl->error || !cpl->env) {
@@ -1272,27 +1413,29 @@ static int compile_code_relocate(compile_t *cpl)
     }
 
     exe = &cpl->env->exe;
-    fp  = cpl->func_buf;
+    for (i = 0; i < cpl->func_num; i++) {
+        cfp = cpl->func_buf + i;
+        compile_code_revise(cpl, cfp);
+    }
 
     /*
      * Main entry function relocation
      */
-
     // interactive mode, history of main code should be clear to save space
+    cfp = cpl->func_buf;
     if (env_is_interactive(cpl->env)) {
         exe->main_code_end = 0;
     }
-
-    if (exe->main_code_end + fp->code_num + FUNC_HEAD_SIZE >= exe->main_code_max) {
+    if (exe->main_code_end + cfp->code_num + FUNC_HEAD_SIZE >= exe->main_code_max) {
         cpl->error = ERR_NotEnoughMemory;
         return -1;
     }
 
     exe->func_map[0] = exe->main_code + exe->main_code_end;
     executable_func_set_head(exe->main_code + exe->main_code_end,
-            fp->var_num, fp->arg_num, fp->code_num, 0, fp->closure);
-    memcpy(exe->main_code + exe->main_code_end + FUNC_HEAD_SIZE, fp->code_buf, fp->code_num);
-    exe->main_code_end += FUNC_HEAD_SIZE + fp->code_num;
+            cfp->var_num, cfp->arg_num, cfp->code_num, cfp->stack_high, cfp->closure);
+    memcpy(exe->main_code + exe->main_code_end + FUNC_HEAD_SIZE, cfp->code_buf, cfp->code_num);
+    exe->main_code_end += FUNC_HEAD_SIZE + cfp->code_num;
     if (exe->func_num == 0) {
         exe->func_num = 1;
     }
@@ -1301,18 +1444,18 @@ static int compile_code_relocate(compile_t *cpl)
      * Function relocation
      */
     for (i = 1; i < cpl->func_num; i++) {
-        fp = cpl->func_buf + i;
+        cfp = cpl->func_buf + i;
 
-        if (exe->func_code_end + fp->code_num + FUNC_HEAD_SIZE >= exe->func_code_max) {
+        if (exe->func_code_end + cfp->code_num + FUNC_HEAD_SIZE >= exe->func_code_max) {
             cpl->error = ERR_NotEnoughMemory;
             return -1;
         }
 
         exe->func_map[exe->func_num++] = exe->func_code + exe->func_code_end;
         executable_func_set_head(exe->func_code + exe->func_code_end,
-                fp->var_num, fp->arg_num, fp->code_num, 0, fp->closure);
-        memcpy(exe->func_code + exe->func_code_end + FUNC_HEAD_SIZE, fp->code_buf, fp->code_num);
-        exe->func_code_end += FUNC_HEAD_SIZE + fp->code_num;
+                cfp->var_num, cfp->arg_num, cfp->code_num, cfp->stack_high, cfp->closure);
+        memcpy(exe->func_code + exe->func_code_end + FUNC_HEAD_SIZE, cfp->code_buf, cfp->code_num);
+        exe->func_code_end += FUNC_HEAD_SIZE + cfp->code_num;
     }
 
     return 0;
@@ -1334,8 +1477,8 @@ int compile_update(compile_t *cpl)
 void compile_code_dump(compile_t *cpl)
 {
     uint8_t *code = compile_code_buf(cpl);
-    int size =  compile_code_pos(cpl);
-    int pc = 0, index;
+    int size = compile_code_pos(cpl);
+    int pc = 0;
 
     if (cpl->error) {
         printf("has error: %d\n", cpl->error);
@@ -1345,109 +1488,21 @@ void compile_code_dump(compile_t *cpl)
     printf("Code [%p : %d] :\n", code, size);
     printf("-------------------------------\n");
     while(pc < size) {
+        const char *cmd;
+        int param1, param2;
         int pos = pc;
-        uint8_t c = code[pc++];
-        switch(c) {
-        case BC_STOP:       printf("[%.3d] ", pos); printf("STOP\n"); break;
-        case BC_PASS:       printf("[%.3d] ", pos); printf("PASS\n"); break;
+        int n = bcode_parse(code, &pc, &cmd, &param1, &param2);
 
-        case BC_RET0:       printf("[%.3d] ", pos); printf("RET0\n"); break;
-        case BC_RET:        printf("[%.3d] ", pos); printf("RET\n"); break;
-
-        /* Jump instruction */
-        case BC_SJMP:       index = (int8_t) code[pc++];
-                            printf("[%.3d] ", pos); printf("SJMP: %d\n", index);
-                            break;
-        case BC_JMP:        index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("JMP: %d\n", index);
-                            break;
-
-        case BC_SJMP_T:     index = (int8_t) code[pc++];
-                            printf("[%.3d] ", pos); printf("SJMP_T: %d\n", index);
-                            break;
-
-        case BC_SJMP_F:     index = (int8_t) code[pc++];
-                            printf("[%.3d] ", pos); printf("SJMP_F: %d\n", index);
-                            break;
-
-        case BC_JMP_T:      index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("JMP_T: %d\n", index);
-                            break;
-        case BC_JMP_F:      index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("JMP_F: %d\n", index);
-                            break;
-        case BC_SJMP_T_POP: index = (int8_t) code[pc++];
-                            printf("[%.3d] ", pos); printf("SJMP_T_POP: %d\n", index);
-                            break;
-        case BC_SJMP_F_POP: index = (int8_t) code[pc++];
-                            printf("[%.3d] ", pos); printf("SJMP_F_POP: %d\n", index);
-                            break;
-        case BC_JMP_T_POP:  index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("JMP_T_POP: %d\n", index);
-                            break;
-        case BC_JMP_F_POP:  index = (int8_t) code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("JMP_F_POP: %d(%.4x)\n", index, index);
-                            break;
-
-        case BC_PUSH_UND:   printf("[%.3d] ", pos); printf("PUSH_UND\n"); break;
-        case BC_PUSH_NAN:   printf("[%.3d] ", pos); printf("PUSH_NAN\n"); break;
-        case BC_PUSH_TRUE:  printf("[%.3d] ", pos); printf("PUSH_TRUE\n"); break;
-        case BC_PUSH_FALSE: printf("[%.3d] ", pos); printf("PUSH_FALSE\n"); break;
-        case BC_PUSH_ZERO:  printf("[%.3d] ", pos); printf("PUSH_NUM 0\n"); break;
-        case BC_PUSH_NUM:   index = code[pc++]; index = (index << 8) + code[pc++];
-                            printf("[%.3d] ", pos); printf("PUSH_NUM %d\n", index);
-                            break;
-        case BC_PUSH_STR:   index = code[pc++]; index = (index << 8) + code[pc++];
-                            printf("[%.3d] ", pos); printf("PUSH_STR %d\n", index);
-                            break;
-        case BC_PUSH_VAR:   index = code[pc++]; printf("[%.3d] ", pos); printf("PUSH_VAR %d\n", index); break;
-        case BC_PUSH_VAR_REF:
-                            index = code[pc++]; printf("[%.3d] ", pos); printf("PUSH_VAR_REF %d\n", index); break;
-        case BC_PUSH_SCRIPT:index = code[pc++]; index = (index << 8) | code[pc++];
-                            printf("[%.3d] ", pos); printf("PUSH_FUNC %d\n", index);
-                            break;
-
-        case BC_POP:        printf("[%.3d] ", pos); printf("POP\n"); break;
-        case BC_POP_RESULT: printf("[%.3d] ", pos); printf("POP_RESULT\n"); break;
-
-        case BC_NEG:        printf("[%.3d] ", pos); printf("NEG\n"); break;
-        case BC_NOT:        printf("[%.3d] ", pos); printf("NOT\n"); break;
-        case BC_LOGIC_NOT:  printf("[%.3d] ", pos); printf("LOGIC_NOT\n"); break;
-
-        case BC_MUL:        printf("[%.3d] ", pos); printf("MUL\n"); break;
-        case BC_DIV:        printf("[%.3d] ", pos); printf("DIV\n"); break;
-        case BC_MOD:        printf("[%.3d] ", pos); printf("MOD\n"); break;
-        case BC_ADD:        printf("[%.3d] ", pos); printf("ADD\n"); break;
-        case BC_SUB:        printf("[%.3d] ", pos); printf("SUB\n"); break;
-
-        case BC_AAND:       printf("[%.3d] ", pos); printf("LOGIC_AND\n"); break;
-        case BC_AOR:        printf("[%.3d] ", pos); printf("LOGIC_OR\n"); break;
-        case BC_AXOR:       printf("[%.3d] ", pos); printf("LOGIC_XOR\n"); break;
-
-        case BC_LSHIFT:     printf("[%.3d] ", pos); printf("LSHIFT\n"); break;
-        case BC_RSHIFT:     printf("[%.3d] ", pos); printf("RSHIFT\n"); break;
-
-        case BC_TEQ:        printf("[%.3d] ", pos); printf("TEQ\n"); break;
-        case BC_TNE:        printf("[%.3d] ", pos); printf("TNE\n"); break;
-        case BC_TGT:        printf("[%.3d] ", pos); printf("TGT\n"); break;
-        case BC_TGE:        printf("[%.3d] ", pos); printf("TGE\n"); break;
-        case BC_TLT:        printf("[%.3d] ", pos); printf("TLT\n"); break;
-        case BC_TLE:        printf("[%.3d] ", pos); printf("TLE\n"); break;
-
-        case BC_TIN:        printf("[%.3d] ", pos); printf("TIN\n"); break;
-        case BC_ASSIGN:     printf("[%.3d] ", pos); printf("ASSING\n"); break;
-        case BC_FUNC_CALL:  index = code[pc++]; printf("[%.3d] ", pos); printf("CALL %d\n", index); break;
-
-        case BC_PROP:       printf("[%.3d] ", pos); printf("PROP\n"); break;
-        case BC_PROP_METH:  printf("[%.3d] ", pos); printf("PROP_CALL\n"); break;
-
-        case BC_ELEM:       printf("[%.3d] ", pos); printf("ELEM\n"); break;
-        case BC_ELEM_METH:  printf("[%.3d] ", pos); printf("ELEM_CALL\n"); break;
-
-        default:            printf("[%.3d] ", pos); printf("Unknown: %.2x", c);
+        printf("[%.4d] ", pos);
+        if (n == 0) {
+            printf("%s\n", cmd);
+        } else
+        if (n == 1) {
+            printf("%s %d\n", cmd, param1);
+        } else {
+            printf("%s %d %d\n", cmd, param1, param2);
         }
     }
-    printf("-------------------------------\n");
 }
 
 int compile_env_init(env_t *env, void *mem_ptr, int mem_size)

@@ -357,11 +357,7 @@ static inline void interp_elem_call(env_t *env) {
 static inline
 void interp_push_function(env_t *env, unsigned int id)
 {
-    uint8_t  *entry;
-    uint8_t  vc, ac;
-    uint16_t stack_size;
-    uint32_t code_size;
-    int closure;
+    uint8_t *entry;
     intptr_t fn;
 
     if (id >= env->exe.func_num) {
@@ -370,9 +366,7 @@ void interp_push_function(env_t *env, unsigned int id)
     }
 
     entry = env->exe.func_map[id];
-    executable_func_get_head(entry, &vc, &ac, &code_size, &stack_size, &closure);
-
-    fn = function_create(env, entry + FUNC_HEAD_SIZE, code_size, vc, ac);
+    fn = function_create(env, entry);
     if (0 == fn) {
         env_set_error(env, ERR_SysError);
     } else {
@@ -458,22 +452,22 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                 pc += index;
                             }
                             break;
-        case BC_SJMP_T_POP: index = (int8_t) (*pc++);
+        case BC_POP_SJMP_T: index = (int8_t) (*pc++);
                             if (val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
-        case BC_SJMP_F_POP: index = (int8_t) (*pc++);
+        case BC_POP_SJMP_F: index = (int8_t) (*pc++);
                             if (!val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
-        case BC_JMP_T_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
+        case BC_POP_JMP_T:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             if (val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
                             break;
-        case BC_JMP_F_POP:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
+        case BC_POP_JMP_F:  index = (int8_t) (*pc++); index = (index << 8) | (*pc++);
                             if (!val_is_true(env_stack_pop(env))) {
                                 pc += index;
                             }
@@ -493,12 +487,10 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                             env_push_string(env, index);
                             break;
 
-        case BC_PUSH_VAR:   index = (*pc++);
-                            env_push_var(env, index, *pc++);
+        case BC_PUSH_VAR:   index = (*pc++); env_push_var(env, index, *pc++);
                             break;
 
-        case BC_PUSH_VAR_REF:
-                            index = (*pc++); env_push_ref(env, index, *pc++);
+        case BC_PUSH_REF:   index = (*pc++); env_push_ref(env, index, *pc++);
                             break;
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
@@ -546,10 +538,13 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                 int ac = index;
 
                                 if (val_is_script(fn)) {
-                                    function_call(fn, env, ac, av, &pc);
+                                    pc = env_frame_setup(env, pc, fn, ac, av);
                                 } else
                                 if (val_is_native(fn)) {
-                                    function_call_native(fn, env, ac, av);
+                                    function_native_t fp = (function_native_t) val_2_intptr(fn);
+
+                                    env_native_frame_setup(env, ac);
+                                    env_native_return(env, fp(env, ac, av));
                                 } else {
                                     env_set_error(env, ERR_InvalidCallor);
                                 }
@@ -677,7 +672,6 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
         }
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
-            printf("run error: %d\n", env->error);
             error = -env->error;
         }
     } else {

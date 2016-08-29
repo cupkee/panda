@@ -318,34 +318,33 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
     int fp;
 
     // empty function
-    if (fn->size == 0) {
+    if (function_size(fn) == 0) {
         env->sp += ac + 1; // release arguments & fobj in stack
         *env_stack_push(env) = val_mk_undefined();
         return pc;
     }
 
-    if (env->sp < FRAME_SIZE) {
-        env->error = ERR_StackOverflow;
+    if (NULL == (scope = env_scope_create(env, fn->super, function_varc(fn), ac, av))) {
+        // error had be set in env_scope_create
         return NULL;
     }
 
-    if (NULL == (scope = env_scope_create(env, fn->super, fn->var_num, ac, av))) {
-        return NULL;
-    }
-
-    // GC happend? super should be update
     if (!env_is_valid_ptr(env, fn)) {
+        // GC happend? super should be update
         fn = (function_t *)val_2_intptr(fv); // fv had update, by gc
         scope->super = fn->super;
     }
 
     //skip arguments & function
     env->sp += ac + 1;
-
     fp = env->sp - FRAME_SIZE;
-    frame = (frame_t *)(env->sb + fp);
+    if (fp < 0 || fp < function_stack_high(fn)) {
+        env->error = ERR_StackOverflow;
+        return NULL;
+    }
 
     //printf ("############  resave sp: %d, fp: %d\n", env->sp, env->fp);
+    frame = (frame_t *)(env->sb + fp);
     frame->fp = env->fp;
     frame->sp = env->sp;
     frame->pc = (intptr_t) pc;
@@ -355,7 +354,7 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
     env->sp = fp;
     env->scope = scope;
 
-    return fn->code;
+    return function_code(fn);
 }
 
 void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
@@ -385,6 +384,7 @@ int env_native_frame_setup(env_t *env, int ac)
 
     // keep arguments & function in stack
     fp = env->sp - FRAME_SIZE;
+
     frame = (frame_t *)(env->sb + fp);
     frame->fp = env->fp;
     frame->sp = env->sp + ac + 1; // skip arguments & function when return

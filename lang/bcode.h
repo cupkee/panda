@@ -14,18 +14,18 @@ typedef enum bcode_t {
 
     BC_JMP,
     BC_SJMP,
-    BC_JMP_POP,
-    BC_SJMP_POP,
 
     BC_JMP_T,
     BC_SJMP_T,
-    BC_JMP_T_POP,
-    BC_SJMP_T_POP,
-
     BC_JMP_F,
     BC_SJMP_F,
-    BC_JMP_F_POP,
-    BC_SJMP_F_POP,
+
+    BC_POP_JMP_T,
+    BC_POP_SJMP_T,
+    BC_POP_JMP_F,
+    BC_POP_SJMP_F,
+    BC_POP_RESULT,
+    BC_POP,
 
     BC_PUSH_UND,
     BC_PUSH_NAN,
@@ -35,13 +35,9 @@ typedef enum bcode_t {
     BC_PUSH_NUM,
     BC_PUSH_STR,
     BC_PUSH_VAR,
-    BC_PUSH_VAR_REF,
+    BC_PUSH_REF,
     BC_PUSH_SCRIPT,
     BC_PUSH_NATIVE,
-
-    BC_POP,
-    BC_POP_RESULT,
-    BC_POP_VARIABLE,
 
     BC_NEG,
     BC_NOT,
