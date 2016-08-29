@@ -570,6 +570,20 @@ static void test_exec_stack_check(void)
     env_deinit(&env);
 }
 
+static void test_exec_func_arg(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "def narg(a) { return a ? 1 : 0 }", &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "narg() == 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "narg('a') == 1", &res) && val_is_true(res));
+
+    env_deinit(&env);
+}
+
 static void test_exec_gc(void)
 {
     env_t env;
@@ -615,8 +629,9 @@ CU_pSuite test_lang_eval_entry()
         CU_add_test(suite, "exec native call",  test_exec_native_call_script);
         CU_add_test(suite, "exec string",       test_exec_string);
         CU_add_test(suite, "exec closure",      test_exec_closure);
-        CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec stack check",  test_exec_stack_check);
+        CU_add_test(suite, "exec function arg", test_exec_func_arg);
+        CU_add_test(suite, "exec gc",           test_exec_gc);
         if (0) {
         }
     }

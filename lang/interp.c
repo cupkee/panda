@@ -397,11 +397,10 @@ static inline void interp_show(uint8_t *pc, int sp) {}
 static int interp_run(env_t *env, uint8_t *entry, val_t **result)
 {
     uint8_t *base, *pc;
+    int     index;
 
     env_entry_setup(env, entry, 0, NULL, &pc);
     base = pc;
-
-    int index;
     while(!env->error) {
         uint8_t code;
 
@@ -672,9 +671,11 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
         }
 
         if (0 != interp_run(env, env_get_main_entry(env), v)) {
+            //printf("execute error: %d\n", env->error);
             error = -env->error;
         }
     } else {
+        //printf("cmpile error: %d\n", cpl.error);
         error = -cpl.error;
     }
 

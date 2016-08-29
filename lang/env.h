@@ -10,12 +10,15 @@
 #include "heap.h"
 #include "executable.h"
 
-#define MAGIC_SCOPE     (MAGIC_BASE + 1)
+#define MAGIC_SCOPE             (MAGIC_BASE + 1)
+
+#define SCOPE_FL_HEAP           (1)     // variable space alloced in heap
 
 typedef struct scope_t {
     uint8_t magic;
-    uint8_t size;
-    uint8_t num;
+    uint8_t age;
+    uint8_t num;                // all variables number
+    uint8_t nao;                // nonamed arguments offset
     val_t   *var_buf;
     struct scope_t *super;
 } scope_t;
@@ -73,7 +76,7 @@ int env_deinit(env_t *env);
 void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
 
-scope_t *env_scope_create(env_t *env, scope_t *super, int vc, int ac, val_t *av);
+scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av);
 int env_scope_get(env_t *env, int id, val_t **v);
 int env_scope_set(env_t *env, int id, val_t *v);
 
