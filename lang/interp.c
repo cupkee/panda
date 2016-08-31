@@ -295,15 +295,10 @@ static inline void interp_assign(env_t *env) {
         if (lft) {
             *res = *lft = *rht;
             env_stack_pop(env);
-        } else {
-            env_set_error(env, ERR_SysError);
+            return;
         }
-    } else {
-        val_t *obj = lft + 1;
-        val_t *res = obj;
-        *res = object_prop_set(env, obj, lft, rht);
-        interp_stack_release(env, 2);
     }
+    env_set_error(env, ERR_InvalidLeftValue);
 }
 
 static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
@@ -322,7 +317,7 @@ static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
 }
 
 static inline void interp_prop_get(env_t *env) {
-    val_t *key = env_stack_peek(env);
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
     int err = object_prop_get(env, obj, key, res);
@@ -333,11 +328,11 @@ static inline void interp_prop_get(env_t *env) {
     env_stack_pop(env);
 }
 
-static inline void interp_prop_call(env_t *env) {
+static inline void interp_prop_self(env_t *env) {
     val_t *key = env_stack_peek(env);
-    val_t *obj = key + 1; // a as the first argument: self
+    val_t *self = key + 1;
     val_t *prop = key;
-    int err = object_prop_get(env, obj, key, prop);
+    int err = object_prop_get(env, self, key, prop);
 
     if (err) {
         env_set_error(env, err);
@@ -357,11 +352,11 @@ static inline void interp_elem_get(env_t *env) {
     env_stack_pop(env);
 }
 
-static inline void interp_elem_call(env_t *env) {
-    val_t *key = env_stack_peek(env);
-    val_t *obj = key + 1; // a as the first argument: self
+static inline void interp_elem_self(env_t *env) {
+    val_t *key = env_stack_peek(env); // keey the "key" in stack
+    val_t *self = key + 1;
     val_t *elem = key;
-    int err = object_elem_get(env, obj, key, elem);
+    int err = object_elem_get(env, self, key, elem);
 
     if (err) {
         env_set_error(env, err);
@@ -547,10 +542,10 @@ static int interp_run(env_t *env, uint8_t *pc)
                             break;
 
         case BC_PROP:       interp_prop_get(env);  break;
-        case BC_PROP_METH:  interp_prop_call(env); break;
+        case BC_PROP_METH:  interp_prop_self(env); break;
 
         case BC_ELEM:       interp_elem_get(env);  break;
-        case BC_ELEM_METH:  interp_elem_call(env); break;
+        case BC_ELEM_METH:  interp_elem_self(env); break;
 
         default:            env_set_error(env, ERR_InvalidByteCode);
         }
