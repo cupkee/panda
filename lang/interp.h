@@ -19,14 +19,6 @@ int interp_execute(env_t *env, val_t **result);
 int interp_execute_string(env_t *env, const char *input, val_t **result);
 int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v);
 
-static inline void interp_push_call_argument(env_t *env, val_t *v) {
-    *env_stack_push(env) = *v;
-}
-
-static inline void interp_push_call_function(env_t *env, val_t *v) {
-    *env_stack_push(env) = *v;
-}
-
 static inline void interp_stack_alloc(env_t *env, int n) {
     env->sp -= n;
 }

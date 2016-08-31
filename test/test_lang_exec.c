@@ -488,9 +488,10 @@ static val_t test_native_call(env_t *env, int ac, val_t *av)
         int i;
 
         for (i = 0; i < ac -1; i++) {
-            interp_push_call_argument(env, av + ac - i - 1);
+            // push arguments from last to first
+            env_push_call_argument(env, av + ac - i - 1);
         }
-        interp_push_call_function(env, av);
+        env_push_call_function(env, av);
 
         return interp_execute_call(env, ac - 1);
     } else {

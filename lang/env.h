@@ -121,9 +121,16 @@ static inline val_t *env_stack_pop(env_t *env) {
     return env->sb + env->sp++;
 }
 
-static inline
-val_t *env_stack_push(env_t *env) {
+static inline val_t *env_stack_push(env_t *env) {
     return env->sb + (--env->sp);
+}
+
+static inline void env_push_call_argument(env_t *env, val_t *v) {
+    *env_stack_push(env) = *v;
+}
+
+static inline void env_push_call_function(env_t *env, val_t *v) {
+    *env_stack_push(env) = *v;
 }
 
 static inline val_t *env_get_var(env_t *env, uint8_t id, uint8_t generation) {

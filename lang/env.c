@@ -366,18 +366,13 @@ void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
 void env_native_call(env_t *env, val_t *fv, int ac, val_t *av)
 {
     function_native_t fn = (function_native_t) val_2_intptr(fv);
-    scope_t *scope;
-    int fp, sp;
+    int sp;
 
     sp = env->sp + ac; // skip arguments & keep return value in stack
-    fp = env->fp;
-    scope = env->scope;
 
     *(env->sb + sp) = fn(env, ac, av);
 
     env->sp = sp;
-    env->fp = fp;
-    env->scope = scope;
 }
 
 uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av)
