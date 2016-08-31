@@ -649,7 +649,6 @@ int interp_execute(env_t *env, val_t **v)
 
     *v = &undefined;
 
-    //if (0 != interp_run(env, env_get_main_entry(env), 0, NULL, v)) {
     if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
         return -env->error;
     }
@@ -659,7 +658,7 @@ int interp_execute(env_t *env, val_t **v)
 
 int interp_execute_string(env_t *env, const char *input, val_t **v)
 {
-    stmt_t  *stmt;
+    stmt_t *stmt;
     heap_t *heap = env_heap_get_free((env_t*)env);
     parser_t psr;
     compile_t cpl;
@@ -704,7 +703,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
 
 int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v)
 {
-    stmt_t  *stmt;
+    stmt_t *stmt;
     parser_t psr;
     compile_t cpl;
     int stmt_type;
