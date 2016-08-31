@@ -84,7 +84,6 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
                         *name  = "PUSH_NATIVE"; if(offset) *offset = shift; return 1;
 
     case BC_POP:        *name  = "POP"; if(offset) *offset = shift; return 0;
-    case BC_POP_RESULT: *name  = "POP_RESULT"; if(offset) *offset = shift; return 0;
 
     case BC_NEG:        *name  = "NEG"; if(offset) *offset = shift; return 0;
     case BC_NOT:        *name  = "NOT"; if(offset) *offset = shift; return 0;

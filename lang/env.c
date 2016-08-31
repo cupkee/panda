@@ -221,7 +221,6 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     } else {
         env->scope = NULL;
     }
-    env->result = NULL;
 
     if (0 != objects_env_init(env)) {
         return -1;

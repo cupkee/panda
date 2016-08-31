@@ -409,7 +409,7 @@ static inline void interp_show(uint8_t *pc, int sp) {
 static inline void interp_show(uint8_t *pc, int sp) {}
 #endif
 
-static int interp_run(env_t *env, uint8_t *pc, val_t **result)
+static int interp_run(env_t *env, uint8_t *pc)
 {
     int     index;
 
@@ -513,7 +513,6 @@ static int interp_run(env_t *env, uint8_t *pc, val_t **result)
                             break;
 
         case BC_POP:        env_stack_pop(env); break;
-        case BC_POP_RESULT: *result = env_stack_pop(env); break;
 
         case BC_NEG:        interp_neg(env); break;
         case BC_NOT:        interp_not(env); break;
@@ -624,19 +623,17 @@ val_t interp_execute_call(env_t *env, int ac)
 {
     uint8_t stop = BC_STOP;
     uint8_t *pc;
-    val_t *res;
 
     pc = interp_call(env, ac, &stop);
     if (pc != &stop) {
         // call a script function
-        interp_run(env, pc, &res);
+        interp_run(env, pc);
     }
 
-    if (!env->error) {
-        return *env_stack_pop(env);
-    } else {
-        // error occured
+    if (env->error) {
         return val_mk_undefined();
+    } else {
+        return *env_stack_pop(env);
     }
 }
 
@@ -647,10 +644,14 @@ int interp_execute(env_t *env, val_t **v)
         return -1;
     }
 
-    *v = &undefined;
-
-    if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
+    if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
         return -env->error;
+    }
+
+    if (env->fp > env->sp) {
+        *v = env_stack_pop(env);
+    } else {
+        *v = &undefined;
     }
 
     return 0;
@@ -662,7 +663,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     heap_t *heap = env_heap_get_free((env_t*)env);
     parser_t psr;
     compile_t cpl;
-    int error = 0, stmt_type;
+    int error = 0;
 
     if (!env || !input || !v) {
         return -1;
@@ -677,24 +678,18 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
-        //Todo: get other way!!
-        while (stmt) {
-            if (!stmt->next) {
-                stmt_type = stmt->type;
-            }
-            stmt = stmt->next;
-        }
-
-        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
+        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
             //printf("execute error: %d\n", env->error);
-            error = -env->error;
+            return -env->error;
         }
     } else {
         //printf("cmpile error: %d\n", cpl.error);
-        error = -cpl.error;
+        return -cpl.error;
     }
 
-    if (!error && stmt_type != STMT_EXPR) {
+    if (env->fp > env->sp) {
+        *v = env_stack_pop(env);
+    } else {
         *v = &undefined;
     }
 
@@ -723,14 +718,16 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
-        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
+        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
             return -env->error;
         }
     } else {
         return -cpl.error;
     }
 
-    if (stmt_type != STMT_EXPR) {
+    if (env->fp > env->sp) {
+        *v = env_stack_pop(env);
+    } else {
         *v = &undefined;
     }
 

@@ -41,7 +41,6 @@ typedef struct env_t {
     heap_t heap_bot;
 
     scope_t *scope;
-    val_t *result;
 
     uint16_t  native_num;
 

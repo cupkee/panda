@@ -833,6 +833,9 @@ static void compile_stmt_block(compile_t *cpl, stmt_t *s)
 {
     while(s && !cpl->error) {
         compile_stmt(cpl, s);
+        if (s->type == STMT_EXPR) {
+            compile_code_append(cpl, BC_POP);
+        }
         s = s->next;
     }
 }
@@ -971,7 +974,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
 static void compile_stmt_expr(compile_t *cpl, stmt_t *s)
 {
     compile_expr(cpl, s->expr);
-    compile_code_append(cpl, BC_POP_RESULT);
+//    compile_code_append(cpl, BC_POP_RESULT);
 }
 
 static void compile_stmt_return(compile_t *cpl, stmt_t *s)
@@ -1245,13 +1248,19 @@ int compile_one_stmt(compile_t *cpl, stmt_t *stmt)
     return ret;
 }
 
-int compile_multi_stmt(compile_t *cpl, stmt_t *stmt)
+int compile_multi_stmt(compile_t *cpl, stmt_t *s)
 {
-    while (stmt) {
-        if (compile_stmt(cpl, stmt)) {
+    while (s) {
+        int t = s->type;
+
+        if (compile_stmt(cpl, s)) {
             break;
         }
-        stmt = stmt->next;
+        s= s->next;
+
+        if (s && t == STMT_EXPR) {
+            compile_code_append(cpl, BC_POP);
+        }
     }
     compile_code_append(cpl, BC_STOP);
     return compile_save_main_vmap(cpl);
@@ -1284,10 +1293,10 @@ static int compile_code_revise(compile_t *cpl, compile_func_t *fn)
 
     while (off < end) {
         const char *name;
-        int pn, p1, p2;
+        int p1, p2;
         int cp = off;
 
-        pn  = bcode_parse(code, &off, &name, &p1, &p2);
+        bcode_parse(code, &off, &name, &p1, &p2);
 
         switch (code[cp]) {
         case BC_STOP: break;
@@ -1314,8 +1323,6 @@ static int compile_code_revise(compile_t *cpl, compile_func_t *fn)
         case BC_POP_JMP_T:  compile_func_stack_pop(cpl, fn);
                             break;
         case BC_POP_JMP_F:  compile_func_stack_pop(cpl, fn);
-                            break;
-        case BC_POP_RESULT: compile_func_stack_pop(cpl, fn);
                             break;
         case BC_POP:        compile_func_stack_pop(cpl, fn);
                             break;

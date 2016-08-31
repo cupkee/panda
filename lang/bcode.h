@@ -24,7 +24,6 @@ typedef enum bcode_t {
     BC_POP_SJMP_T,
     BC_POP_JMP_F,
     BC_POP_SJMP_F,
-    BC_POP_RESULT,
     BC_POP,
 
     BC_PUSH_UND,
