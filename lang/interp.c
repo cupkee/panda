@@ -306,6 +306,21 @@ static inline void interp_assign(env_t *env) {
     }
 }
 
+static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
+    val_t *fn = env_stack_peek(env);
+    val_t *av = fn + 1;
+
+    if (val_is_script(fn)) {
+        return env_frame_setup(env, pc, fn, ac, av);
+    } else
+    if (val_is_native(fn)) {
+        env_native_call(env, fn, ac, av);
+    } else {
+        env_set_error(env, ERR_InvalidCallor);
+    }
+    return pc;
+}
+
 static inline void interp_prop_get(env_t *env) {
     val_t *key = env_stack_peek(env);
     val_t *obj = key + 1;
@@ -394,13 +409,10 @@ static inline void interp_show(uint8_t *pc, int sp) {
 static inline void interp_show(uint8_t *pc, int sp) {}
 #endif
 
-static int interp_run(env_t *env, uint8_t *entry, val_t **result)
+static int interp_run(env_t *env, uint8_t *pc, val_t **result)
 {
-    uint8_t *base, *pc;
     int     index;
 
-    env_entry_setup(env, entry, 0, NULL, &pc);
-    base = pc;
     while(!env->error) {
         uint8_t code;
 
@@ -530,22 +542,9 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
         case BC_TIN:        env_set_error(env, ERR_InvalidByteCode); break;
 
         case BC_ASSIGN:     interp_assign(env); break;
-        case BC_FUNC_CALL:  index = *pc++;
-                            {
-                                val_t *fn = env_stack_peek(env);
-                                val_t *av = fn + 1;
-                                int ac = index;
 
-                                if (val_is_script(fn)) {
-                                    pc = env_frame_setup(env, pc, fn, ac, av);
-                                } else
-                                if (val_is_native(fn)) {
-                                    //env_native_frame_setup(env, ac);
-                                    env_native_call(env, fn, ac, av);
-                                } else {
-                                    env_set_error(env, ERR_InvalidCallor);
-                                }
-                            }
+        case BC_FUNC_CALL:  index = *pc++;
+                            pc = interp_call(env, index, pc);
                             break;
 
         case BC_PROP:       interp_prop_get(env);  break;
@@ -621,18 +620,37 @@ int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *h
     return 0;
 }
 
+val_t interp_execute_call(env_t *env, int ac)
+{
+    uint8_t stop = BC_STOP;
+    uint8_t *pc;
+    val_t *res;
+
+    pc = interp_call(env, ac, &stop);
+    if (pc != &stop) {
+        // call a script function
+        interp_run(env, pc, &res);
+    }
+
+    if (!env->error) {
+        return *env_stack_pop(env);
+    } else {
+        // error occured
+        return val_mk_undefined();
+    }
+}
+
 int interp_execute(env_t *env, val_t **v)
 {
 
-    if (!env) {
+    if (!env || !v) {
         return -1;
     }
 
-    if (v) {
-        *v = &undefined;
-    }
+    *v = &undefined;
 
-    if (0 != interp_run(env, env_get_main_entry(env), v)) {
+    //if (0 != interp_run(env, env_get_main_entry(env), 0, NULL, v)) {
+    if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
         return -env->error;
     }
 
@@ -647,7 +665,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     compile_t cpl;
     int error = 0, stmt_type;
 
-    if (!env || !input) {
+    if (!env || !input || !v) {
         return -1;
     }
 
@@ -668,7 +686,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
             stmt = stmt->next;
         }
 
-        if (0 != interp_run(env, env_get_main_entry(env), v)) {
+        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
             //printf("execute error: %d\n", env->error);
             error = -env->error;
         }
@@ -692,7 +710,7 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     int stmt_type;
     heap_t *heap = env_heap_get_free((env_t*)env);
 
-    if (!env || !input) {
+    if (!env || !input || !v) {
         return -1;
     }
 
@@ -706,8 +724,7 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
-
-        if (0 != interp_run(env, env_get_main_entry(env), v)) {
+        if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL), v)) {
             return -env->error;
         }
     } else {

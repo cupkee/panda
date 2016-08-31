@@ -7,7 +7,7 @@ intptr_t function_create(env_t *env, uint8_t *entry)
     if (fn) {
         fn->magic = MAGIC_FUNCTION;
         fn->age   = 0;
-        fn->head = entry;
+        fn->entry = entry;
         fn->super = env->scope;
     }
     return (intptr_t) fn;

@@ -302,33 +302,6 @@ int env_scope_get(env_t *env, int id, val_t **v) {
     return -1;
 }
 
-int env_entry_setup(env_t *env, uint8_t *entry, int an, val_t *av, uint8_t **pc)
-{
-    uint8_t  vc, ac;
-    scope_t *scope;
-
-    vc = executable_func_get_var_cnt(entry);
-    ac = executable_func_get_arg_cnt(entry);
-    if (an < ac) {
-        // Todo: support variable count arguments
-        env_set_error(env, ERR_NotImplemented);
-        return -1;
-    }
-
-    // main scope already created, in interactive mode
-    if (!env_is_interactive(env)) {
-        scope = env_scope_create(env, NULL, entry, an, av);
-        if (!scope) {
-            return -1;
-        }
-        env->scope = scope;
-    }
-
-    *pc = executable_func_get_code(entry);
-
-    return 0;
-}
-
 uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
 {
     function_t *fn = (function_t *)val_2_intptr(fv);
@@ -343,7 +316,7 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
         return pc;
     }
 
-    if (NULL == (scope = env_scope_create(env, fn->super, fn->head, ac, av))) {
+    if (NULL == (scope = env_scope_create(env, fn->super, fn->entry, ac, av))) {
         // error had be set in
         return NULL;
     }
@@ -406,6 +379,28 @@ void env_native_call(env_t *env, val_t *fv, int ac, val_t *av)
     env->sp = sp;
     env->fp = fp;
     env->scope = scope;
+}
+
+uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av)
+{
+    // main scope already created, in interactive mode
+    if (!env_is_interactive(env)) {
+        env->scope = env_scope_create(env, NULL, entry, ac, av);
+    }
+
+    return executable_func_get_code(entry);
+}
+
+uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av)
+{
+    uint8_t *entry = env_get_main_entry(env);
+
+    // main scope already created, in interactive mode
+    if (!env_is_interactive(env)) {
+        env->scope = env_scope_create(env, NULL, entry, ac, av);
+    }
+
+    return executable_func_get_code(entry);
 }
 
 void *env_heap_alloc(env_t *env, int size)
