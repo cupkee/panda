@@ -391,41 +391,21 @@ void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
     }
 }
 
-int env_native_frame_setup(env_t *env, int ac)
+void env_native_call(env_t *env, val_t *fv, int ac, val_t *av)
 {
-    frame_t *frame;
-    int fp;
+    function_native_t fn = (function_native_t) val_2_intptr(fv);
+    scope_t *scope;
+    int fp, sp;
 
-    if (env->sp < FRAME_SIZE) {
-        env->error = ERR_StackOverflow;
-        return -1;
-    }
+    sp = env->sp + ac; // skip arguments & keep return value in stack
+    fp = env->fp;
+    scope = env->scope;
 
-    // keep arguments & function in stack
-    fp = env->sp - FRAME_SIZE;
+    *(env->sb + sp) = fn(env, ac, av);
 
-    frame = (frame_t *)(env->sb + fp);
-    frame->fp = env->fp;
-    frame->sp = env->sp + ac + 1; // skip arguments & function when return
-    frame->pc = 0;
-    frame->scope = (intptr_t) env->scope;
-
+    env->sp = sp;
     env->fp = fp;
-    env->sp = fp;
-    env->scope = NULL;
-
-    return 0;
-}
-
-void env_native_return(env_t *env, val_t res)
-{
-    frame_t *frame = (frame_t *)(env->sb + env->fp);
-
-    env->sp = frame->sp;
-    env->fp = frame->fp;
-    env->scope = (scope_t*) frame->scope;
-
-    *env_stack_push(env) = res;
+    env->scope = scope;
 }
 
 void *env_heap_alloc(env_t *env, int size)

@@ -540,10 +540,8 @@ static int interp_run(env_t *env, uint8_t *entry, val_t **result)
                                     pc = env_frame_setup(env, pc, fn, ac, av);
                                 } else
                                 if (val_is_native(fn)) {
-                                    function_native_t fp = (function_native_t) val_2_intptr(fn);
-
-                                    env_native_frame_setup(env, ac);
-                                    env_native_return(env, fp(env, ac, av));
+                                    //env_native_frame_setup(env, ac);
+                                    env_native_call(env, fn, ac, av);
                                 } else {
                                     env_set_error(env, ERR_InvalidCallor);
                                 }

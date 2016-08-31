@@ -99,8 +99,7 @@ int env_native_find(env_t *env, intptr_t sym_id);
 
 uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av);
 void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
-int  env_native_frame_setup(env_t *env, int vc);
-void env_native_return(env_t *env, val_t res);
+void env_native_call(env_t *env, val_t *fv, int ac, val_t *av);
 
 int env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av, uint8_t **pc);
 
