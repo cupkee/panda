@@ -392,13 +392,6 @@ static int compile_var_add(compile_t *cpl, intptr_t sym_id)
     return var_id < var_max ? 0 : 1;
 }
 
-/*
-int compile_var_get(compile_t *cpl, intptr_t sym_id)
-{
-    return (!cpl || !sym_id) ? -1 : compile_varmap_lookup(cpl, sym_id);
-}
-*/
-
 static inline int compile_varmap_lookup_name(compile_t *cpl, const char *name, int *generation) {
     return compile_varmap_lookup(cpl, compile_sym_find(cpl, name), generation);
 }
@@ -435,35 +428,31 @@ static int compile_code_check_extend(compile_t *cpl, int space)
     return size;
 }
 
-static inline int compile_code_append(compile_t *cpl, uint8_t code)
+static inline void compile_code_append(compile_t *cpl, uint8_t code)
 {
     compile_func_t *func;
 
     if (cpl->error || 0 > compile_code_check_extend(cpl, 1)) {
-        return 1;
+        return;
     }
 
     func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = code;
-
-    return 0;
 }
 
-static inline int compile_code_appends(compile_t *cpl, int n, uint8_t *code)
+static inline void compile_code_appends(compile_t *cpl, int n, uint8_t *code)
 {
     compile_func_t *func;
     int i;
 
     if (cpl->error || 0 > compile_code_check_extend(cpl, n)) {
-        return 1;
+        return;
     }
 
     func = compile_func_cur(cpl);
     for (i = 0; i < n; i++) {
         func->code_buf[func->code_num++] = code[i];
     }
-
-    return 0;
 }
 
 static int compile_code_extend(compile_t *cpl, int bytes)
@@ -530,67 +519,50 @@ static void compile_code_append_str(compile_t *cpl, const char *s)
     compile_code_append(cpl, id);
 }
 
-static inline int compile_code_append_func(compile_t *cpl, int func_id)
+static inline void compile_code_append_arg_u16(compile_t *cpl, uint8_t cmd, int n)
 {
     compile_func_t *func;
 
     if (cpl->error || 0 > compile_code_check_extend(cpl, 3)) {
-        return 1;
+        return;
     }
 
-    func = cpl->func_buf + cpl->func_cur;
-    func->code_buf[func->code_num++] = BC_PUSH_SCRIPT;
-    func->code_buf[func->code_num++] = func_id >> 8;
-    func->code_buf[func->code_num++] = func_id;
-
-    return 0;
-}
-
-static inline int compile_code_append_native(compile_t *cpl, int id)
-{
-    compile_func_t *func;
-
-    if (cpl->error || 0 > compile_code_check_extend(cpl, 3)) {
-        return 1;
+    if (n < 0 || n > 0xffff) {
+        cpl->error = ERR_SysError;
+        return;
     }
 
     func = compile_func_cur(cpl);
-    func->code_buf[func->code_num++] = BC_PUSH_NATIVE;
-    func->code_buf[func->code_num++] = id >> 8;
-    func->code_buf[func->code_num++] = id;
-
-    return 0;
+    func->code_buf[func->code_num++] = cmd;
+    func->code_buf[func->code_num++] = n >> 8;
+    func->code_buf[func->code_num++] = n;
 }
 
-static inline int compile_code_append_var(compile_t *cpl, int id, int generation)
+static inline void compile_code_append_var(compile_t *cpl, int id, int generation)
 {
     compile_func_t *func;
 
     if (cpl->error || 0 > compile_code_check_extend(cpl, 3)) {
-        return 1;
+        return;
     }
 
     func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = BC_PUSH_VAR;
     func->code_buf[func->code_num++] = id;
     func->code_buf[func->code_num++] = generation;
-
-    return 0;
 }
 
-static inline int compile_code_append_call(compile_t *cpl, int ac)
+static inline void compile_code_append_call(compile_t *cpl, int ac)
 {
     compile_func_t *func;
 
     if (cpl->error || 0 > compile_code_check_extend(cpl, 2)) {
-        return 1;
+        return;
     }
 
     func = compile_func_cur(cpl);
     func->code_buf[func->code_num++] = BC_FUNC_CALL;
     func->code_buf[func->code_num++] = ac;
-
-    return 0;
 }
 
 static void compile_expr(compile_t *cpl, expr_t *e);
@@ -730,7 +702,7 @@ void compile_expr_id(compile_t *cpl, expr_t *e)
         id = compile_native_lookup(cpl, sym_id);
 
         if (id >= 0) {
-            compile_code_append_native(cpl, id);
+            compile_code_append_arg_u16(cpl, BC_PUSH_NATIVE, id);
         } else {
             cpl->error = ERR_NotDefinedId;
         }
@@ -867,11 +839,46 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     func_id = curr + cpl->func_offset;
     if (name) {
         compile_expr_lft(cpl, name);
-        compile_code_append_func(cpl, func_id);
+        compile_code_append_arg_u16(cpl, BC_PUSH_SCRIPT, func_id);
         compile_code_append(cpl, BC_ASSIGN);
     } else {
-        compile_code_append_func(cpl, func_id);
+        compile_code_append_arg_u16(cpl, BC_PUSH_SCRIPT, func_id);
     }
+}
+
+static inline void compile_kv(compile_t *cpl, expr_t *e) {
+    expr_t *key = ast_expr_lft(e);
+    expr_t *val = ast_expr_rht(e);
+
+    compile_expr(cpl, val);
+    if (key->type == EXPR_ID || key->type == EXPR_STRING) {
+        compile_code_append_str(cpl, ast_expr_text(key));
+    } else {
+        cpl->error = ERR_InvalidSyntax;
+    }
+}
+
+static void compile_dict(compile_t *cpl, expr_t *e)
+{
+    int n = 0;
+    expr_t *list = ast_expr_lft(e);
+
+    while(!cpl->error && list) {
+        expr_t *kv;
+
+        if (list->type == EXPR_COMMA) {
+            kv = ast_expr_lft(list);
+            list = ast_expr_rht(list);
+        } else {
+            kv = list;
+            list = NULL;
+        }
+
+        compile_kv(cpl, kv);
+        n++;
+    }
+
+    compile_code_append_arg_u16(cpl, BC_DICT, n * 2);
 }
 
 static void compile_callor(compile_t *cpl, expr_t *e, int argc)
@@ -889,7 +896,50 @@ static void compile_callor(compile_t *cpl, expr_t *e, int argc)
     compile_code_append_call(cpl, argc);
 }
 
-static void compile_func_call(compile_t *cpl, expr_t *e)
+static void compile_assign(compile_t *cpl, expr_t *e)
+{
+    int type = ast_expr_lft(e)->type;
+
+    if (type == EXPR_PROP) {
+        expr_t *prop = ast_expr_rht(ast_expr_lft(e));
+
+        compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
+        compile_code_append_str(cpl, ast_expr_text(prop));
+        compile_expr(cpl, ast_expr_rht(e));
+        compile_code_append(cpl, BC_PROP_ASSIGN);
+    } else
+    if (type == EXPR_ELEM) {
+        compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
+        compile_expr(cpl, ast_expr_rht(ast_expr_lft(e)));
+        compile_expr(cpl, ast_expr_rht(e));
+        compile_code_append(cpl, BC_ELEM_ASSIGN);
+    } else {
+        compile_expr_lft(cpl, ast_expr_lft(e));
+        compile_expr(cpl, ast_expr_rht(e));
+        compile_code_append(cpl, BC_ASSIGN);
+    }
+}
+
+static inline void compile_comma(compile_t *cpl, expr_t *e)
+{
+    compile_expr(cpl, ast_expr_lft(e));
+    compile_code_append(cpl, BC_POP);
+    compile_expr(cpl, ast_expr_rht(e));
+}
+
+static inline void compile_ternary(compile_t *cpl, expr_t *e)
+{
+    int pos1, pos2, end;
+
+    compile_expr(cpl, ast_expr_lft(e)); pos1 = compile_code_pos(cpl);
+    compile_expr(cpl, ast_expr_lft(ast_expr_rht(e))); pos2 = compile_code_pos(cpl);
+    compile_expr(cpl, ast_expr_rht(ast_expr_rht(e))); end = compile_code_pos(cpl);
+
+    compile_code_insert_jmp_to(cpl, pos2, end);
+    compile_false_pop_jmp(cpl, pos1, pos2 + (compile_code_pos(cpl) - end));
+}
+
+static inline void compile_func_call(compile_t *cpl, expr_t *e)
 {
     int argc = 0;
     expr_t *args, *func;
@@ -921,7 +971,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NOT); break;
     case EXPR_LOGIC_NOT:compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_LOGIC_NOT); break;
     case EXPR_ARRAY:    cpl->error = ERR_NotImplemented; break;
-    case EXPR_DICT:     cpl->error = ERR_NotImplemented; break;
+    case EXPR_DICT:     compile_dict(cpl, e); break;
 
     case EXPR_MUL:      compile_expr_binary(cpl, e, BC_MUL); break;
     case EXPR_DIV:      compile_expr_binary(cpl, e, BC_DIV); break;
@@ -951,22 +1001,11 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_PROP:     compile_expr_binary(cpl, e, BC_PROP); break;
     case EXPR_ELEM:     compile_expr_binary(cpl, e, BC_ELEM); break;
 
-    case EXPR_ASSIGN:   compile_expr_lft(cpl, ast_expr_lft(e));
-                        compile_expr(cpl, ast_expr_rht(e));
-                        compile_code_append(cpl, BC_ASSIGN); break;
+    case EXPR_ASSIGN:   compile_assign(cpl, e); break;
 
-    case EXPR_COMMA:    compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_POP);
-                        compile_expr(cpl, ast_expr_rht(e)); break;
-    case EXPR_TERNARY:  {
-                            int pos1, pos2, end;
-                            compile_expr(cpl, ast_expr_lft(e)); pos1 = compile_code_pos(cpl);
-                            compile_expr(cpl, ast_expr_lft(ast_expr_rht(e))); pos2 = compile_code_pos(cpl);
-                            compile_expr(cpl, ast_expr_rht(ast_expr_rht(e))); end = compile_code_pos(cpl);
+    case EXPR_COMMA:    compile_comma(cpl, e); break;
+    case EXPR_TERNARY:  compile_ternary(cpl, e); break;
 
-                            compile_code_insert_jmp_to(cpl, pos2, end);
-                            compile_false_pop_jmp(cpl, pos1, pos2 + (compile_code_pos(cpl) - end));
-                        }
-                        break;
     default:            cpl->error = ERR_NotImplemented; break;
     }
 }

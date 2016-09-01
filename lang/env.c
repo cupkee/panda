@@ -472,6 +472,11 @@ static scope_t *env_heap_copy_scope(heap_t *heap, scope_t *scope)
     return heap_dup_scope(heap, scope);
 }
 
+static object_t *env_heap_copy_dictionary(heap_t *heap, object_t *obj)
+{
+    return NULL;
+}
+
 static intptr_t env_heap_copy_string(heap_t *heap, intptr_t str)
 {
     if (!str || heap_is_owned(heap, (void*)str)) {
@@ -526,6 +531,9 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
             //printf("val[%d] f %llx reset to ", i, *v);
             val_set_script(v, env_heap_copy_function(heap, val_2_intptr(v)));
             //printf("%llx\n", *v);
+        } else
+        if (val_is_dictionary(v)) {
+            val_set_dictionary(v, (intptr_t)env_heap_copy_dictionary(heap, (object_t *)val_2_intptr(v)));
         }
         i++;
     }
@@ -595,6 +603,10 @@ static void env_heap_gc_scan(env_t *env)
 
             scan += scope_mem_space(scope);
             break;
+            }
+        case MAGIC_OBJECT: {
+            object_t *obj = (object_t *) (base + scan);
+            obj->proto = env_heap_copy_dictionary(heap, obj->proto);
             }
         }
     }

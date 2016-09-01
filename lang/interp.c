@@ -316,15 +316,32 @@ static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
     return pc;
 }
 
+static inline void interp_dict(env_t *env, int n) {
+    val_t *av = env_stack_peek(env);
+    intptr_t dict = object_create(env, n, av);
+
+    if (dict) {
+        val_set_dictionary(env_stack_release(env, n - 1), dict);
+    } else {
+        val_set_undefined(env_stack_release(env, n - 1));
+    }
+}
+
 static inline void interp_prop_get(env_t *env) {
     val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
-    int err = object_prop_get(env, obj, key, res);
 
-    if (err) {
-        env_set_error(env, err);
-    }
+    object_prop_get(env, obj, key, res);
+    env_stack_pop(env);
+}
+
+static inline void interp_elem_get(env_t *env) {
+    val_t *key = env_stack_peek(env);
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_get(env, obj, key, res);
     env_stack_pop(env);
 }
 
@@ -332,36 +349,40 @@ static inline void interp_prop_self(env_t *env) {
     val_t *key = env_stack_peek(env);
     val_t *self = key + 1;
     val_t *prop = key;
-    int err = object_prop_get(env, self, key, prop);
 
-    if (err) {
-        env_set_error(env, err);
-    }
+    object_prop_get(env, self, key, prop);
     // no pop
-}
-
-static inline void interp_elem_get(env_t *env) {
-    val_t *key = env_stack_peek(env);
-    val_t *obj = key + 1;
-    val_t *res = obj;
-    int err = object_elem_get(env, obj, key, res);
-
-    if (err) {
-        env_set_error(env, err);
-    }
-    env_stack_pop(env);
 }
 
 static inline void interp_elem_self(env_t *env) {
     val_t *key = env_stack_peek(env); // keey the "key" in stack
     val_t *self = key + 1;
     val_t *elem = key;
-    int err = object_elem_get(env, self, key, elem);
 
-    if (err) {
-        env_set_error(env, err);
-    }
+    object_elem_get(env, self, key, elem);
     // no pop
+}
+
+static inline void interp_prop_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_set(env, obj, key, val);
+    env_stack_release(env, 2);
+    *res = *val;
+}
+
+static inline void interp_elem_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_set(env, obj, key, val);
+    env_stack_release(env, 2);
+    *res = *val;
 }
 
 static inline
@@ -499,6 +520,7 @@ static int interp_run(env_t *env, uint8_t *pc)
         case BC_PUSH_REF:   index = (*pc++); env_push_ref(env, index, *pc++);
                             break;
 
+
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             interp_push_function(env, index);
                             break;
@@ -541,11 +563,16 @@ static int interp_run(env_t *env, uint8_t *pc)
                             pc = interp_call(env, index, pc);
                             break;
 
+        case BC_DICT:       index = (*pc++); index = (index << 8) | (*pc++);
+                            interp_dict(env, index); break;
+
         case BC_PROP:       interp_prop_get(env);  break;
         case BC_PROP_METH:  interp_prop_self(env); break;
+        case BC_PROP_ASSIGN:interp_prop_set(env); break;
 
         case BC_ELEM:       interp_elem_get(env);  break;
         case BC_ELEM_METH:  interp_elem_self(env); break;
+        case BC_ELEM_ASSIGN:interp_elem_set(env); break;
 
         default:            env_set_error(env, ERR_InvalidByteCode);
         }
@@ -674,11 +701,11 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
         if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
-            //printf("execute error: %d\n", env->error);
+            printf("execute error: %d\n", env->error);
             return -env->error;
         }
     } else {
-        //printf("cmpile error: %d\n", cpl.error);
+        printf("cmpile error: %d\n", cpl.error);
         return -cpl.error;
     }
 

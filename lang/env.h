@@ -125,6 +125,11 @@ static inline val_t *env_stack_push(env_t *env) {
     return env->sb + (--env->sp);
 }
 
+static inline val_t *env_stack_release(env_t *env, int n) {
+    env->sp += n;
+    return env->sb + env->sp;
+}
+
 static inline void env_push_call_argument(env_t *env, val_t *v) {
     *env_stack_push(env) = *v;
 }

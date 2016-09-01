@@ -111,15 +111,22 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
 
     case BC_TIN:        *name = "TIN"; if(offset) *offset = shift; return 0;
 
-    case BC_ASSIGN:     *name = "ASSING"; if(offset) *offset = shift; return 0;
     case BC_FUNC_CALL:  *param1 = code[shift++];
                         *name = "CALL"; if(offset) *offset = shift; return 1;
+
+    case BC_DICT:       index = (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
+                        *name  = "DICT"; if(offset) *offset = shift; return 1;
 
     case BC_PROP:       *name = "PROP"; if(offset) *offset = shift; return 0;
     case BC_PROP_METH:  *name = "PROP_METH"; if(offset) *offset = shift; return 0;
 
     case BC_ELEM:       *name = "ELEM"; if(offset) *offset = shift; return 0;
     case BC_ELEM_METH:  *name = "ELEM_METH"; if(offset) *offset = shift; return 0;
+
+    case BC_ASSIGN:     *name = "ASSING"; if(offset) *offset = shift; return 0;
+    case BC_PROP_ASSIGN:*name = "PROP_ASSING"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_ASSIGN:*name = "ELEM_ASSING"; if(offset) *offset = shift; return 0;
 
     default:            *name = "UNKNOWN"; if(offset) *offset = shift; return 0;
     }

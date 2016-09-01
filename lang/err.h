@@ -20,6 +20,7 @@
 #define ERR_NotDefinedId        403
 #define ERR_NotDefinedProp      404
 #define ERR_HasNoneElement      405
+#define ERR_HasNoneProperty     406
 
 #endif /* __LANG_ERR_INC__ */
 

@@ -50,7 +50,7 @@ typedef union {
 #define TAG_BOOLEAN         MAKE_TAG(1, 7)
 #define TAG_NAN             MAKE_TAG(1, 8)
 
-#define TAG_OBJECT          MAKE_TAG(1, 9)
+#define TAG_DICT            MAKE_TAG(1, 9)
 #define TAG_ARRAY           MAKE_TAG(1, 0xA)
 #define TAG_BUFFER          MAKE_TAG(1, 0xB)
 
@@ -81,9 +81,7 @@ static inline void val_2_reference(val_t *v, uint8_t *id, uint8_t *generation) {
 #endif
 }
 
-static inline val_t double_2_val(double d) {
-    return ((valnum_t*)&d)->v;
-}
+#define double_2_val(d) (((valnum_t*)&(d))->v)
 
 static inline int val_is_number(val_t *v) {
     return (*v & TAG_INFINITE) != TAG_INFINITE;
@@ -145,8 +143,8 @@ static inline const char *val_2_cstring(val_t *v) {
     }
 }
 
-static inline int val_is_object(val_t *v) {
-    return (*v & TAG_MASK) == TAG_OBJECT;
+static inline int val_is_dictionary(val_t *v) {
+    return (*v & TAG_MASK) == TAG_DICT;
 }
 
 static inline int val_is_reference(val_t *v) {
@@ -186,6 +184,9 @@ static inline val_t val_mk_script(intptr_t s) {
 static inline val_t val_mk_native(intptr_t n) {
     return TAG_FUNC_NATIVE | n;
 }
+
+#define INIT_NATIVE_VAL(n)  (TAG_FUNC_NATIVE | (intptr_t)n)
+#define INIT_STRING_VAL(s)  (TAG_STRING_S | (intptr_t)s)
 
 static inline val_t val_mk_boolean(int v) {
     return TAG_BOOLEAN | (!!v);
@@ -248,8 +249,8 @@ static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
 }
 
-static inline void val_set_object(val_t *p, intptr_t o) {
-    *((uint64_t *)p) = TAG_OBJECT | o;
+static inline void val_set_dictionary(val_t *p, intptr_t d) {
+    *((uint64_t *)p) = TAG_DICT | d;
 }
 
 #endif /* __LANG_VALUE_INC__ */

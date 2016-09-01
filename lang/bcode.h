@@ -61,6 +61,8 @@ typedef enum bcode_t {
     BC_TLE,
     BC_TIN,
 
+    BC_DICT,
+
     BC_PROP,
     BC_PROP_METH,
     BC_PROP_SET,
@@ -72,6 +74,8 @@ typedef enum bcode_t {
     BC_FUNC_CALL,
 
     BC_ASSIGN,
+    BC_PROP_ASSIGN,
+    BC_ELEM_ASSIGN,
 } bcode_t;
 
 int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int *param2);
