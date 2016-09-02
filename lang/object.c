@@ -138,7 +138,7 @@ int objects_env_init(env_t *env)
     NaN       = &nan_proto;
     Boolean   = &boolean_proto;
 
-    Object->magic = 0;
+    Object->magic = MAGIC_OBJECT_STATIC;
     Object->proto = NULL;
     Object->prop_num = 1;
     Object->keys = object_prop_keys;
@@ -147,7 +147,7 @@ int objects_env_init(env_t *env)
         env_symbal_add_static(env, (const char *)object_prop_keys[i]);
     }
 
-    String->magic = 0;
+    String->magic = MAGIC_OBJECT_STATIC;
     String->proto = Object;
     String->prop_num = 2;
     String->keys = string_prop_keys;
@@ -156,19 +156,19 @@ int objects_env_init(env_t *env)
         env_symbal_add_static(env, (const char *)string_prop_keys[i]);
     }
 
-    Number->magic = 0;
+    Number->magic = MAGIC_OBJECT_STATIC;
     Number->proto = Object;
     Number->prop_num = 0;
 
-    Undefined->magic = 0;
+    Undefined->magic = MAGIC_OBJECT_STATIC;
     Undefined->proto = Object;
     Undefined->prop_num = 0;
 
-    NaN->magic = 0;
+    NaN->magic = MAGIC_OBJECT_STATIC;
     NaN->proto = Object;
     NaN->prop_num = 0;
 
-    Boolean->magic = 0;
+    Boolean->magic = MAGIC_OBJECT_STATIC;
     Boolean->proto = Object;
     Boolean->prop_num = 0;
 

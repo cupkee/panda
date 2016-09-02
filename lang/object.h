@@ -10,6 +10,7 @@
 #include "err.h"
 
 #define MAGIC_OBJECT (MAGIC_BASE + 7)
+#define MAGIC_OBJECT_STATIC (MAGIC_BASE + 9)
 
 typedef struct object_t {
     uint8_t magic;
@@ -29,6 +30,10 @@ void object_prop_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_prop_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_elem_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
+
+static inline int object_mem_space(object_t *o) {
+    return sizeof(object_t) + sizeof(intptr_t) * o->prop_size + sizeof(val_t) * o->prop_size;
+};
 
 intptr_t object_create(env_t *env, int n, val_t *av);
 

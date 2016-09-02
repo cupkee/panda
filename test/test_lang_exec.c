@@ -598,6 +598,13 @@ static void test_exec_dict(void)
     CU_ASSERT(0 < interp_execute_string(&env, "(c.d = false) == false", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.e = def() return 0", &res) && val_is_function(res));
 
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = {a: a, b: b, c: c}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.a == a", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.b == b", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.c == c", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.a.a == 'world'", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.b.b() == 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.c.e() == 0", &res) && val_is_boolean(res) && val_is_true(res));
     /*
     */
 
@@ -673,7 +680,13 @@ static void test_exec_gc(void)
 
     CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 'world', c = 'hello';", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "var d = c + ' ', e = b + '.', f;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = {a: b, b: c};", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def add(a, b) {var n = 10; while(n) {n = n-1; a+b}return a + b}", &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def join(){return e + c}", &res) && val_is_function(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "o.a == b", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.b == c", &res) && val_is_true(res));
+
     CU_ASSERT(0 < interp_execute_string(&env, "while (a < 1000) { f = add(d, e); a = a + 1}", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 1000", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d", &res) && val_is_string(res));
@@ -681,12 +694,22 @@ static void test_exec_gc(void)
     CU_ASSERT(0 < interp_execute_string(&env, "f", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f == 'hello world.'", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "def join(){return e + c}", &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = 0", &res) && val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (a < 1000) { f = o.a + o.b; a = a + 1}", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f == 'worldhello'", &res) && val_is_boolean(res) && val_is_true(res));
+
     CU_ASSERT(0 < interp_execute_string(&env, "a = 0", &res) && val_is_number(res));
     CU_ASSERT(0 < interp_execute_string(&env, "while (a < 1000) { f = join(); a = a + 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "join() == 'world.hello'", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "join() == e + c", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f == e + c", &res) && val_is_true(res));
+
+
+    CU_ASSERT(0 < interp_execute_string(&env, "b == 'world'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c == 'hello'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.a == b", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.b == c", &res) && val_is_true(res));
+
 
     env_deinit(&env);
 }

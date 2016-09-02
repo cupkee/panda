@@ -417,7 +417,8 @@ static scope_t *heap_dup_scope(heap_t *heap, scope_t *scope)
     scope_t *dup;
     val_t   *buf = NULL;
 
-    dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
+    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
+    dup = heap_alloc(heap, scope_mem_space(scope));
     buf = (val_t *)(dup + 1);
 
     //printf("%s: free %d\n", __func__, heap->free);
@@ -426,6 +427,29 @@ static scope_t *heap_dup_scope(heap_t *heap, scope_t *scope)
     dup->var_buf = buf;
 
     ADDR_VALUE(scope) = dup;
+    return dup;
+}
+
+static object_t *heap_dup_object(heap_t *heap, object_t *obj)
+{
+    object_t *dup;
+    intptr_t *keys;
+    val_t    *vals;
+
+    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
+    dup = heap_alloc(heap, object_mem_space(obj));
+    keys = (intptr_t *) (dup + 1);
+    vals = (val_t *)(keys + obj->prop_size);
+
+    //printf("%s: free %d\n", __func__, heap->free);
+    memcpy(dup, obj, sizeof(object_t));
+    memcpy(keys, obj->keys, sizeof(intptr_t) * obj->prop_num);
+    memcpy(vals, obj->vals, sizeof(val_t) * obj->prop_num);
+    dup->keys = keys;
+    dup->vals = vals;
+
+    ADDR_VALUE(obj) = dup;
+
     return dup;
 }
 
@@ -445,7 +469,7 @@ static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
 
 static intptr_t heap_dup_function(heap_t *heap, intptr_t func)
 {
-    function_t *dup = heap_alloc(heap, sizeof(function_t));
+    function_t *dup = heap_alloc(heap, function_mem_space((function_t*)func));
 
     //printf("%s: free %d\n", __func__, heap->free);
     memcpy(dup, (void*)func, sizeof(function_t));
@@ -472,9 +496,22 @@ static scope_t *env_heap_copy_scope(heap_t *heap, scope_t *scope)
     return heap_dup_scope(heap, scope);
 }
 
-static object_t *env_heap_copy_dictionary(heap_t *heap, object_t *obj)
+static object_t *env_heap_copy_object(heap_t *heap, object_t *obj)
 {
-    return NULL;
+    if (!obj || obj->magic == MAGIC_OBJECT_STATIC || heap_is_owned(heap, obj)) {
+        //printf("[object is nil or owned or static: %p]", obj);
+        return obj;
+    }
+
+    if (MAGIC_BYTE(obj) != MAGIC_OBJECT) {
+        //printf("[obj had copy to: %p]", ADDR_VALUE(obj));
+        return ADDR_VALUE(obj);
+    }
+    //scope_t *dup = heap_dup_scope(heap, scope);
+    //printf("[scope(%p) copy to: %p]", scope, dup);
+    //return dup;
+
+    return heap_dup_object(heap, obj);
 }
 
 static intptr_t env_heap_copy_string(heap_t *heap, intptr_t str)
@@ -533,7 +570,7 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
             //printf("%llx\n", *v);
         } else
         if (val_is_dictionary(v)) {
-            val_set_dictionary(v, (intptr_t)env_heap_copy_dictionary(heap, (object_t *)val_2_intptr(v)));
+            val_set_dictionary(v, (intptr_t)env_heap_copy_object(heap, (object_t *)val_2_intptr(v)));
         }
         i++;
     }
@@ -586,28 +623,37 @@ static void env_heap_gc_scan(env_t *env)
 
         case MAGIC_FUNCTION: {
             function_t *func = (function_t *)(base + scan);
+            scan += function_mem_space(func);
+
             //printf("func super socpe: %p", func->super);
             func->super = env_heap_copy_scope(heap, func->super);
             //printf("\n");
 
-            scan += function_mem_space(func);
             break;
             }
         case MAGIC_SCOPE: {
             scope_t *scope = (scope_t *) (base + scan);
+
+            scan += scope_mem_space(scope);
 
             //printf("super socpe: %p", scope->super);
             scope->super = env_heap_copy_scope(heap, scope->super);
             //printf("\n");
             env_heap_copy_vals(heap, scope->num, scope->var_buf);
 
-            scan += scope_mem_space(scope);
             break;
             }
         case MAGIC_OBJECT: {
             object_t *obj = (object_t *) (base + scan);
-            obj->proto = env_heap_copy_dictionary(heap, obj->proto);
+
+            scan += object_mem_space(obj);
+
+            obj->proto = env_heap_copy_object(heap, obj->proto);
+            env_heap_copy_vals(heap, obj->prop_num, obj->vals);
+
+            break;
             }
+        default: break;
         }
     }
 }
