@@ -18,6 +18,9 @@ typedef struct array_t {
     val_t *elems;
 } array_t;
 
+static inline int array_mem_space(array_t *a) {
+    return SIZE_ALIGN(sizeof(array_t) + sizeof(val_t) * a->elem_size);
+}
 intptr_t array_create(env_t *env, int ac, val_t *av);
 
 void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *elem);

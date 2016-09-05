@@ -2,6 +2,7 @@
 #include "env.h"
 #include "object.h"
 #include "string.h"
+#include "array.h"
 #include "function.h"
 
 #define VACATED     (-1)
@@ -453,6 +454,25 @@ static object_t *heap_dup_object(heap_t *heap, object_t *obj)
     return dup;
 }
 
+static array_t *heap_dup_array(heap_t *heap, array_t *a)
+{
+    array_t *dup;
+    val_t   *vals;
+
+    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
+    dup = heap_alloc(heap, array_mem_space(a));
+    vals = (val_t *)(dup + 1);
+
+    //printf("%s: free %d\n", __func__, heap->free);
+    memcpy(dup, a, sizeof(array_t));
+    memcpy(vals, a->elems, sizeof(val_t) * a->elem_num);
+    dup->elems = vals;
+
+    ADDR_VALUE(a) = dup;
+
+    return dup;
+}
+
 static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
 {
     int size = string_mem_space(str);
@@ -514,6 +534,21 @@ static object_t *env_heap_copy_object(heap_t *heap, object_t *obj)
     return heap_dup_object(heap, obj);
 }
 
+static inline array_t *env_heap_copy_array(heap_t *heap, array_t *a)
+{
+    if (!a || heap_is_owned(heap, a)) {
+        //printf("[array is nil or owned: %p]", a);
+        return a;
+    }
+
+    if (MAGIC_BYTE(a) != MAGIC_ARRAY) {
+        //printf("[array had copy to: %p]", ADDR_VALUE(a));
+        return ADDR_VALUE(a);
+    }
+
+    return heap_dup_array(heap, a);
+}
+
 static intptr_t env_heap_copy_string(heap_t *heap, intptr_t str)
 {
     if (!str || heap_is_owned(heap, (void*)str)) {
@@ -571,6 +606,9 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
         } else
         if (val_is_dictionary(v)) {
             val_set_dictionary(v, (intptr_t)env_heap_copy_object(heap, (object_t *)val_2_intptr(v)));
+        } else
+        if (val_is_array(v)) {
+            val_set_array(v, (intptr_t)env_heap_copy_array(heap, (array_t *)val_2_intptr(v)));
         }
         i++;
     }
@@ -650,6 +688,14 @@ static void env_heap_gc_scan(env_t *env)
 
             obj->proto = env_heap_copy_object(heap, obj->proto);
             env_heap_copy_vals(heap, obj->prop_num, obj->vals);
+
+            break;
+            }
+        case MAGIC_ARRAY: {
+            array_t *array= (array_t*) (base + scan);
+
+            scan += array_mem_space(array);
+            env_heap_copy_vals(heap, array->elem_num, array->elems);
 
             break;
             }
