@@ -61,6 +61,7 @@ typedef enum bcode_t {
     BC_TLE,
     BC_TIN,
 
+    BC_ARRAY,
     BC_DICT,
 
     BC_PROP,

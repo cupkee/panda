@@ -114,6 +114,10 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
     case BC_FUNC_CALL:  *param1 = code[shift++];
                         *name = "CALL"; if(offset) *offset = shift; return 1;
 
+    case BC_ARRAY:      index = (code[shift++]);
+                        *param1 = (index << 8) | (code[shift++]);
+                        *name  = "ARRAY"; if(offset) *offset = shift; return 1;
+
     case BC_DICT:       index = (code[shift++]);
                         *param1 = (index << 8) | (code[shift++]);
                         *name  = "DICT"; if(offset) *offset = shift; return 1;

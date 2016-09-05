@@ -7,6 +7,7 @@
 #include "interp.h"
 #include "object.h"
 #include "function.h"
+#include "array.h"
 #include "string.h"
 
 static val_t undefined = TAG_UNDEFINED;
@@ -316,6 +317,17 @@ static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
     return pc;
 }
 
+static inline void interp_array(env_t *env, int n) {
+    val_t *av = env_stack_peek(env);
+    intptr_t array = array_create(env, n, av);
+
+    if (array) {
+        val_set_array(env_stack_release(env, n - 1), array);
+    } else {
+        val_set_undefined(env_stack_release(env, n - 1));
+    }
+}
+
 static inline void interp_dict(env_t *env, int n) {
     val_t *av = env_stack_peek(env);
     intptr_t dict = object_create(env, n, av);
@@ -562,6 +574,9 @@ static int interp_run(env_t *env, uint8_t *pc)
         case BC_FUNC_CALL:  index = *pc++;
                             pc = interp_call(env, index, pc);
                             break;
+
+        case BC_ARRAY:      index = (*pc++); index = (index << 8) | (*pc++);
+                            interp_array(env, index); break;
 
         case BC_DICT:       index = (*pc++); index = (index << 8) | (*pc++);
                             interp_dict(env, index); break;

@@ -858,6 +858,30 @@ static inline void compile_kv(compile_t *cpl, expr_t *e) {
     }
 }
 
+static void compile_array(compile_t *cpl, expr_t *list)
+{
+    int n = 0;
+
+    while(!cpl->error && list) {
+        expr_t *elem;
+
+        if (list->type == EXPR_ARRAY) {
+            elem = ast_expr_rht(list);
+            list = ast_expr_lft(list);
+        } else {
+            elem = list;
+            list = NULL;
+        }
+
+        if (elem) {
+            compile_expr(cpl, elem);
+        }
+        n++;
+    }
+
+    compile_code_append_arg_u16(cpl, BC_ARRAY, n);
+}
+
 static void compile_dict(compile_t *cpl, expr_t *e)
 {
     int n = 0;
@@ -970,7 +994,7 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_NEG:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NEG); break;
     case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NOT); break;
     case EXPR_LOGIC_NOT:compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_LOGIC_NOT); break;
-    case EXPR_ARRAY:    cpl->error = ERR_NotImplemented; break;
+    case EXPR_ARRAY:    compile_array(cpl, e); break;
     case EXPR_DICT:     compile_dict(cpl, e); break;
 
     case EXPR_MUL:      compile_expr_binary(cpl, e, BC_MUL); break;

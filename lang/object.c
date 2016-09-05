@@ -1,6 +1,7 @@
 
 #include "object.h"
 #include "string.h"
+#include "array.h"
 
 typedef struct object_string_t {
     object_t    obj;
@@ -229,8 +230,7 @@ void object_elem_get(env_t *env, val_t *self, val_t *key, val_t *elem)
             string_at(env, self, key, elem);
         } else
         if (val_is_array(self)) {
-            //array_at(env, self, key, elem);
-            env_set_error(env, ERR_NotImplemented);
+            array_elem_get(env, self, key, elem);
         } else {
             env_set_error(env, ERR_HasNoneElement);
         }
@@ -276,8 +276,7 @@ void object_elem_set(env_t *env, val_t *self, val_t *key, val_t *val)
 {
     if (val_is_number(key)) {
         if (val_is_array(self)) {
-            //array_at(env, self, key, elem);
-            env_set_error(env, ERR_NotImplemented);
+            array_elem_set(env, self, key, val);
         } else {
             env_set_error(env, ERR_InvalidSementic);
         }
