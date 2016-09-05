@@ -356,7 +356,8 @@ static expr_t *parse_expr_assign(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr = parse_expr_ternary(psr, cb, ud);
 
-    if (expr && parse_match(psr, '=')) {
+    if (expr && '=' == parse_token(psr, NULL)) {
+        parse_match(psr, '=');
         if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM) {
             parse_fail(psr, ERR_InvalidLeftValue, cb, ud);
             return NULL;
@@ -413,8 +414,7 @@ static expr_t *parse_expr_kvlist(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr = parse_expr_kv(psr, cb, ud);
 
-    if (expr && ',' == parse_token(psr, NULL)) {
-        parse_match(psr, ',');
+    if (expr && parse_match(psr, ',')) {
         expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_kvlist(psr, cb, ud), cb, ud);
     }
 
@@ -437,7 +437,8 @@ static expr_t *parse_expr_comma(parser_t *psr, parse_callback_t cb, void *ud)
 {
     expr_t *expr = parse_expr_assign(psr, cb, ud);
 
-    if (expr && parse_match(psr, ',')) {
+    if (expr && ',' == parse_token(psr, NULL)) {
+        parse_match(psr, ',');
         expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_comma(psr, cb, ud), cb, ud);
     }
 

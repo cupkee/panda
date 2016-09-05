@@ -26,6 +26,11 @@ intptr_t array_create(env_t *env, int ac, val_t *av);
 void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *elem);
 void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *elem);
 
+val_t array_length(env_t *env, int ac, val_t *av);
+val_t array_push(env_t *env, int ac, val_t *av);
+val_t array_pop(env_t *env, int ac, val_t *av);
+
+
 
 #endif /* __LANG_ARRAY_INC__ */
 

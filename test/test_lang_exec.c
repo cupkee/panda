@@ -618,13 +618,15 @@ static void test_exec_array(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}], b = [];", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_array(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] == 'hello'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2][0] == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2][1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[3].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] = a[1]", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] = a[2]", &res) && val_is_array(res));
@@ -635,6 +637,10 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a[2].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2] == a[3]", &res) && val_is_boolean(res) && val_is_true(res));
 
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = a.pop();", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[2] == o", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.push(o) == 4", &res) && val_is_boolean(res) && val_is_true(res));
 
     env_deinit(&env);
 }

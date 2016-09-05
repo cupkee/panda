@@ -31,6 +31,7 @@ static object_t *Undefined = NULL;
 static object_t *NaN = NULL;
 
 static object_t object_proto;
+static object_t array_proto;
 static object_t undefined_proto;
 static object_t nan_proto;
 static object_t boolean_proto;
@@ -39,8 +40,10 @@ static object_string_t string_proto;
 
 static intptr_t object_prop_keys[1] = {(intptr_t)"toString"};
 static intptr_t string_prop_keys[2] = {(intptr_t)"length", (intptr_t)"indexOf"};
+static intptr_t array_prop_keys[3] = {(intptr_t)"length", (intptr_t)"push", (intptr_t)"pop"};
 static val_t object_prop_vals[1];
 static val_t string_prop_vals[2];
+static val_t array_prop_vals[3];
 
 static val_t object_to_string(env_t *env, int ac, val_t *obj)
 {
@@ -132,9 +135,14 @@ int objects_env_init(env_t *env)
     string_prop_vals[0] = val_mk_native((intptr_t) string_length);
     string_prop_vals[1] = val_mk_native((intptr_t) string_index_of);
 
+    array_prop_vals[0] = val_mk_native((intptr_t) array_length);
+    array_prop_vals[1] = val_mk_native((intptr_t) array_push);
+    array_prop_vals[2] = val_mk_native((intptr_t) array_pop);
+
     Object    = &object_proto;
     String    = (object_t *)&string_proto;
     Number    = (object_t *)&number_proto;
+    Array     = &array_proto;
     Undefined = &undefined_proto;
     NaN       = &nan_proto;
     Boolean   = &boolean_proto;
@@ -155,6 +163,15 @@ int objects_env_init(env_t *env)
     String->vals = string_prop_vals;
     for (i = 0; i < 2; i++) {
         env_symbal_add_static(env, (const char *)string_prop_keys[i]);
+    }
+
+    Array->magic = MAGIC_OBJECT_STATIC;
+    Array->proto = Object;
+    Array->prop_num = 3;
+    Array->keys = array_prop_keys;
+    Array->vals = array_prop_vals;
+    for (i = 0; i < 3; i++) {
+        env_symbal_add_static(env, (const char *)array_prop_keys[i]);
     }
 
     Number->magic = MAGIC_OBJECT_STATIC;

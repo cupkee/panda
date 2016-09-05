@@ -875,8 +875,8 @@ static void compile_array(compile_t *cpl, expr_t *list)
 
         if (elem) {
             compile_expr(cpl, elem);
+            n++;
         }
-        n++;
     }
 
     compile_code_append_arg_u16(cpl, BC_ARRAY, n);
