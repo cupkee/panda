@@ -106,7 +106,7 @@ int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size
 
     panda_native_init(&env);
 
-    printf("PANDA V0.1\n\n");
+    printf("PANDA V0.1.1\n\n");
 
     while (1) {
         int    err;
