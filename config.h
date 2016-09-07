@@ -54,9 +54,10 @@
 # define EXE_FUNCTION_MAX           (16)
 # define EXE_NUMBER_MAX             (32)
 # define EXE_STRING_MAX             (128)
-# define EXE_NATIVE_MAX             (16)
 # define EXE_MAIN_CODE_MAX          (512)
 # define EXE_FUNC_CODE_MAX          (1536)
+
+# define DEF_PROP_SIZE              (4)
 
 # define DEF_FUNC_SIZE              (4)
 # define DEF_VMAP_SIZE              (4)
@@ -74,9 +75,10 @@
 # define EXE_FUNCTION_MAX           (32)
 # define EXE_NUMBER_MAX             (64)
 # define EXE_STRING_MAX             (256)
-# define EXE_NATIVE_MAX             (32)
 # define EXE_MAIN_CODE_MAX          (1024)
 # define EXE_FUNC_CODE_MAX          (1024 * 3)
+
+# define DEF_PROP_SIZE              (8)
 
 # define DEF_FUNC_SIZE              (4)
 # define DEF_VMAP_SIZE              (4)
@@ -90,8 +92,8 @@
 #endif
 
 #define EXE_MEM_SPACE               SIZE_ALIGN(EXE_FUNCTION_MAX * sizeof(void *) + EXE_NUMBER_MAX * sizeof(double)\
-                                    + EXE_STRING_MAX * sizeof(void *) + EXE_NATIVE_MAX * 2 * sizeof(void *)\
-                                    + EXE_MAIN_CODE_MAX + EXE_FUNC_CODE_MAX + 32)
+                                    + EXE_STRING_MAX * sizeof(void *) + EXE_MAIN_CODE_MAX + EXE_FUNC_CODE_MAX + 32)
+
 #define SYMBAL_MEM_SPACE            SIZE_ALIGN(EXE_STRING_MAX * (sizeof(void *) + DEF_STRING_SIZE))
 
 // lang compile resource default and limit

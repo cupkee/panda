@@ -15,8 +15,9 @@
 typedef struct object_t {
     uint8_t magic;
     uint8_t age;
-    uint8_t prop_size;
-    uint8_t prop_num;
+    uint8_t reserved[2];
+    uint16_t prop_size;
+    uint16_t prop_num;
     struct object_t   *proto;
     intptr_t *keys;
     val_t    *vals;

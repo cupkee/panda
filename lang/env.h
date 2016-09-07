@@ -66,7 +66,7 @@ typedef struct native_t {
 
 int env_init(env_t *env, void * mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
-             int number_max, int string_max, int native_max, int func_max,
+             int number_max, int string_max, int func_max,
              int main_code_max, int func_code_max,
              int interactive);
 

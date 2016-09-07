@@ -1584,7 +1584,7 @@ void compile_code_dump(compile_t *cpl)
 int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
 {
     return env_init(env, mem_ptr, mem_size, NULL, 0, NULL, 0,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, 0, 0, 0, 0);
+                EXE_NUMBER_MAX, EXE_STRING_MAX, 0, 0, 0, 0);
 }
 
 static void parse_callback(void *ud, parse_event_t *e)

@@ -614,7 +614,7 @@ int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *h
 {
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, EXE_FUNCTION_MAX,
+                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_FUNCTION_MAX,
                 EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 1);
 }
 
@@ -622,7 +622,7 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
 {
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_NATIVE_MAX, EXE_FUNCTION_MAX,
+                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_FUNCTION_MAX,
                 EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 0);
 }
 
@@ -637,7 +637,7 @@ int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *h
 
     if (0 != env_init(env, mem_ptr, mem_size,
                     heap_ptr, heap_size, stack_ptr, stack_size,
-                    0, ef->str_cnt, EXE_NATIVE_MAX, ef->fn_cnt, 0, 0, 0)) {
+                    0, ef->str_cnt, ef->fn_cnt, 0, 0, 0)) {
         return -1;
     }
 

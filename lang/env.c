@@ -133,7 +133,7 @@ intptr_t env_symbal_get(env_t *env, const char *name) {
 
 int env_init(env_t *env, void *mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
-             int number_max, int string_max, int native_max, int func_max,
+             int number_max, int string_max, int func_max,
              int main_code_max, int func_code_max, int interactive)
 {
     int mem_offset;
@@ -755,34 +755,4 @@ int env_native_add(env_t *env, int cnt, native_t *ent)
     env->native_ent = ent;
     return 0;
 }
-
-/*
-int env_native_add(env_t *env, const char *name, val_t (*fn)(env_t *, int ac, val_t *av))
-{
-    intptr_t sym_id;
-    int i;
-
-    // Note: sym_id is a string point of symbal, should not be 0!
-    if (env->error || 0 == (sym_id = env_symbal_add_static(env, name))) {
-        env_set_error(env, ERR_SysError);
-        return -1;
-    }
-
-    for (i = 0; i < env->native_num; i++) {
-        if (sym_id == env->native_map[i]) {
-            // already exist!
-            return 0;
-        }
-    }
-
-    if (i >= env->native_max) {
-        return -1;
-    }
-
-    env->native_map[i] = sym_id;
-    env->native_entry[i] = (intptr_t)fn;
-
-    return env->native_num++;
-}
-*/
 

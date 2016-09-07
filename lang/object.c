@@ -24,10 +24,18 @@ static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
     intptr_t *keys;
 
     if (obj->prop_size <= obj->prop_num) {
-        int size = obj->prop_size * 2;
+        int size;
+
+        if (obj->prop_size >= UINT16_MAX) {
+            env_set_error(env, ERR_ResourceOutLimit);
+            return NULL;
+        }
+        size = obj->prop_size * 2;
+        size = size < UINT16_MAX ? size : UINT16_MAX;
 
         keys = (intptr_t*) env_heap_alloc(env, sizeof(intptr_t) * size + sizeof(val_t) * size);
         if (!keys) {
+            env_set_error(env, ERR_NotEnoughMemory);
             return NULL;
         }
         vals = (val_t *)(keys + size);
@@ -214,8 +222,6 @@ void object_prop_set(env_t *env, val_t *self, val_t *key, val_t *val)
 
         if (prop) {
             *prop = *val;
-        } else {
-            env_set_error(env, ERR_NotEnoughMemory);
         }
     } else {
         env_set_error(env, ERR_HasNoneProperty);
@@ -256,11 +262,11 @@ intptr_t object_create(env_t *env, int n, val_t *av)
     object_t *obj;
     int size;
 
-    if ((n & 1) || n > 255 * 2) {
+    if ((n & 1) || n > UINT16_MAX * 2) {
         return 0;
     }
     size = n / 2;
-    size = size < 4 ? 4 : size;
+    size = size < DEF_PROP_SIZE ? DEF_PROP_SIZE : size;
 
     obj = (object_t *) env_heap_alloc(env, sizeof(object_t) + sizeof(intptr_t) * size + sizeof(val_t) * size);
     if (obj) {
