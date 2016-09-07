@@ -339,24 +339,6 @@ static inline void interp_dict(env_t *env, int n) {
     }
 }
 
-static inline void interp_prop_get(env_t *env) {
-    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
-    val_t *obj = key + 1;
-    val_t *res = obj;
-
-    object_prop_get(env, obj, key, res);
-    env_stack_pop(env);
-}
-
-static inline void interp_elem_get(env_t *env) {
-    val_t *key = env_stack_peek(env);
-    val_t *obj = key + 1;
-    val_t *res = obj;
-
-    object_elem_get(env, obj, key, res);
-    env_stack_pop(env);
-}
-
 static inline void interp_prop_self(env_t *env) {
     val_t *key = env_stack_peek(env);
     val_t *self = key + 1;
@@ -366,14 +348,32 @@ static inline void interp_prop_self(env_t *env) {
     // no pop
 }
 
+static inline void interp_prop_get(env_t *env) {
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_get(env, obj, key, res);
+    env_stack_pop(env);
+}
+
 static inline void interp_elem_self(env_t *env) {
     val_t *key = env_stack_peek(env); // keey the "key" in stack
-    val_t *self = key + 1;
-    val_t *elem = key;
+    val_t *obj = key + 1;
+    val_t *res = key;
 
-    object_elem_get(env, self, key, elem);
-    // no pop
+    object_elem_get(env, obj, key, res);
 }
+
+static inline void interp_elem_get(env_t *env) {
+    val_t *key = env_stack_peek(env); // keey the "key" in stack
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_get(env, obj, key, res);
+    env_stack_pop(env);
+}
+
 
 static inline void interp_prop_set(env_t *env) {
     val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC

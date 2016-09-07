@@ -17,6 +17,19 @@ void string_at(env_t *env, val_t *a, val_t *b, val_t *res);
 val_t string_length(env_t *env, int ac, val_t *av);
 val_t string_index_of(env_t *env, int ac, val_t *av);
 
+static inline int string_inline_len(val_t *s) {
+    return 1;
+}
+
+static inline int string_static_len(val_t *s) {
+    return strlen((void*)val_2_intptr(s));
+}
+
+static inline int string_owned_len(val_t *s) {
+    uint8_t *p = (uint8_t *)val_2_intptr(s);
+    return p[1] * 256 + p[2];
+}
+
 static inline int string_len(val_t *s) {
     if (val_is_inline_string(s)) {
         return 1;
