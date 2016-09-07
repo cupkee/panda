@@ -76,13 +76,13 @@ static void test_expr_factor(void)
     parse_init(&psr, " {a: 1, b : 2} \n", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
-    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_COMMA);
-    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_((expr)))) == EXPR_PAIR);
-    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_((expr)))) == EXPR_PAIR);
-    CU_ASSERT(L_(L_(L_(expr))) && ast_expr_type(L_(L_(L_((expr))))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(L_(expr))))));
-    CU_ASSERT(R_(L_(L_(expr))) && ast_expr_type(R_(L_(L_((expr))))) == EXPR_NUM && 1 == NUMBER(R_(L_(L_(expr)))));
-    CU_ASSERT(L_(R_(L_(expr))) && ast_expr_type(L_(R_(L_((expr))))) == EXPR_ID && !strcmp("b", TEXT(L_(R_(L_(expr))))));
-    CU_ASSERT(R_(R_(L_(expr))) && ast_expr_type(R_(R_(L_((expr))))) == EXPR_NUM && 2 == NUMBER(R_(R_(L_(expr)))));
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_PAIR);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_PAIR);
+
+    CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_((expr)))) == EXPR_ID && !strcmp("a", TEXT(L_(L_(expr)))));
+    CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_((expr)))) == EXPR_NUM && 1 == NUMBER(R_(L_(expr))));
+    CU_ASSERT(L_(R_(expr)) && ast_expr_type(L_(R_((expr)))) == EXPR_ID && !strcmp("b", TEXT(L_(R_(expr)))));
+    CU_ASSERT(R_(R_(expr)) && ast_expr_type(R_(R_((expr)))) == EXPR_NUM && 2 == NUMBER(R_(R_(expr))));
 }
 
 static void test_expr_primary(void)
@@ -458,11 +458,16 @@ static void test_expr_array(void)
     expr_t   *expr;
     expr_t   *elem[4];
 
-    parse_init(&psr, "[a, 'a', [1], {a: 1}]", NULL, heap_buf, PSR_BUF_SIZE);
+    parse_init(&psr, "[]", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
+    CU_ASSERT(L_(expr) == NULL && R_(expr) == NULL);
 
+
+    parse_init(&psr, "[a, 'a', [1], {a: 1, b: 2}]", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
 
-    CU_ASSERT_FATAL(ast_expr_type(expr) == EXPR_ARRAY);
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     elem[3] = R_(expr);
     CU_ASSERT_FATAL(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ARRAY);
     elem[2] = R_(L_(expr));
@@ -477,6 +482,48 @@ static void test_expr_array(void)
 
     CU_ASSERT(ast_expr_type(L_(elem[2])) == EXPR_NUM);
     CU_ASSERT(R_(elem[2]) == NULL);
+}
+
+static void test_expr_dict(void)
+{
+    parser_t psr;
+    expr_t   *expr;
+    expr_t   *prop[4];
+
+
+    parse_init(&psr, "{}", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
+    CU_ASSERT(L_(expr) == NULL && R_(expr) == NULL);
+
+
+    parse_init(&psr, "{a: a, 'b': 'a', c: [1, 2], d: {a: 1}}", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
+    prop[3] = R_(expr);
+    CU_ASSERT_FATAL(L_(expr) && ast_expr_type(L_(expr)) == EXPR_DICT);
+    prop[2] = R_(L_(expr));
+    CU_ASSERT_FATAL(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_DICT);
+    prop[1] = R_(L_(L_(expr)));
+    prop[0] = L_(L_(L_(expr)));
+
+    CU_ASSERT(ast_expr_type(prop[0]) == EXPR_PAIR);
+    CU_ASSERT(ast_expr_type(prop[1]) == EXPR_PAIR);
+    CU_ASSERT(ast_expr_type(prop[2]) == EXPR_PAIR);
+    CU_ASSERT(ast_expr_type(prop[3]) == EXPR_PAIR);
+
+    CU_ASSERT(ast_expr_type(L_(prop[0])) == EXPR_ID);
+    CU_ASSERT(ast_expr_type(R_(prop[0])) == EXPR_ID);
+
+    CU_ASSERT(ast_expr_type(L_(prop[1])) == EXPR_STRING);
+    CU_ASSERT(ast_expr_type(R_(prop[1])) == EXPR_STRING);
+
+    CU_ASSERT(ast_expr_type(L_(prop[2])) == EXPR_ID);
+    CU_ASSERT(ast_expr_type(R_(prop[2])) == EXPR_ARRAY);
+
+    CU_ASSERT(ast_expr_type(L_(prop[3])) == EXPR_ID);
+    CU_ASSERT(ast_expr_type(R_(prop[3])) == EXPR_DICT);
 }
 
 static void test_stmt_simple(void)
@@ -585,6 +632,7 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse expression funcall",  test_expr_funcall);
 
         CU_add_test(suite, "parse expression array",    test_expr_array);
+        CU_add_test(suite, "parse expression dict",     test_expr_dict);
 
         CU_add_test(suite, "parse statements simple",   test_stmt_simple);
         CU_add_test(suite, "parse statements if",       test_stmt_if);

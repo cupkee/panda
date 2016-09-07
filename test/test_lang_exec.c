@@ -598,7 +598,7 @@ static void test_exec_dict(void)
     CU_ASSERT(0 < interp_execute_string(&env, "(c.d = false) == false", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.e = def() return 0", &res) && val_is_function(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var o = {a: a, b: b, c: c}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = {'a': a, 'b': b, 'c': c}", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.a == a", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.b == b", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.c == c", &res) && val_is_boolean(res) && val_is_true(res));
@@ -618,15 +618,22 @@ static void test_exec_array(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}], b = [];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}], b = [], c = [1], d = [1, 2];", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_array(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_array(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "d", &res) && val_is_array(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b.length() == 0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.length() == 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "d.length() == 2", &res) && val_is_boolean(res) && val_is_true(res));
+
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] == 'hello'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2][0] == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2][1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[3].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] = a[1]", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] = a[2]", &res) && val_is_array(res));
@@ -763,8 +770,6 @@ CU_pSuite test_lang_eval_entry()
     CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
 
     if (suite) {
-        if (0) {
-        }
         CU_add_test(suite, "exec simple",       test_exec_simple);
         CU_add_test(suite, "exec calculate",    test_exec_calculate);
         CU_add_test(suite, "exec compare",      test_exec_compare);

@@ -846,9 +846,14 @@ static void compile_func_def(compile_t *cpl, expr_t *e)
     }
 }
 
-static inline void compile_kv(compile_t *cpl, expr_t *e) {
+static inline void compile_pair(compile_t *cpl, expr_t *e) {
     expr_t *key = ast_expr_lft(e);
     expr_t *val = ast_expr_rht(e);
+
+    if (e->type != EXPR_PAIR) {
+        cpl->error = ERR_InvalidSementic;
+        return;
+    }
 
     compile_expr(cpl, val);
     if (key->type == EXPR_ID || key->type == EXPR_STRING) {
@@ -882,24 +887,25 @@ static void compile_array(compile_t *cpl, expr_t *list)
     compile_code_append_arg_u16(cpl, BC_ARRAY, n);
 }
 
-static void compile_dict(compile_t *cpl, expr_t *e)
+static void compile_dict(compile_t *cpl, expr_t *dict)
 {
     int n = 0;
-    expr_t *list = ast_expr_lft(e);
 
-    while(!cpl->error && list) {
-        expr_t *kv;
+    while(!cpl->error && dict) {
+        expr_t *pair;
 
-        if (list->type == EXPR_COMMA) {
-            kv = ast_expr_lft(list);
-            list = ast_expr_rht(list);
+        if (dict->type == EXPR_DICT) {
+            pair = ast_expr_rht(dict);
+            dict = ast_expr_lft(dict);
         } else {
-            kv = list;
-            list = NULL;
+            pair = dict;
+            dict = NULL;
         }
 
-        compile_kv(cpl, kv);
-        n++;
+        if (pair) {
+            compile_pair(cpl, pair);
+            n++;
+        }
     }
 
     compile_code_append_arg_u16(cpl, BC_DICT, n * 2);

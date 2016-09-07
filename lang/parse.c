@@ -369,7 +369,7 @@ static expr_t *parse_expr_assign(parser_t *psr, parse_callback_t cb, void *ud)
     return expr;
 }
 
-static expr_t *parse_expr_kv(parser_t *psr, parse_callback_t cb, void *ud)
+static expr_t *parse_expr_pair(parser_t *psr, parse_callback_t cb, void *ud)
 {
     int tok = parse_token(psr, NULL);
     expr_t *expr;
@@ -405,17 +405,6 @@ static expr_t *parse_expr_vardef(parser_t *psr, parse_callback_t cb, void *ud)
     if (expr && '=' == parse_token(psr, NULL)) {
         parse_match(psr, '=');
         expr = parse_expr_form_binary(psr, EXPR_ASSIGN, expr, parse_expr_assign(psr, cb, ud), cb, ud);
-    }
-
-    return expr;
-}
-
-static expr_t *parse_expr_kvlist(parser_t *psr, parse_callback_t cb, void *ud)
-{
-    expr_t *expr = parse_expr_kv(psr, cb, ud);
-
-    if (expr && parse_match(psr, ',')) {
-        expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_kvlist(psr, cb, ud), cb, ud);
     }
 
     return expr;
@@ -611,13 +600,24 @@ static expr_t *parse_expr_form_dict(parser_t *psr, parse_callback_t cb, void *ud
         return expr;
     }
 
-    expr = parse_expr_form_unary(psr, EXPR_DICT, parse_expr_kvlist(psr, cb, ud), cb, ud);
-    if (expr) {
-        if (!parse_match(psr, '}')) {
-            parse_fail(psr, ERR_InvalidToken, cb, ud);
-            return NULL;
+    if (NULL == (expr = parse_expr_pair(psr, cb, ud))) {
+        return expr;
+    }
+
+    if (!parse_match(psr, ',')) {
+        expr = parse_expr_form_unary(psr, EXPR_DICT, expr, cb, ud);
+    } else {
+        expr = parse_expr_form_binary(psr, EXPR_DICT, expr, parse_expr_pair(psr, cb, ud), cb, ud);
+        while (expr && parse_match(psr, ',')) {
+            expr = parse_expr_form_binary(psr, EXPR_DICT, expr, parse_expr_pair(psr, cb, ud), cb, ud);
         }
     }
+
+    if (expr && !parse_match(psr, '}')) {
+        parse_fail(psr, ERR_InvalidToken, cb, ud);
+        return NULL;
+    }
+
     return expr;
 }
 

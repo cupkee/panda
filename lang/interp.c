@@ -700,7 +700,6 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     heap_t *heap = env_heap_get_free((env_t*)env);
     parser_t psr;
     compile_t cpl;
-    int error = 0;
 
     if (!env || !input || !v) {
         return -1;
@@ -710,6 +709,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     parse_init(&psr, input, NULL, heap->base, heap->size);
     stmt = parse_stmt_multi(&psr, parse_callback, NULL);
     if (!stmt) {
+        printf("parse error: %d\n", psr.error);
         return psr.error ? -psr.error : 0;
     }
 
@@ -730,7 +730,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
         *v = &undefined;
     }
 
-    return error ? error : 1;
+    return 1;
 }
 
 int interp_execute_interactive(env_t *env, const char *input, char *(*input_more)(void), val_t **v)
