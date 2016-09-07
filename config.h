@@ -58,6 +58,7 @@
 # define EXE_FUNC_CODE_MAX          (1536)
 
 # define DEF_PROP_SIZE              (4)
+# define DEF_ELEM_SIZE              (4)
 
 # define DEF_FUNC_SIZE              (4)
 # define DEF_VMAP_SIZE              (4)
@@ -79,6 +80,7 @@
 # define EXE_FUNC_CODE_MAX          (1024 * 3)
 
 # define DEF_PROP_SIZE              (8)
+# define DEF_ELEM_SIZE              (8)
 
 # define DEF_FUNC_SIZE              (4)
 # define DEF_VMAP_SIZE              (4)

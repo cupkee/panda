@@ -265,6 +265,7 @@ intptr_t object_create(env_t *env, int n, val_t *av)
     if ((n & 1) || n > UINT16_MAX * 2) {
         return 0;
     }
+
     size = n / 2;
     size = size < DEF_PROP_SIZE ? DEF_PROP_SIZE : size;
 

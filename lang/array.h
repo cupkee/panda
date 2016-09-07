@@ -13,8 +13,9 @@
 typedef struct array_t {
     uint8_t magic;
     uint8_t age;
-    uint8_t elem_size;
-    uint8_t elem_num;
+    uint16_t elem_size;
+    uint16_t elem_bgn;
+    uint16_t elem_num;
     val_t *elems;
 } array_t;
 

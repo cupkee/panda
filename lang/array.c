@@ -2,10 +2,14 @@
 
 intptr_t array_create(env_t *env, int ac, val_t *av)
 {
-    int size;
     array_t *array;
+    int size = ac < DEF_ELEM_SIZE ? DEF_ELEM_SIZE : ac;
 
-    size = ac < 4 ? 4 : ac;
+    if (ac > UINT16_MAX) {
+        env_set_error(env, ERR_ResourceOutLimit);
+        return 0;
+    }
+
     array = env_heap_alloc(env, sizeof(array_t) + sizeof(val_t) * size);
     if (array) {
         val_t *vals = (val_t *)(array + 1);
@@ -67,6 +71,10 @@ static array_t *array_space_check_extend(env_t *env, val_t *self, int n)
         return a;
     }
     size = SIZE_ALIGN_16(a->elem_num + n);
+    if (size > UINT16_MAX) {
+        env_set_error(env, ERR_ResourceOutLimit);
+        return NULL;
+    }
 
     elems = env_heap_alloc(env, size * sizeof(val_t));
     if (elems) {
