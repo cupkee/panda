@@ -2,6 +2,7 @@
 #include "object.h"
 #include "string.h"
 #include "array.h"
+#include "interp.h"
 
 static object_t object_proto;
 static object_t array_proto;
@@ -11,8 +12,8 @@ static object_t boolean_proto;
 static object_t number_proto;
 static object_t string_proto;
 
-static intptr_t object_prop_keys[2] = {(intptr_t)"length", (intptr_t)"toString"};
-static val_t object_prop_vals[2];
+static intptr_t object_prop_keys[3] = {(intptr_t)"length", (intptr_t)"toString", (intptr_t)"foreach"};
+static val_t object_prop_vals[3];
 
 static intptr_t string_prop_keys[1] = {(intptr_t)"indexOf"};
 static val_t string_prop_vals[1];
@@ -170,6 +171,25 @@ static val_t object_to_string(env_t *env, int ac, val_t *obj)
     }
 }
 
+static val_t object_foreach(env_t *env, int ac, val_t *av)
+{
+    if (ac > 1 && val_is_dictionary(av) && val_is_function(av + 1)) {
+        object_t *o = (object_t *)val_2_intptr(av);
+        int i, max = o->prop_num;
+
+        for (i = 0; i < max && !env->error; i++) {
+            val_t key = val_mk_static_string(o->keys[i]);
+
+            env_push_call_argument(env, &key);
+            env_push_call_argument(env, o->vals + i);
+            env_push_call_function(env, av + 1);
+
+            interp_execute_call(env, 2);
+        }
+    }
+
+    return val_mk_undefined();
+}
 void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
 {
     const char *name = val_2_cstring(key);
@@ -322,9 +342,10 @@ int objects_env_init(env_t *env)
 
     object_prop_vals[0] = val_mk_native((intptr_t) object_length);
     object_prop_vals[1] = val_mk_native((intptr_t) object_to_string);
+    object_prop_vals[2] = val_mk_native((intptr_t) object_foreach);
     Object->magic = MAGIC_OBJECT_STATIC;
     Object->proto = NULL;
-    Object->prop_num = 2;
+    Object->prop_num = 3;
     Object->keys = object_prop_keys;
     Object->vals = object_prop_vals;
     object_static_register(env, &object_proto);

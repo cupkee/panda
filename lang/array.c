@@ -196,13 +196,12 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
         for (i = 0; i < max && !env->error; i++) {
             val_t key = val_mk_number(i);
 
-            env_push_call_argument(env, array_values(a) + i);
             env_push_call_argument(env, &key);
+            env_push_call_argument(env, array_values(a) + i);
             env_push_call_function(env, av + 1);
 
             interp_execute_call(env, 2);
         }
-
     }
 
     return val_mk_undefined();

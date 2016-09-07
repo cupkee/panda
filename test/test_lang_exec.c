@@ -605,6 +605,13 @@ static void test_exec_dict(void)
     CU_ASSERT(0 < interp_execute_string(&env, "o.a.a == 'world'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.b.b() == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.c.e() == 0", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "o = {'a': 'hello', 'b': ' ', 'c': 'world'}", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var ks = '', vs = ''", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o.foreach(def(v, k) {ks = ks + k; vs = vs + v })", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "ks == 'abc'", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "vs == 'hello world'", &res) && val_is_boolean(res) && val_is_true(res));
+
     /*
     */
 

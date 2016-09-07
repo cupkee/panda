@@ -273,7 +273,7 @@ scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, va
     }
 
     for (i = 0; i < d; i++) {
-        buf[i] = av[an + i];
+        buf[vn + i] = av[an + i];
     }
 
     scope->magic = MAGIC_SCOPE;
