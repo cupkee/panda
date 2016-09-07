@@ -12,11 +12,13 @@ static object_t number_proto;
 static object_t string_proto;
 
 static intptr_t object_prop_keys[2] = {(intptr_t)"length", (intptr_t)"toString"};
-static intptr_t string_prop_keys[1] = {(intptr_t)"indexOf"};
-static intptr_t array_prop_keys[2]  = {(intptr_t)"push", (intptr_t)"pop"};
 static val_t object_prop_vals[2];
+
+static intptr_t string_prop_keys[1] = {(intptr_t)"indexOf"};
 static val_t string_prop_vals[1];
-static val_t array_prop_vals[2];
+
+static intptr_t array_prop_keys[5]  = {(intptr_t)"push", (intptr_t)"pop", (intptr_t)"shift", (intptr_t)"unshift", (intptr_t)"foreach"};
+static val_t array_prop_vals[5];
 
 
 static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
@@ -120,7 +122,7 @@ static val_t object_length(env_t *env, int ac, val_t *av)
         } else
         if (val_is_array(av)) {
             array_t *a = (array_t *)val_2_intptr(av);
-            return val_mk_number(a->elem_num);
+            return val_mk_number(array_length(a));
         } else
         if (val_is_inline_string(av)) {
             return val_mk_number(string_inline_len(av));
@@ -337,9 +339,12 @@ int objects_env_init(env_t *env)
 
     array_prop_vals[0] = val_mk_native((intptr_t) array_push);
     array_prop_vals[1] = val_mk_native((intptr_t) array_pop);
+    array_prop_vals[2] = val_mk_native((intptr_t) array_shift);
+    array_prop_vals[3] = val_mk_native((intptr_t) array_unshift);
+    array_prop_vals[4] = val_mk_native((intptr_t) array_foreach);
     Array->magic = MAGIC_OBJECT_STATIC;
     Array->proto = Object;
-    Array->prop_num = 2;
+    Array->prop_num = 5;
     Array->keys = array_prop_keys;
     Array->vals = array_prop_vals;
     object_static_register(env, &array_proto);

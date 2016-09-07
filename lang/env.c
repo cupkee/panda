@@ -465,7 +465,7 @@ static array_t *heap_dup_array(heap_t *heap, array_t *a)
 
     //printf("%s: free %d\n", __func__, heap->free);
     memcpy(dup, a, sizeof(array_t));
-    memcpy(vals, a->elems, sizeof(val_t) * a->elem_num);
+    memcpy(vals, array_values(a), sizeof(val_t) * array_length(a));
     dup->elems = vals;
 
     ADDR_VALUE(a) = dup;
@@ -695,7 +695,7 @@ static void env_heap_gc_scan(env_t *env)
             array_t *array= (array_t*) (base + scan);
 
             scan += array_mem_space(array);
-            env_heap_copy_vals(heap, array->elem_num, array->elems);
+            env_heap_copy_vals(heap, array_length(array), array_values(array));
 
             break;
             }

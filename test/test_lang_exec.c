@@ -646,8 +646,30 @@ static void test_exec_array(void)
 
     CU_ASSERT(0 < interp_execute_string(&env, "var o = a.pop();", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a[2] == o", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o == a[2]", &res) && val_is_boolean(res) && val_is_true(res));
+
     CU_ASSERT(0 < interp_execute_string(&env, "a.push(o) == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o == a[3]", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.push(1) == 5", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == a[4]", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var s = a.shift();", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'hello' == s", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.shift()[1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[0].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[0].b = 1", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[1] = 1", &res) && val_is_number(res) && 1 == val_2_double(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "a.unshift(s) == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "s == a[0]", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[1].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var sum = 0;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = [1, 2, 3, 4, 5]", &res) && val_is_array(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.foreach(def(v) sum = sum + v)", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "sum == 15", &res) && val_is_boolean(res) && val_is_true(res));
 
     env_deinit(&env);
 }
