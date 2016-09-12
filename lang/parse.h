@@ -18,17 +18,20 @@ enum {
     PARSE_LEAVE_BLOCK
 };
 
+struct parser_t;
+typedef struct parse_event_t {
+    int type;
+    int line, col;
+    struct parser_t *psr;
+} parse_event_t;
+
 typedef struct parser_t {
     int      error;
     lexer_t  lex;
     heap_t   heap;
+    void (*usr_cb) (void *, parse_event_t *);
+    void *usr_data;
 } parser_t;
-
-typedef struct parse_event_t {
-    int type;
-    int line, col;
-    parser_t *psr;
-} parse_event_t;
 
 typedef void (*parse_callback_t)(void *u, parse_event_t *e);
 
@@ -37,9 +40,18 @@ static inline int parse_init(parser_t *psr, const char *input, char *(*more)(voi
         psr->error = 0;
         lex_init(&psr->lex, input, more);
         heap_init(&psr->heap, mem, size);
+        psr->usr_cb = NULL;
+        psr->usr_data = NULL;
         return 0;
     } else {
         return -1;
+    }
+}
+
+static inline void parse_set_cb(parser_t *psr, parse_callback_t cb, void *data) {
+    if (psr) {
+        psr->usr_cb = cb;
+        psr->usr_data = data;
     }
 }
 
