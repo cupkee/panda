@@ -9,8 +9,8 @@ test_SRCS = test.c \
 			test_lang_symtbl.c \
 			test_lang_exec.c
 
-
-test_CPPFLAGS = -I../cunit
+test_CPPFLAGS = -I${BASE}
 test_CFLAGS   =
-test_LDFLAGS  = -lcunit -lsal -llang
+test_LDFLAGS  = -L${BASE}/sal -L${BASE}/lang -L${BASE}/cunit -lsal -llang -lcunit
+
 
