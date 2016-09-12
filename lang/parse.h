@@ -59,9 +59,9 @@ static inline void parse_disable_more(parser_t *psr) {
     psr->lex.line_more = NULL;
 }
 
-expr_t *parse_expr(parser_t *psr, parse_callback_t cb, void *u);
-stmt_t *parse_stmt(parser_t *psr, parse_callback_t cb, void *u);
-stmt_t *parse_stmt_multi(parser_t *psr, parse_callback_t cb, void *ud);
+expr_t *parse_expr(parser_t *psr);
+stmt_t *parse_stmt(parser_t *psr);
+stmt_t *parse_stmt_multi(parser_t *psr);
 
 static inline int parse_position(parser_t *psr, int *line, int *col) {
     return lex_position(&psr->lex, line, col);

@@ -1624,7 +1624,8 @@ int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
 
     // The free heap can be used for parse and compile process
     parse_init(&psr, input, NULL, mem_ptr, mem_size);
-    stmt = parse_stmt_multi(&psr, parse_callback, NULL);
+    parse_set_cb(&psr, parse_callback, NULL);
+    stmt = parse_stmt_multi(&psr);
     if (!stmt) {
         return psr.error ? -psr.error : 0;
     }

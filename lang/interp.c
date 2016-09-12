@@ -707,7 +707,8 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
 
     // The free heap can be used for parse and compile process
     parse_init(&psr, input, NULL, heap->base, heap->size);
-    stmt = parse_stmt_multi(&psr, parse_callback, NULL);
+    parse_set_cb(&psr, parse_callback, NULL);
+    stmt = parse_stmt_multi(&psr);
     if (!stmt) {
         printf("parse error: %d\n", psr.error);
         return psr.error ? -psr.error : 0;
@@ -747,7 +748,8 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
 
     // The free heap can be used for parse and compile process
     parse_init(&psr, input, input_more, heap->base, heap->size);
-    stmt = parse_stmt(&psr, parse_callback, NULL);
+    parse_set_cb(&psr, parse_callback, NULL);
+    stmt = parse_stmt(&psr);
     if (!stmt) {
         return psr.error ? -psr.error : 0;
     }

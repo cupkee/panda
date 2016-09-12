@@ -35,46 +35,46 @@ static void test_expr_factor(void)
     expr_t   *expr;
 
     parse_init(&psr, " [a, b] \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     CU_ASSERT(L_(expr) && ast_expr_type(L_((expr))) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_((expr))) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
     parse_init(&psr, " true false \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TRUE);
 
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FALSE);
 
     parse_init(&psr, " undefined null NaN \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_UND);
 
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NULL);
 
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NAN);
 
     parse_init(&psr, " 'null' hello 12345\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_STRING && !strcmp("null", TEXT(expr)));
 
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ID && !strcmp("hello", TEXT(expr)));
 
-    CU_ASSERT(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NUM && NUMBER(expr) == 12345);
 
     parse_init(&psr, " (a + b) \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
     parse_init(&psr, " {a: 1, b : 2} \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_PAIR);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_PAIR);
@@ -91,12 +91,12 @@ static void test_expr_primary(void)
     expr_t   *expr;
 
     parse_init(&psr, " a.b a.b.c \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_PROP);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_PROP);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("c", TEXT(R_(expr))));
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_PROP);
@@ -104,12 +104,12 @@ static void test_expr_primary(void)
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
 
     parse_init(&psr, " a[b] a[b][c] \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ELEM);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ELEM);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("c", TEXT(R_(expr))));
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ELEM);
@@ -117,12 +117,12 @@ static void test_expr_primary(void)
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID && !strcmp("b", TEXT(R_(L_(expr)))));
 
     parse_init(&psr, " a(b) a(b)(c) \n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("c", TEXT(R_(expr))));
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_CALL);
@@ -131,7 +131,7 @@ static void test_expr_primary(void)
 
     // f(a)[b].c[d](e)
     parse_init(&psr, "f(a)[b].c[d](e)\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("e", TEXT(R_(expr))));
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ELEM);
@@ -152,19 +152,19 @@ static void test_expr_unary(void)
 
     parse_init(&psr, "-a ~b !c !!d", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NEG);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("b", TEXT(L_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("c", TEXT(L_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_NOT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_LOGIC_NOT);
     CU_ASSERT(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ID
@@ -178,17 +178,17 @@ static void test_expr_mul(void)
 
     parse_init(&psr, "a * b 1 / 2 c % 2", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_MUL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DIV);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_MOD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("c", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
@@ -201,17 +201,17 @@ static void test_expr_add(void)
 
     parse_init(&psr, "a + b 1 - 2 c+1-2*f", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ADD);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_SUB);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_SUB);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ADD);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_MUL);
@@ -229,24 +229,24 @@ static void test_expr_shift(void)
 
     parse_init(&psr, "1<<1 1>>2 1<<1+2 1+2>>1", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 1 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_RSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && NUMBER(L_(expr)) == 1);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ADD);
     CU_ASSERT(L_(R_(expr)) && NUMBER(L_(R_(expr))) == 1);
     CU_ASSERT(R_(R_(expr)) && NUMBER(R_(R_(expr))) == 2);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_RSHIFT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ADD);
     CU_ASSERT(L_(L_(expr)) && NUMBER(L_(L_(expr))) == 1);
@@ -261,37 +261,37 @@ static void test_expr_test(void)
 
     parse_init(&psr, "1>1 2<2 3>=3 4<=4 5!=5 6==6 a in b\n", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TGT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 1 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 1 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TLT);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 2 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 2 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TGE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 3 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 3 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TLE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 4 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 4 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TNE);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 5 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 5 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TEQ);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_NUM && 6 == NUMBER(L_(expr)));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_NUM && 6 == NUMBER(R_(expr)));
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TIN);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
@@ -304,7 +304,7 @@ static void test_expr_logic(void)
 
     parse_init(&psr, "a&&b||c&&d", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_LOGIC_OR);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_LOGIC_AND);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_LOGIC_AND);
@@ -326,7 +326,7 @@ static void test_expr_ternary(void)
 
     parse_init(&psr, "a ? b : c", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_TERNARY);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(L_(expr) && 0 == strcmp(TEXT(L_(expr)), "a"));
@@ -346,7 +346,7 @@ static void test_expr_assign(void)
 
     parse_init(&psr, "a = b = c", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ASSIGN);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(L_(expr) && 0 == strcmp(TEXT(L_(expr)), "a"));
@@ -366,7 +366,7 @@ static void test_expr_comma(void)
 
     parse_init(&psr, "a, b, c", NULL, heap_buf, PSR_BUF_SIZE);
 
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_COMMA);
     CU_ASSERT_FATAL(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(L_(expr) && 0 == strcmp(TEXT(L_(expr)), "a"));
@@ -385,7 +385,7 @@ static void test_expr_funcdef(void)
     expr_t   *expr;
 
     parse_init(&psr, "def (x) return x + b", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
@@ -393,7 +393,7 @@ static void test_expr_funcdef(void)
     CU_ASSERT(R_(L_(expr)) && ast_expr_type(R_(L_(expr))) == EXPR_ID);
 
     parse_init(&psr, "def f() {x = x + 1 return x * 2}\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
@@ -401,13 +401,13 @@ static void test_expr_funcdef(void)
     CU_ASSERT(!R_(L_(expr)));
 
     parse_init(&psr, "def () 100\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(!L_(expr));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
 
     parse_init(&psr, "def f(x) {x = x + 1 return x * 2}\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_FUNCHEAD);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
@@ -416,7 +416,7 @@ static void test_expr_funcdef(void)
     CU_ASSERT(STMT(R_(expr)) && STMT(R_(expr))->next);
 
     parse_init(&psr, "def () {}\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(!L_(expr));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
@@ -428,25 +428,25 @@ static void test_expr_funcall(void)
     expr_t   *expr;
 
     parse_init(&psr, "a()\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(R_(expr) == NULL);
 
     parse_init(&psr, "a ()\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(R_(expr) == NULL);
 
     parse_init(&psr, "a (b)\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
 
     parse_init(&psr, "a (b, c)\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_COMMA);
@@ -459,13 +459,13 @@ static void test_expr_array(void)
     expr_t   *elem[4];
 
     parse_init(&psr, "[]", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     CU_ASSERT(L_(expr) == NULL && R_(expr) == NULL);
 
 
     parse_init(&psr, "[a, 'a', [1], {a: 1, b: 2}]", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
 
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     elem[3] = R_(expr);
@@ -492,13 +492,13 @@ static void test_expr_dict(void)
 
 
     parse_init(&psr, "{}", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
     CU_ASSERT(L_(expr) == NULL && R_(expr) == NULL);
 
 
     parse_init(&psr, "{a: a, 'b': 'a', c: [1, 2], d: {a: 1}}", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
 
     CU_ASSERT(ast_expr_type(expr) == EXPR_DICT);
     prop[3] = R_(expr);
@@ -533,41 +533,41 @@ static void test_stmt_simple(void)
 
     // expression
     parse_init(&psr, "a + b;\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_EXPR);
     CU_ASSERT(stmt->expr->type == EXPR_ADD);
 
     parse_init(&psr, "a - b\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_EXPR);
     CU_ASSERT(stmt->expr->type == EXPR_SUB);
 
     // break
     parse_init(&psr, "break\n", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_BREAK);
     CU_ASSERT(!stmt->expr);
 
     // continue
     parse_init(&psr, "continue", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_CONTINUE);
     CU_ASSERT(!stmt->expr);
 
     // var
     parse_init(&psr, "var a = 1, b = c = 0", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_VAR);
     CU_ASSERT(stmt->expr->type == EXPR_COMMA);
 
     // return
     parse_init(&psr, "return a + b", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_RET);
     CU_ASSERT(stmt->expr->type == EXPR_ADD);
 
     parse_init(&psr, "return;", NULL, heap_buf, PSR_BUF_SIZE);
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_RET);
     CU_ASSERT(!stmt->expr);
 }
@@ -587,7 +587,7 @@ static void test_stmt_if(void)
     parse_init(&psr, input, NULL, heap_buf, PSR_BUF_SIZE);
 
     // expression
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_IF);
     CU_ASSERT(stmt->expr->type == EXPR_ADD);
     CU_ASSERT(stmt->block != NULL);
@@ -607,7 +607,7 @@ static void test_stmt_while(void)
     parse_init(&psr, input, NULL, heap_buf, PSR_BUF_SIZE);
 
     // expression
-    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr, NULL, NULL)));
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
     CU_ASSERT(stmt->type == STMT_WHILE);
     CU_ASSERT(stmt->expr->type == EXPR_TGT);
 }
