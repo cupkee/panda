@@ -5,7 +5,6 @@
 # public make rules
 # user should not modify anything there
 
-
 include Makefile
 
 AS  := ${PREFIX}as
@@ -14,7 +13,6 @@ LD  := ${PREFIX}gcc
 AR  := ${PREFIX}ar
 RM  := rm -rf
 MAKE := make
-ECHO := echo
 
 # Marco build_obj_rule
 # param ${1}: source file
@@ -28,9 +26,6 @@ endef
 # Marco build_prog_rule
 # param ${1}: program name
 define build_prog_rule
-${1}_CFLAGS += ${CFLAGS}
-${1}_CPPFLAGS += ${CPPFLAGS}
-${1}_LDFLAGS += ${LDFLAGS}
 ${1}_OBJS = ${${1}_SRCS:%.c=%.o}
 ${1}_DEPS = ${${1}_SRCS:%.c=%.d}
 ${1}: $${${1}_OBJS}
@@ -49,8 +44,6 @@ endef
 # Marco build_lib_rule
 # param ${1}: library name
 define build_lib_rule
-${1}_CFLAGS += ${CFLAGS}
-${1}_CPPFLAGS += ${CPPFLAGS}
 ${1}_OBJS = ${${1}_SRCS:%.c=%.o}
 ${1}_DEPS = ${${1}_SRCS:%.c=%.d}
 ${1}: lib${1}.a
