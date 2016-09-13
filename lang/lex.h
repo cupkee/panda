@@ -26,8 +26,8 @@ enum LEX_TOKEN_TYPE{
     TOK_ORASSIGN,           // |=
     TOK_XORASSIGN,          // ^=
     TOK_NOTASSIGN,          // ~=
-    TOK_LSHIFTASSIGN,
-    TOK_RSHIFTASSIGN,
+    TOK_LSHIFTASSIGN,       // <<=
+    TOK_RSHIFTASSIGN,       // >>=
 
     TOK_LSHIFT,             // <<
     TOK_RSHIFT,             // >>

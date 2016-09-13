@@ -359,6 +359,90 @@ static void test_expr_assign(void)
 
 }
 
+static void test_expr_op_assign(void)
+{
+    parser_t psr;
+    expr_t   *expr;
+
+    parse_init(&psr, "a += b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ADD_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a += b + c", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ADD_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ADD);
+
+    parse_init(&psr, "a += b += c", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ADD_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ADD_ASSIGN);
+
+    parse_init(&psr, "a -= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_SUB_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a *= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_MUL_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a /= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DIV_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a %= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_MOD_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a &= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_AND_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a |= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_OR_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a ^= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_XOR_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a ~= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a <<= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_LSHIFT_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+
+    parse_init(&psr, "a >>= b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_RSHIFT_ASSIGN);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_ID);
+}
+
 static void test_expr_comma(void)
 {
     parser_t psr;
@@ -627,6 +711,7 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse expression logic",    test_expr_logic);
         CU_add_test(suite, "parse expression ternary",  test_expr_ternary);
         CU_add_test(suite, "parse expression assign",   test_expr_assign);
+        CU_add_test(suite, "parse expression x assign", test_expr_op_assign);
         CU_add_test(suite, "parse expression comma",    test_expr_comma);
         CU_add_test(suite, "parse expression funcdef",  test_expr_funcdef);
         CU_add_test(suite, "parse expression funcall",  test_expr_funcall);
