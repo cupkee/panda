@@ -355,14 +355,26 @@ static expr_t *parse_expr_assign(parser_t *psr)
 {
     expr_t *expr = parse_expr_ternary(psr);
 
-    if (expr && '=' == parse_token(psr, NULL)) {
-        parse_match(psr, '=');
+    if (expr) {
+        int tok = parse_token(psr, NULL);
+        int type;
+
+        if (tok == '=') {
+            type = EXPR_ASSIGN;
+        } else
+        if (tok >= TOK_ADDASSIGN && tok <= TOK_RSHIFTASSIGN) {
+            type = EXPR_ADD_ASSIGN + (tok - TOK_ADDASSIGN);
+        } else {
+            return expr;
+        }
+
+        parse_match(psr, tok);
         if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM) {
             parse_fail(psr, ERR_InvalidLeftValue);
             return NULL;
         }
 
-        expr = parse_expr_form_binary(psr, EXPR_ASSIGN, expr, parse_expr_assign(psr));
+        expr = parse_expr_form_binary(psr, type, expr, parse_expr_assign(psr));
     }
 
     return expr;
