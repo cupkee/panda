@@ -928,25 +928,26 @@ static void compile_callor(compile_t *cpl, expr_t *e, int argc)
 
 static void compile_assign(compile_t *cpl, expr_t *e)
 {
-    int type = ast_expr_lft(e)->type;
+    int op  = e->type - EXPR_ASSIGN;
+    int lft = ast_expr_lft(e)->type;
 
-    if (type == EXPR_PROP) {
+    if (lft == EXPR_PROP) {
         expr_t *prop = ast_expr_rht(ast_expr_lft(e));
 
         compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
         compile_code_append_str(cpl, ast_expr_text(prop));
         compile_expr(cpl, ast_expr_rht(e));
-        compile_code_append(cpl, BC_PROP_ASSIGN);
+        compile_code_append(cpl, BC_PROP_ASSIGN + op);
     } else
-    if (type == EXPR_ELEM) {
+    if (lft == EXPR_ELEM) {
         compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
         compile_expr(cpl, ast_expr_rht(ast_expr_lft(e)));
         compile_expr(cpl, ast_expr_rht(e));
-        compile_code_append(cpl, BC_ELEM_ASSIGN);
+        compile_code_append(cpl, BC_ELEM_ASSIGN + op);
     } else {
         compile_expr_lft(cpl, ast_expr_lft(e));
         compile_expr(cpl, ast_expr_rht(e));
-        compile_code_append(cpl, BC_ASSIGN);
+        compile_code_append(cpl, BC_ASSIGN + op);
     }
 }
 
@@ -1031,12 +1032,24 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_PROP:     compile_expr_binary(cpl, e, BC_PROP); break;
     case EXPR_ELEM:     compile_expr_binary(cpl, e, BC_ELEM); break;
 
-    case EXPR_ASSIGN:   compile_assign(cpl, e); break;
+    case EXPR_ASSIGN:
+    case EXPR_ADD_ASSIGN:
+    case EXPR_SUB_ASSIGN:
+    case EXPR_MUL_ASSIGN:
+    case EXPR_DIV_ASSIGN:
+    case EXPR_MOD_ASSIGN:
+    case EXPR_AND_ASSIGN:
+    case EXPR_OR_ASSIGN:
+    case EXPR_XOR_ASSIGN:
+    case EXPR_NOT_ASSIGN:
+    case EXPR_LSHIFT_ASSIGN:
+    case EXPR_RSHIFT_ASSIGN: compile_assign(cpl, e); break;
+
 
     case EXPR_COMMA:    compile_comma(cpl, e); break;
     case EXPR_TERNARY:  compile_ternary(cpl, e); break;
 
-    default:            cpl->error = ERR_NotImplemented; break;
+    default:            cpl->error = ERR_InvalidSementic; break;
     }
 }
 
@@ -1633,7 +1646,6 @@ int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
 
     if (0 != compile_multi_stmt(&cpl, stmt)) {
-        printf("wawa : %d\n", cpl.error);
         return -cpl.error;
     }
 

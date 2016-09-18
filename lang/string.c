@@ -29,6 +29,11 @@ void string_at(env_t *env, val_t *a, val_t *b, val_t *res)
 
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 {
+    if (!val_is_string(b)) {
+        val_set_nan(res);
+        return;
+    }
+
     int size1 = string_len(a);
     int size2 = string_len(b);
     int len = size1 + size2, head = 3;

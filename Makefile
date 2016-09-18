@@ -39,6 +39,7 @@ lang: sal
 
 test: cunit lang panda
 	@printf "[Build] test\n"
+	@${RM} ${TEST_DIR}/test
 	@${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub
 	@${TEST_DIR}/test
 

@@ -5,10 +5,12 @@
 #include "parse.h"
 #include "compile.h"
 #include "interp.h"
-#include "object.h"
+
+#include "number.h"
+#include "string.h"
 #include "function.h"
 #include "array.h"
-#include "string.h"
+#include "object.h"
 
 static val_t undefined = TAG_UNDEFINED;
 
@@ -43,8 +45,8 @@ static inline void interp_mul(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(b) && val_is_number(a)) {
-        val_set_number(res, val_2_double(a) * val_2_double(b));
+    if (val_is_number(a)) {
+        number_mul(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -55,8 +57,8 @@ static inline void interp_div(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
-        val_set_number(res, val_2_double(a) / val_2_double(b));
+    if (val_is_number(a)) {
+        number_div(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -67,8 +69,8 @@ static inline void interp_mod(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(b) && val_2_double(b) && val_is_number(a)) {
-        val_set_number(res, val_2_integer(a) % val_2_integer(b));
+    if (val_is_number(a)) {
+        number_mod(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -80,19 +82,11 @@ static inline void interp_add(env_t *env) {
     val_t *res = a;
 
     if (val_is_number(a)) {
-        if (val_is_number(b)) {
-            val_set_number(res, val_2_double(a) + val_2_double(b));
-        } else {
-            val_set_nan(res);
-        }
+        number_add(env, a, b, res);
     } else
     if (val_is_string(a)){
-        if (val_is_string(b)) {
-            // Maybe cause gc here!
-            string_add(env, a, b, res);
-        } else {
-            val_set_nan(res);
-        }
+        // Maybe cause gc here!
+        string_add(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -105,11 +99,7 @@ static inline void interp_sub(env_t *env) {
     val_t *res = a;
 
     if (val_is_number(a)) {
-        if (val_is_number(b)) {
-            val_set_number(res, val_2_double(a) - val_2_double(b));
-        } else {
-            val_set_nan(res);
-        }
+        number_sub(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -120,8 +110,8 @@ static inline void interp_and(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(a) && val_is_number(b)) {
-        val_set_number(res, val_2_integer(a) & val_2_integer(b));
+    if (val_is_number(a)) {
+        number_and(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -132,8 +122,8 @@ static inline void interp_or(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(a) && val_is_number(b)) {
-        val_set_number(res, val_2_integer(a) | val_2_integer(b));
+    if (val_is_number(a)) {
+        number_or(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -144,8 +134,8 @@ static inline void interp_xor(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(a) && val_is_number(b)) {
-        val_set_number(res, val_2_integer(a) ^ val_2_integer(b));
+    if (val_is_number(a)) {
+        number_xor(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -156,8 +146,8 @@ static inline void interp_lshift(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(a) && val_is_number(b)) {
-        val_set_number(res, val_2_integer(a) << val_2_integer(b));
+    if (val_is_number(a)) {
+        number_lshift(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -168,8 +158,8 @@ static inline void interp_rshift(env_t *env) {
     val_t *a = b + 1;
     val_t *res = a;
 
-    if (val_is_number(a) && val_is_number(b)) {
-        val_set_number(res, val_2_integer(a) >> val_2_integer(b));
+    if (val_is_number(a)) {
+        number_rshift(env, a, b, res);
     } else {
         val_set_nan(res);
     }
@@ -295,6 +285,224 @@ static inline void interp_assign(env_t *env) {
         lft = env_get_var(env, id, generation);
         if (lft) {
             *res = *lft = *rht;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_add_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft) {
+            if (val_is_number(lft)) {
+                number_add(env, lft, rht, lft);
+            } else
+            if (val_is_string(lft)){
+                string_add(env, lft, rht, lft);
+            } else {
+                val_set_nan(lft);
+            }
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_sub_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_sub(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_mul_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_mul(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_div_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_div(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_mod_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_mod(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_and_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_and(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_or_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_or(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_xor_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_xor(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_lshift_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_lshift(env, lft, rht, lft);
+
+            *res = *lft;
+            env_stack_pop(env);
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static inline void interp_rshift_assign(env_t *env) {
+    val_t *rht = env_stack_peek(env);
+    val_t *lft = rht + 1;
+
+    if (val_is_reference(lft)) {
+        val_t *res = lft;
+        uint8_t id, generation;
+
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft && val_is_number(lft)) {
+            number_rshift(env, lft, rht, lft);
+
+            *res = *lft;
             env_stack_pop(env);
             return;
         }
@@ -570,6 +778,16 @@ static int interp_run(env_t *env, uint8_t *pc)
         case BC_TIN:        env_set_error(env, ERR_InvalidByteCode); break;
 
         case BC_ASSIGN:     interp_assign(env); break;
+        case BC_ADD_ASSIGN: interp_add_assign(env); break;
+        case BC_SUB_ASSIGN: interp_sub_assign(env); break;
+        case BC_MUL_ASSIGN: interp_mul_assign(env); break;
+        case BC_DIV_ASSIGN: interp_div_assign(env); break;
+        case BC_MOD_ASSIGN: interp_mod_assign(env); break;
+        case BC_AND_ASSIGN: interp_and_assign(env); break;
+        case BC_OR_ASSIGN:  interp_or_assign(env); break;
+        case BC_XOR_ASSIGN: interp_xor_assign(env); break;
+        case BC_LSHIFT_ASSIGN:     interp_lshift_assign(env); break;
+        case BC_RSHIFT_ASSIGN:     interp_rshift_assign(env); break;
 
         case BC_FUNC_CALL:  index = *pc++;
                             pc = interp_call(env, index, pc);

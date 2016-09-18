@@ -261,8 +261,29 @@ static void test_exec_var(void)
     CU_ASSERT(0 < interp_execute_string(&env, "j;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "s;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "m;", &res) && val_is_undefined(res));
-    /*
-    */
+
+    env_deinit(&env);
+}
+
+static void test_exec_assign(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a /= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a %= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a &= 2;", &res) && val_is_number(res) && 0 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a |= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a ^= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+
 
     env_deinit(&env);
 }
@@ -805,6 +826,7 @@ CU_pSuite test_lang_eval_entry()
         CU_add_test(suite, "exec logic",        test_exec_logic);
         CU_add_test(suite, "exec symbal",       test_exec_symbal);
         CU_add_test(suite, "exec var stmt",     test_exec_var);
+        CU_add_test(suite, "exec assign",       test_exec_assign);
         CU_add_test(suite, "exec if stmt",      test_exec_if);
         CU_add_test(suite, "exec while stmt",   test_exec_while);
         CU_add_test(suite, "exec function",     test_exec_function);
