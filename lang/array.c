@@ -1,3 +1,5 @@
+#include "number.h"
+#include "string.h"
 #include "array.h"
 #include "interp.h"
 
@@ -28,27 +30,197 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
     return (intptr_t) array;
 }
 
-void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *elem)
-{
+static inline val_t *_array_elem_get(env_t *env, val_t *a, val_t *i) {
     array_t *array = (array_t *) val_2_intptr(a);
     int id = val_2_integer(i);
 
     if (id >= 0 && id < array_length(array)) {
-        *elem = array->elems[array->elem_bgn + id];
+        return array->elems + (array->elem_bgn + id);
     } else {
-        val_set_undefined(elem);
+        return NULL;
     }
 }
 
-void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *elem)
+void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *res)
 {
-    array_t *array = (array_t *) val_2_intptr(a);
-    int id = val_2_integer(i);
-
-    if (id >= 0 && id < array_length(array)) {
-        array->elems[array->elem_bgn + id] = *elem;
+    val_t *elem = _array_elem_get(env, a, i);
+    if (elem) {
+        *res= *elem;
     } else {
-        val_set_undefined(elem);
+        val_set_undefined(res);
+    }
+}
+
+void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *v)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+    if (elem) {
+        *elem = *v;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_add_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_add(env, elem, v, elem);
+        } else
+        if (val_is_string(elem)) {
+            string_add(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_sub_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_sub(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_mul_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_mul(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_div_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_div(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_mod_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_mod(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_and_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_and(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_or_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_or(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_xor_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_xor(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_lshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_lshift(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
+    }
+}
+
+void array_elem_rshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            number_rshift(env, elem, v, elem);
+        } else {
+            val_set_nan(elem);
+        }
+        *r = *elem;
+    } else {
+        env_set_error(env, ERR_HasNoneElement);
     }
 }
 

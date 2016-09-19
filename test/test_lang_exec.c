@@ -283,7 +283,35 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a ^= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 3;", &res) && val_is_true(res));
 
+    /*
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = [1];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] /= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] %= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] &= 2;", &res) && val_is_number(res) && 0 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] |= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] ^= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b[0] == 3;", &res) && val_is_true(res));
+    */
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a /= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a %= 2;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a &= 2;", &res) && val_is_number(res) && 0 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a |= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a ^= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 3;", &res) && val_is_true(res));
 
     env_deinit(&env);
 }

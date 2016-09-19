@@ -1,8 +1,9 @@
 
-#include "object.h"
+#include "interp.h"
+#include "number.h"
 #include "string.h"
 #include "array.h"
-#include "interp.h"
+#include "object.h"
 
 static object_t object_proto;
 static object_t array_proto;
@@ -219,6 +220,22 @@ void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
     }
 }
 
+void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *elem)
+{
+    if (val_is_number(key)) {
+        if (val_is_string(obj)) {
+            string_at(env, obj, key, elem);
+        } else
+        if (val_is_array(obj)) {
+            array_elem_get(env, obj, key, elem);
+        } else {
+            env_set_error(env, ERR_HasNoneElement);
+        }
+    } else {
+        object_prop_get(env, obj, key, elem);
+    }
+}
+
 void object_prop_set(env_t *env, val_t *self, val_t *key, val_t *val)
 {
     const char *name = val_2_cstring(key);
@@ -228,7 +245,7 @@ void object_prop_set(env_t *env, val_t *self, val_t *key, val_t *val)
         return;
     }
 
-    if (val_is_dictionary(self) || val_is_array(self)) {
+    if (val_is_dictionary(self)) {
         object_t *obj = (object_t *) val_2_intptr(self);
         intptr_t sym_id = env_symbal_get(env, name);
         val_t *prop;
@@ -250,22 +267,6 @@ void object_prop_set(env_t *env, val_t *self, val_t *key, val_t *val)
     }
 }
 
-void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *elem)
-{
-    if (val_is_number(key)) {
-        if (val_is_string(obj)) {
-            string_at(env, obj, key, elem);
-        } else
-        if (val_is_array(obj)) {
-            array_elem_get(env, obj, key, elem);
-        } else {
-            env_set_error(env, ERR_HasNoneElement);
-        }
-    } else {
-        object_prop_get(env, obj, key, elem);
-    }
-}
-
 void object_elem_set(env_t *env, val_t *self, val_t *key, val_t *val)
 {
     if (val_is_number(key)) {
@@ -276,6 +277,417 @@ void object_elem_set(env_t *env, val_t *self, val_t *key, val_t *val)
         }
     } else {
         object_prop_set(env, self, key, val);
+    }
+}
+
+static int _object_prop_get_owned(env_t *env, val_t *o, val_t *k, val_t **p, const char **n)
+{
+    const char *name = val_2_cstring(k);
+    if (!name) {
+        env_set_error(env, ERR_InvalidInput);
+        return -1;
+    }
+
+    if (!val_is_dictionary(o)) {
+        env_set_error(env, ERR_HasNoneProperty);
+        return -1;
+    }
+
+    *n = name;
+    *p = object_find_prop_owned((object_t *)val_2_intptr(o), env_symbal_get(env, name));
+    return 0;
+}
+
+void object_prop_add_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_add(env, prop, val, prop);
+        } else
+        if (val_is_string(prop)) {
+            string_add(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_sub_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_sub(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_mul_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_mul(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_div_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_div(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_mod_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_mod(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_and_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_and(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_or_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_or(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_xor_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_xor(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_lshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_lshift(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_prop_rshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            number_rshift(env, prop, val, prop);
+        } else {
+            val_set_nan(prop);
+        }
+        *res = *prop;
+        return;
+    }
+
+    prop = object_add_prop(env, (object_t *)val_2_intptr(self), env_symbal_add(env, name));
+    if (prop) {
+        val_set_nan(prop);
+        val_set_nan(res);
+    }
+}
+
+void object_elem_add_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_add_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_add_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_sub_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_sub_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_sub_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_mul_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_mul_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_mul_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_div_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_div_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_div_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_mod_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_mod_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_mod_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_and_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_and_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_and_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_or_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_or_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_or_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_xor_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_xor_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_xor_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_lshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_lshift_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_lshift_set(env, self, key, val, res);
+    }
+}
+
+void object_elem_rshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_rshift_set(env, self, key, val, res);
+        } else {
+            env_set_error(env, ERR_InvalidSementic);
+        }
+    } else {
+        object_prop_rshift_set(env, self, key, val, res);
     }
 }
 

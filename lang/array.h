@@ -33,8 +33,19 @@ static inline int array_length(array_t *a) {
 
 intptr_t array_create(env_t *env, int ac, val_t *av);
 
-void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *elem);
-void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *elem);
+void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *e);
+
+void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *v);
+void array_elem_add_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_sub_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_mul_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_div_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_mod_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_and_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_or_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_xor_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_lshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
+void array_elem_rshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
 
 val_t array_push(env_t *env, int ac, val_t *av);
 val_t array_pop(env_t *env, int ac, val_t *av);

@@ -582,7 +582,6 @@ static inline void interp_elem_get(env_t *env) {
     env_stack_pop(env);
 }
 
-
 static inline void interp_prop_set(env_t *env) {
     val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *key = val + 1;
@@ -603,6 +602,206 @@ static inline void interp_elem_set(env_t *env) {
     object_elem_set(env, obj, key, val);
     env_stack_release(env, 2);
     *res = *val;
+}
+
+static inline void interp_prop_add_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_add_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_add_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_add_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_sub_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_sub_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_sub_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_sub_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_mul_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_mul_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_mul_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_mul_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_div_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_div_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_div_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_div_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_mod_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_mod_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_mod_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_mod_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_and_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_and_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_and_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_and_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_or_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_or_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_or_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_or_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_xor_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_xor_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_xor_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_xor_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_lshift_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_lshift_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_lshift_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_lshift_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_prop_rshift_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_rshift_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
+}
+
+static inline void interp_elem_rshift_set(env_t *env) {
+    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *key = val + 1;
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_rshift_set(env, obj, key, val, res);
+    env_stack_release(env, 2);
 }
 
 static inline
@@ -777,6 +976,11 @@ static int interp_run(env_t *env, uint8_t *pc)
 
         case BC_TIN:        env_set_error(env, ERR_InvalidByteCode); break;
 
+        case BC_PROP:       interp_prop_get(env);  break;
+        case BC_PROP_METH:  interp_prop_self(env); break;
+        case BC_ELEM:       interp_elem_get(env);  break;
+        case BC_ELEM_METH:  interp_elem_self(env); break;
+
         case BC_ASSIGN:     interp_assign(env); break;
         case BC_ADD_ASSIGN: interp_add_assign(env); break;
         case BC_SUB_ASSIGN: interp_sub_assign(env); break;
@@ -786,8 +990,32 @@ static int interp_run(env_t *env, uint8_t *pc)
         case BC_AND_ASSIGN: interp_and_assign(env); break;
         case BC_OR_ASSIGN:  interp_or_assign(env); break;
         case BC_XOR_ASSIGN: interp_xor_assign(env); break;
-        case BC_LSHIFT_ASSIGN:     interp_lshift_assign(env); break;
-        case BC_RSHIFT_ASSIGN:     interp_rshift_assign(env); break;
+        case BC_LSHIFT_ASSIGN:      interp_lshift_assign(env); break;
+        case BC_RSHIFT_ASSIGN:      interp_rshift_assign(env); break;
+
+        case BC_PROP_ASSIGN:        interp_prop_set(env); break;
+        case BC_PROP_ADD_ASSIGN:    interp_prop_add_set(env); break;
+        case BC_PROP_SUB_ASSIGN:    interp_prop_sub_set(env); break;
+        case BC_PROP_MUL_ASSIGN:    interp_prop_mul_set(env); break;
+        case BC_PROP_DIV_ASSIGN:    interp_prop_div_set(env); break;
+        case BC_PROP_MOD_ASSIGN:    interp_prop_mod_set(env); break;
+        case BC_PROP_AND_ASSIGN:    interp_prop_and_set(env); break;
+        case BC_PROP_OR_ASSIGN:     interp_prop_or_set(env); break;
+        case BC_PROP_XOR_ASSIGN:    interp_prop_xor_set(env); break;
+        case BC_PROP_LSHIFT_ASSIGN: interp_prop_lshift_set(env); break;
+        case BC_PROP_RSHIFT_ASSIGN: interp_prop_rshift_set(env); break;
+
+        case BC_ELEM_ASSIGN:        interp_elem_set(env); break;
+        case BC_ELEM_ADD_ASSIGN:    interp_elem_add_set(env); break;
+        case BC_ELEM_SUB_ASSIGN:    interp_elem_sub_set(env); break;
+        case BC_ELEM_MUL_ASSIGN:    interp_elem_mul_set(env); break;
+        case BC_ELEM_DIV_ASSIGN:    interp_elem_div_set(env); break;
+        case BC_ELEM_MOD_ASSIGN:    interp_elem_mod_set(env); break;
+        case BC_ELEM_AND_ASSIGN:    interp_elem_and_set(env); break;
+        case BC_ELEM_OR_ASSIGN:     interp_elem_or_set(env); break;
+        case BC_ELEM_XOR_ASSIGN:    interp_elem_xor_set(env); break;
+        case BC_ELEM_LSHIFT_ASSIGN: interp_elem_lshift_set(env); break;
+        case BC_ELEM_RSHIFT_ASSIGN: interp_elem_rshift_set(env); break;
 
         case BC_FUNC_CALL:  index = *pc++;
                             pc = interp_call(env, index, pc);
@@ -798,14 +1026,6 @@ static int interp_run(env_t *env, uint8_t *pc)
 
         case BC_DICT:       index = (*pc++); index = (index << 8) | (*pc++);
                             interp_dict(env, index); break;
-
-        case BC_PROP:       interp_prop_get(env);  break;
-        case BC_PROP_METH:  interp_prop_self(env); break;
-        case BC_PROP_ASSIGN:interp_prop_set(env); break;
-
-        case BC_ELEM:       interp_elem_get(env);  break;
-        case BC_ELEM_METH:  interp_elem_self(env); break;
-        case BC_ELEM_ASSIGN:interp_elem_set(env); break;
 
         default:            env_set_error(env, ERR_InvalidByteCode);
         }
