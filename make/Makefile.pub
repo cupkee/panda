@@ -61,17 +61,18 @@ $(foreach src,${${1}_SRCS},$(eval $(call build_obj_rule,${src},${1})))
 -include $${${1}_DEPS}
 endef
 
-all: bin lib
-
-bin: ${bin_NAMES}
+all: lib bin
 
 lib: ${lib_NAMES}
 
+bin: ${bin_NAMES}
+
 clean: ${bin_NAMES:%=%.clean} ${lib_NAMES:%=%.clean}
 
-$(foreach prog,${bin_NAMES},$(eval $(call build_prog_rule,${prog})))
-
 $(foreach lib,${lib_NAMES},$(eval $(call build_lib_rule,${lib})))
+
+$(foreach bin,${bin_NAMES},$(eval $(call build_prog_rule,${bin})))
+
 
 .PHONY: clean bin lib all
 

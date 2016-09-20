@@ -1,4 +1,7 @@
-#include "panda.h"
+#include "example.h"
+
+#define MEM_SIZE  10240
+static char *MEM_PTR[MEM_SIZE];
 
 static int set_output_name(const char *input, void *buf, int sz)
 {
@@ -15,7 +18,7 @@ static int set_output_name(const char *input, void *buf, int sz)
 
 #define OUTPUT_NAME_MAX     (128)
 
-int panda_compile(const char *input, void *mem_ptr, int mem_size)
+static int compile(const char *input, void *mem_ptr, int mem_size)
 {
     char *output  = (char *) mem_ptr;
     void *cpl_mem, *exe_mem;
@@ -37,7 +40,7 @@ int panda_compile(const char *input, void *mem_ptr, int mem_size)
         return -1;
     }
 
-    panda_native_init(&env);
+    native_init(&env);
 
     input = file_load(input, &input_sz);
     if (!input) {
@@ -52,5 +55,21 @@ int panda_compile(const char *input, void *mem_ptr, int mem_size)
     } else {
         return file_store(output, exe_mem, exe_sz);
     }
+}
+
+int main(int ac, char **av)
+{
+    int   error;
+
+    if (ac == 1) {
+        printf("Usage: %s <input>\n", av[0]);
+        return 0;
+    }
+
+    if (0 > (error = compile(av[1], MEM_PTR, MEM_SIZE))) {
+        printf("compile: %s fail:%d\n", av[1], error);
+    }
+
+    return error ? 1 : 0;
 }
 

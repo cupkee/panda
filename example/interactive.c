@@ -1,8 +1,13 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "panda.h"
+#include "example.h"
 
+#define HEAP_SIZE     (1024 * 480)
+#define STACK_SIZE    (1024)
+#define MEM_SIZE      (STACK_SIZE * sizeof(val_t) + HEAP_SIZE + EXE_MEM_SPACE + SYMBAL_MEM_SPACE)
+
+static uint8_t memory[MEM_SIZE];
 static char *input_last = NULL;
 
 static inline void input_release(char *last)
@@ -95,7 +100,7 @@ static void print_value(val_t *v)
     }
 }
 
-int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size)
+static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
     env_t env;
 
@@ -104,7 +109,7 @@ int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size
         return -1;
     }
 
-    panda_native_init(&env);
+    native_init(&env);
 
     printf("PANDA V0.1.1\n\n");
 
@@ -125,5 +130,10 @@ int panda_interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size
             print_value(res);
         }
     }
+}
+
+int main(int ac, char **av)
+{
+    return interactive(memory, MEM_SIZE, HEAP_SIZE, STACK_SIZE);
 }
 

@@ -1,6 +1,5 @@
 
-#include "panda.h"
-
+#include "example.h"
 
 static void print_value(val_t *v)
 {
@@ -32,7 +31,7 @@ static void print_value(val_t *v)
     }
 }
 
-static val_t panda_print(env_t *env, int ac, val_t *av)
+static val_t print(env_t *env, int ac, val_t *av)
 {
     int i;
 
@@ -48,10 +47,10 @@ static val_t panda_print(env_t *env, int ac, val_t *av)
 }
 
 static native_t native_entry[] = {
-    {"print", panda_print}
+    {"print", print}
 };
 
-int panda_native_init(env_t *env)
+int native_init(env_t *env)
 {
     return env_native_add(env, 1, native_entry);
 }

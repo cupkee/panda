@@ -1,6 +1,6 @@
-#include "panda.h"
+#include "example.h"
 
-int panda_dump_image(const char *file)
+static int dump_image(const char *file)
 {
     int err, size;
     image_info_t image;
@@ -63,5 +63,22 @@ int panda_dump_image(const char *file)
     file_release((void *)binary, size);
 
     return err;
+}
+
+int main(int ac, char **av)
+{
+    int   error;
+
+    if (ac == 1) {
+        printf("Usage: %s <input>\n", av[0]);
+        return 0;
+    }
+
+    error = dump_image(av[1]);
+    if (error < 0) {
+        printf("dump: %s fail:%d\n", av[1], error);
+    }
+
+    return error ? 1 : 0;
 }
 
