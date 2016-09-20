@@ -302,7 +302,7 @@ int env_scope_get(env_t *env, int id, val_t **v) {
     return -1;
 }
 
-uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
+const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av)
 {
     function_t *fn = (function_t *)val_2_intptr(fv);
     scope_t *scope;
@@ -349,7 +349,7 @@ uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av)
     return function_code(fn);
 }
 
-void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope)
+void env_frame_restore(env_t *env, const uint8_t **pc, scope_t **scope)
 {
     if (env->fp != env->ss) {
         frame_t *frame = (frame_t *)(env->sb + env->fp);
@@ -376,7 +376,7 @@ void env_native_call(env_t *env, val_t *fv, int ac, val_t *av)
     env->sp = sp;
 }
 
-uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av)
+const uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av)
 {
     // main scope already created, in interactive mode
     if (!env_is_interactive(env)) {
@@ -386,7 +386,7 @@ uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av)
     return executable_func_get_code(entry);
 }
 
-uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av)
+const uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av)
 {
     uint8_t *entry = env_get_main_entry(env);
 

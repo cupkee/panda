@@ -18,7 +18,7 @@ int panda_dump_ef(const char *file)
 
         //const char *executable_file_string(&ef, )
 
-        printf("==================== executable file ====================\n");
+        printf("================ executable image file ==================\n");
         printf("+ Version  : %d\n", 0);
         printf("+ AddrSize : %d\n", ef.addr_size == ADDRSIZE_32 ? 32 : 64);
         printf("+ ByteOrder: %s\n", ef.byte_order == LE ? "LittleEndian" : "BigEndian");
@@ -35,9 +35,27 @@ int panda_dump_ef(const char *file)
         }
         printf("----------------------- functions -----------------------\n");
         for (i = 0; i < ef.fn_cnt; i++) {
-            const uint8_t *code = executable_file_get_function(&ef, i);
-            uint16_t size = code[2] * 256 + code[3];
-            printf("F[%d] ac:%d,vc:%d,sz:%d\n", i, code[0], code[1], size);
+            const uint8_t *entry = executable_file_get_function(&ef, i);
+            const uint8_t *code = executable_func_get_code(entry);
+            uint32_t size = executable_func_get_code_size(entry);
+            int off = 0;
+
+            printf("\n* Function[%d] %c\n", i, executable_func_is_closure(entry) ? '*' : ' ');
+            printf("* variables: %u, arguments: %u, stack_need: %u, code_size: %u\n",
+                    executable_func_get_var_cnt(entry), executable_func_get_arg_cnt(entry),
+                    executable_func_get_stack_high(entry), size);
+            while (off < size) {
+                const char *name;
+                int p1, p2, pos = off;
+                int n = bcode_parse(code, &off, &name, &p1, &p2);
+                if (n == 2) {
+                    printf("[%4d] %s %d %d\n", pos, name, p1, p2);
+                } else if (n == 1) {
+                    printf("[%4d] %s %d\n", pos, name, p1);
+                } else {
+                    printf("[%4d] %s\n", pos, name);
+                }
+            }
         }
         printf("========================= end ===========================\n");
     } else {

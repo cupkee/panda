@@ -23,7 +23,7 @@ export PREFIX
 
 .PHONY: all test cunit lang sal panda
 
-all: test
+all: lang
 
 cunit:
 	@printf "[Build] cunit\n"
@@ -33,7 +33,7 @@ sal:
 	@printf "[Build] sal\n"
 	@${MAKE} -C sal -f ${MAKE_DIR}/Makefile.pub
 
-lang: sal
+lang:
 	@printf "[Build] lang\n"
 	@${MAKE} -C lang -f ${MAKE_DIR}/Makefile.pub
 
@@ -43,7 +43,7 @@ test: cunit lang panda
 	@${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub
 	@${TEST_DIR}/test
 
-panda: lang
+panda: lang sal
 	@printf "[Build] panda\n"
 	@${MAKE} -C panda -f ${MAKE_DIR}/Makefile.pub
 

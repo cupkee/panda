@@ -1619,6 +1619,7 @@ static int compile_map_ef(compile_t *cpl, void *mem_ptr, int mem_size)
 
     for (i = 0; i < cpl->func_num; i++) {
         executable_file_fill_code(&ef, i, cpl->func_buf[i].var_num, cpl->func_buf[i].arg_num,
+                cpl->func_buf[i].stack_high, cpl->func_buf[i].closure,
                 cpl->func_buf[i].code_buf, cpl->func_buf[i].code_num);
     }
 

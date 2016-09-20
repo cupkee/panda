@@ -87,7 +87,6 @@ void ef_write_uint16(executable_file_t *ef, int offset, uint16_t d) {
         }
     }
 }
-*/
 
 static inline
 void ef_write_uint16_be(executable_file_t *ef, int offset, uint16_t d) {
@@ -97,6 +96,7 @@ void ef_write_uint16_be(executable_file_t *ef, int offset, uint16_t d) {
         write_uint16_be(ef->base + offset, &d);
     }
 }
+*/
 
 static inline
 void ef_write_uint32(executable_file_t *ef, int offset, uint32_t d) {
@@ -249,7 +249,7 @@ void executable_file_fill_data(executable_file_t *ef, int nc, double *nv, int sc
     ef_write_zero(ef, offset, ef->end - offset);
 }
 
-void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint8_t *code, int size)
+void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size)
 {
     int offset;
 
@@ -263,9 +263,7 @@ void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uin
 
     ef_write_uint32(ef, ef->fn_ent + entry * 4, offset);
 
-    ef_write_byte(ef, offset, vc);
-    ef_write_byte(ef, offset + 1, ac);
-    ef_write_uint16_be(ef, offset + 2, size);
+    executable_func_set_head(ef->base + offset, vc, ac, size, stack_need, closure);
     offset += FUNC_HEAD_SIZE;
     ef_write(ef, offset, code, size);
 

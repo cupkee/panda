@@ -110,32 +110,32 @@ int executable_func_get_head(void *buf, uint8_t *vc, uint8_t *ac, uint32_t *code
 }
 
 static inline
-uint8_t executable_func_get_var_cnt(uint8_t *entry) {
+uint8_t executable_func_get_var_cnt(const uint8_t *entry) {
     return entry[0];
 }
 
 static inline
-uint8_t executable_func_get_arg_cnt(uint8_t *entry) {
+uint8_t executable_func_get_arg_cnt(const uint8_t *entry) {
     return entry[1];
 }
 
 static inline
-uint16_t executable_func_get_stack_high(uint8_t *entry) {
+uint16_t executable_func_get_stack_high(const uint8_t *entry) {
     return (entry[2] * 0x100 + entry[3]) & 0x7FFF;
 }
 
 static inline
-uint32_t executable_func_get_code_size(uint8_t *entry) {
+uint32_t executable_func_get_code_size(const uint8_t *entry) {
     return (entry[4] * 0x1000000 + entry[5] * 0x10000 + entry[6] * 0x100 + entry[7]);
 }
 
 static inline
-uint8_t *executable_func_get_code(uint8_t *entry) {
+const uint8_t *executable_func_get_code(const uint8_t *entry) {
     return entry + FUNC_HEAD_SIZE;
 }
 
 static inline
-int executable_func_is_closure(uint8_t *entry) {
+int executable_func_is_closure(const uint8_t *entry) {
     return (entry[2] & 0x80) == 0x80;
 }
 
@@ -145,7 +145,7 @@ int executable_string_find_add(executable_t *exe, intptr_t s);
 int executable_file_init(executable_file_t *ef, void *mem_ptr, int mem_size, int byte_order, int nc, int sc, int fc);
 int executable_file_load(executable_file_t *ef, uint8_t *input, int size);
 void executable_file_fill_data(executable_file_t *ef, int nc, double *nv, int sc, intptr_t *sv);
-void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint8_t *code, int size);
+void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size);
 double *executable_file_number_entry(executable_file_t *ef);
 double executable_file_get_number(executable_file_t *ef, int index);
 const char *executable_file_get_string(executable_file_t *ef, int index);

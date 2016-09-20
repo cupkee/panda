@@ -3,6 +3,7 @@
 #define __PANDA_INC__
 
 #include "sal/sal.h"
+#include "lang/bcode.h"
 #include "lang/interp.h"
 #include "lang/compile.h"
 #include "lang/err.h"

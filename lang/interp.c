@@ -510,7 +510,7 @@ static inline void interp_rshift_assign(env_t *env) {
     env_set_error(env, ERR_InvalidLeftValue);
 }
 
-static inline uint8_t *interp_call(env_t *env, int ac, uint8_t *pc) {
+static inline const uint8_t *interp_call(env_t *env, int ac, const uint8_t *pc) {
     val_t *fn = env_stack_peek(env);
     val_t *av = fn + 1;
 
@@ -825,7 +825,7 @@ void interp_push_function(env_t *env, unsigned int id)
 }
 
 #if 0
-static inline void interp_show(uint8_t *pc, int sp) {
+static inline void interp_show(const uint8_t *pc, int sp) {
     const char *cmd;
     int param1, param2, n;
 
@@ -841,10 +841,10 @@ static inline void interp_show(uint8_t *pc, int sp) {
     }
 }
 #else
-static inline void interp_show(uint8_t *pc, int sp) {}
+static inline void interp_show(const uint8_t *pc, int sp) {}
 #endif
 
-static int interp_run(env_t *env, uint8_t *pc)
+static int interp_run(env_t *env, const uint8_t *pc)
 {
     int     index;
 
@@ -1083,10 +1083,12 @@ int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *h
     exe->number_map = executable_file_number_entry(ef);
     exe->number_num = ef->num_cnt;
 
+    exe->string_num = ef->str_cnt;
     for (i = 0; i < ef->str_cnt; i++) {
         exe->string_map[i] = (intptr_t)executable_file_get_string(ef, i);
     }
 
+    exe->func_num = ef->fn_cnt;
     for (i = 0; i < ef->fn_cnt; i++) {
         exe->func_map[i] = (uint8_t *)executable_file_get_function(ef, i);
     }
@@ -1097,7 +1099,7 @@ int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *h
 val_t interp_execute_call(env_t *env, int ac)
 {
     uint8_t stop = BC_STOP;
-    uint8_t *pc;
+    const uint8_t *pc;
 
     pc = interp_call(env, ac, &stop);
     if (pc != &stop) {
@@ -1116,7 +1118,7 @@ int interp_execute(env_t *env, val_t **v)
 {
 
     if (!env || !v) {
-        return -1;
+        return -ERR_InvalidInput;
     }
 
     if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
@@ -1148,18 +1150,18 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     parse_set_cb(&psr, parse_callback, NULL);
     stmt = parse_stmt_multi(&psr);
     if (!stmt) {
-        printf("parse error: %d\n", psr.error);
+        //printf("parse error: %d\n", psr.error);
         return psr.error ? -psr.error : 0;
     }
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_multi_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
         if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
-            printf("execute error: %d\n", env->error);
+            //printf("execute error: %d\n", env->error);
             return -env->error;
         }
     } else {
-        printf("cmpile error: %d\n", cpl.error);
+        //printf("cmpile error: %d\n", cpl.error);
         return -cpl.error;
     }
 

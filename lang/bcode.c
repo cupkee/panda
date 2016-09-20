@@ -1,6 +1,6 @@
 #include "bcode.h"
 
-int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int *param2)
+int bcode_parse(const uint8_t *code, int *offset, const char **name, int *param1, int *param2)
 {
     int shift, index;
 
@@ -57,7 +57,7 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
     case BC_PUSH_NAN:   *name = "PUSH_NAN"; if(offset) *offset = shift; return 0;
     case BC_PUSH_TRUE:  *name = "PUSH_TRUE"; if(offset) *offset = shift; return 0;
     case BC_PUSH_FALSE: *name = "PUSH_FALSE"; if(offset) *offset = shift; return 0;
-    case BC_PUSH_ZERO:  *name = "PUSH_NUM 0"; if(offset) *offset = shift; return 0;
+    case BC_PUSH_ZERO:  *name = "PUSH_ZERO"; if(offset) *offset = shift; return 0;
 
     case BC_PUSH_NUM:   index = (code[shift++]);
                         *param1 = (index << 8) | (code[shift++]);
@@ -128,9 +128,41 @@ int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int 
     case BC_ELEM:       *name = "ELEM"; if(offset) *offset = shift; return 0;
     case BC_ELEM_METH:  *name = "ELEM_METH"; if(offset) *offset = shift; return 0;
 
-    case BC_ASSIGN:     *name = "ASSING"; if(offset) *offset = shift; return 0;
-    case BC_PROP_ASSIGN:*name = "PROP_ASSING"; if(offset) *offset = shift; return 0;
+    case BC_ASSIGN:     *name = "ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ADD_ASSIGN: *name = "ADD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_SUB_ASSIGN: *name = "SUB_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_MUL_ASSIGN: *name = "MUL_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_DIV_ASSIGN: *name = "DIV_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_MOD_ASSIGN: *name = "MOD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_AND_ASSIGN: *name = "AND_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_OR_ASSIGN:  *name = "OR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_XOR_ASSIGN: *name = "XOR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_LSHIFT_ASSIGN:     *name = "LS_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_RSHIFT_ASSIGN:     *name = "RS_ASSIGN"; if(offset) *offset = shift; return 0;
+
+    case BC_PROP_ASSIGN:     *name = "PROP_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_ADD_ASSIGN: *name = "PROP_ADD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_SUB_ASSIGN: *name = "PROP_SUB_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_MUL_ASSIGN: *name = "PROP_MUL_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_DIV_ASSIGN: *name = "PROP_DIV_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_MOD_ASSIGN: *name = "PROP_MOD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_AND_ASSIGN: *name = "PROP_AND_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_OR_ASSIGN:  *name = "PROP_OR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_XOR_ASSIGN: *name = "PROP_XOR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_LSHIFT_ASSIGN:     *name = "PROP_LS_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_PROP_RSHIFT_ASSIGN:     *name = "PROP_RS_ASSIGN"; if(offset) *offset = shift; return 0;
+
     case BC_ELEM_ASSIGN:*name = "ELEM_ASSING"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_ADD_ASSIGN: *name = "ELEM_ADD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_SUB_ASSIGN: *name = "ELEM_SUB_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_MUL_ASSIGN: *name = "ELEM_MUL_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_DIV_ASSIGN: *name = "ELEM_DIV_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_MOD_ASSIGN: *name = "ELEM_MOD_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_AND_ASSIGN: *name = "ELEM_AND_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_OR_ASSIGN:  *name = "ELEM_OR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_XOR_ASSIGN: *name = "ELEM_XOR_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_LSHIFT_ASSIGN:     *name = "ELEM_LS_ASSIGN"; if(offset) *offset = shift; return 0;
+    case BC_ELEM_RSHIFT_ASSIGN:     *name = "ELEM_RS_ASSIGN"; if(offset) *offset = shift; return 0;
 
     default:            *name = "UNKNOWN"; if(offset) *offset = shift; return 0;
     }

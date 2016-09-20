@@ -96,12 +96,12 @@ int env_number_find_add(env_t *env, double);
 int env_native_add(env_t *env, int cnt, native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
-uint8_t *env_frame_setup(env_t *env, uint8_t *pc, val_t *fv, int ac, val_t *av);
-void env_frame_restore(env_t *env, uint8_t **pc, scope_t **scope);
+const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av);
+void env_frame_restore(env_t *env, const uint8_t **pc, scope_t **scope);
 void env_native_call(env_t *env, val_t *fv, int ac, val_t *av);
 
-uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av);
-uint8_t *env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av);
+const uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av);
+const uint8_t *env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av);
 
 static inline
 void env_set_error(env_t *env, int error) {

@@ -843,7 +843,7 @@ static void test_exec_gc(void)
     env_deinit(&env);
 }
 
-CU_pSuite test_lang_eval_entry()
+CU_pSuite test_lang_interp_entry()
 {
     CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
 

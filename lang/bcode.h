@@ -113,7 +113,7 @@ typedef enum bcode_t {
 
 } bcode_t;
 
-int bcode_parse(uint8_t *code, int *offset, const char **name, int *param1, int *param2);
+int bcode_parse(const uint8_t *code, int *offset, const char **name, int *param1, int *param2);
 
 #endif /* __LANG_BCODE_INC__ */
 
