@@ -6,25 +6,25 @@ int panda_binary(const char *input, void *mem_ptr, int mem_size, int heap_size, 
     val_t *res;
     int err, size;
     uint8_t *binary;
-    executable_file_t ef;
+    image_info_t ef;
 
     binary = file_load(input, &size);
     if (!binary) {
         return -1;
     }
 
-    if (0 != executable_file_load(&ef, binary, size)) {
+    if (0 != image_load(&ef, binary, size)) {
         file_release((void *)input, size);
         return -1;
     }
 
-    if (0 != interp_env_init_executable(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size, &ef)) {
+    if (0 != interp_env_init_image (&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size, &ef)) {
         file_release((void *)input, size);
         return -1;
     }
     panda_native_init(&env);
 
-    err = interp_execute(&env, &res);
+    err = interp_execute_image(&env, &res);
     if (err < 0) {
         printf("error: %d\n", err);
     }

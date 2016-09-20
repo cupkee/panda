@@ -56,7 +56,7 @@ int main(int ac, char **av)
         error = panda_compile(input, MEM_PTR, MEM_SIZE);
     } else
     if (dump_binary){
-        error = panda_dump_ef(input);
+        error = panda_dump_image(input);
     } else {
         error = interpreter(input, ac - 1, av + 1);
     }

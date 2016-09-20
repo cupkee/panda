@@ -40,7 +40,7 @@ typedef struct executable_t {
     uint8_t  *func_code;
 } executable_t;
 
-typedef struct executable_file_t {
+typedef struct image_info_t {
     int8_t      error;
     uint8_t     addr_size;
     uint8_t     byte_order;
@@ -54,7 +54,7 @@ typedef struct executable_file_t {
     uint32_t    fn_cnt, fn_ent;
 
     uint8_t    *base;
-} executable_file_t;
+} image_info_t;
 
 
 int executable_init(executable_t *exe, void *memory, int size,
@@ -142,17 +142,17 @@ int executable_func_is_closure(const uint8_t *entry) {
 int executable_number_find_add(executable_t *exe, double n);
 int executable_string_find_add(executable_t *exe, intptr_t s);
 
-int executable_file_init(executable_file_t *ef, void *mem_ptr, int mem_size, int byte_order, int nc, int sc, int fc);
-int executable_file_load(executable_file_t *ef, uint8_t *input, int size);
-void executable_file_fill_data(executable_file_t *ef, int nc, double *nv, int sc, intptr_t *sv);
-void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size);
-double *executable_file_number_entry(executable_file_t *ef);
-double executable_file_get_number(executable_file_t *ef, int index);
-const char *executable_file_get_string(executable_file_t *ef, int index);
-const uint8_t *executable_file_get_function(executable_file_t *ef, int index);
+int image_init(image_info_t *img, void *mem_ptr, int mem_size, int byte_order, int nc, int sc, int fc);
+int image_load(image_info_t *img, uint8_t *input, int size);
+int image_fill_data(image_info_t *img, int nc, double *nv, int sc, intptr_t *sv);
+int image_fill_code(image_info_t *img, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size);
+double *image_number_entry(image_info_t *img);
+double image_get_number(image_info_t *img, int index);
+const char *image_get_string(image_info_t *img, int index);
+const uint8_t *image_get_function(image_info_t *img, int index);
 
-static inline int executable_file_size(executable_file_t *ef) {
-    return ef->error ? -1 : ef->end;
+static inline int image_size(image_info_t *img) {
+    return img->end;
 }
 
 #endif /* __LANG_EXECUTABLE_INC__ */

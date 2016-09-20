@@ -1605,25 +1605,31 @@ static void parse_callback(void *ud, parse_event_t *e)
 
 }
 
-static int compile_map_ef(compile_t *cpl, void *mem_ptr, int mem_size)
+static int compile_map_image(compile_t *cpl, void *mem_ptr, int mem_size)
 {
-    executable_file_t ef;
+    image_info_t image;
     executable_t *exe = &cpl->env->exe;
     int i;
 
-    executable_file_init(&ef, mem_ptr, mem_size,
-            LE, exe->number_num, exe->string_num, cpl->func_num);
-
-    executable_file_fill_data(&ef, exe->number_num, exe->number_map,
-                exe->string_num, exe->string_map);
-
-    for (i = 0; i < cpl->func_num; i++) {
-        executable_file_fill_code(&ef, i, cpl->func_buf[i].var_num, cpl->func_buf[i].arg_num,
-                cpl->func_buf[i].stack_high, cpl->func_buf[i].closure,
-                cpl->func_buf[i].code_buf, cpl->func_buf[i].code_num);
+    if (image_init(&image, mem_ptr, mem_size,
+            LE, exe->number_num, exe->string_num, cpl->func_num)) {
+        return -1;
     }
 
-    return executable_file_size(&ef);
+    if (image_fill_data(&image, exe->number_num, exe->number_map,
+                exe->string_num, exe->string_map)) {
+        return -1;
+    }
+
+    for (i = 0; i < cpl->func_num; i++) {
+        if (image_fill_code(&image, i, cpl->func_buf[i].var_num, cpl->func_buf[i].arg_num,
+                cpl->func_buf[i].stack_high, cpl->func_buf[i].closure,
+                cpl->func_buf[i].code_buf, cpl->func_buf[i].code_num)) {
+            return -1;
+        }
+    }
+
+    return image_size(&image);
 }
 
 int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
@@ -1650,6 +1656,5 @@ int compile_exe(env_t *env, const char *input, void *mem_ptr, int mem_size)
         return -cpl.error;
     }
 
-
-    return compile_map_ef(&cpl, mem_ptr, mem_size);
+    return compile_map_image(&cpl, mem_ptr, mem_size);
 }

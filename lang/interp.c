@@ -1064,33 +1064,33 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
                 EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 0);
 }
 
-int interp_env_init_executable (env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, executable_file_t *ef)
+int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, image_info_t *image)
 {
     int i;
     executable_t *exe;
 
-    if (!ef || ef->error || ef->byte_order != SYS_BYTE_ORDER) {
+    if (!image || image->byte_order != SYS_BYTE_ORDER) {
         return -1;
     }
 
     if (0 != env_init(env, mem_ptr, mem_size,
                     heap_ptr, heap_size, stack_ptr, stack_size,
-                    0, ef->str_cnt, ef->fn_cnt, 0, 0, 0)) {
+                    0, image->str_cnt, image->fn_cnt, 0, 0, 0)) {
         return -1;
     }
 
     exe = &env->exe;
-    exe->number_map = executable_file_number_entry(ef);
-    exe->number_num = ef->num_cnt;
+    exe->number_map = image_number_entry(image);
+    exe->number_num = image->num_cnt;
 
-    exe->string_num = ef->str_cnt;
-    for (i = 0; i < ef->str_cnt; i++) {
-        exe->string_map[i] = (intptr_t)executable_file_get_string(ef, i);
+    exe->string_num = image->str_cnt;
+    for (i = 0; i < image->str_cnt; i++) {
+        exe->string_map[i] = (intptr_t)image_get_string(image, i);
     }
 
-    exe->func_num = ef->fn_cnt;
-    for (i = 0; i < ef->fn_cnt; i++) {
-        exe->func_map[i] = (uint8_t *)executable_file_get_function(ef, i);
+    exe->func_num = image->fn_cnt;
+    for (i = 0; i < image->fn_cnt; i++) {
+        exe->func_map[i] = (uint8_t *)image_get_function(image, i);
     }
 
     return 0;
@@ -1114,7 +1114,7 @@ val_t interp_execute_call(env_t *env, int ac)
     }
 }
 
-int interp_execute(env_t *env, val_t **v)
+int interp_execute_image(env_t *env, val_t **v)
 {
 
     if (!env || !v) {

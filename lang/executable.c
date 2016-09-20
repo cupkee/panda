@@ -46,275 +46,6 @@ int executable_init(executable_t *exe, void *mem_ptr, int mem_size,
     }
 }
 
-
-static inline
-void ef_write(executable_file_t *ef, int offset, void *buf, int size) {
-    if (offset + size >= ef->size) {
-        ef->error = 1;
-    } else {
-        memcpy(ef->base + offset, buf, size);
-    }
-}
-
-static inline
-void ef_write_zero(executable_file_t *ef, int offset, int size) {
-    if (offset + size >= ef->size) {
-        ef->error = 1;
-    } else {
-        bzero(ef->base + offset, size);
-    }
-}
-
-static inline
-void ef_write_byte(executable_file_t *ef, int offset, uint8_t d) {
-    if (offset >= ef->size) {
-        ef->error = 1;
-    } else {
-        ef->base[offset] = d;
-    }
-}
-
-/*
-static inline
-void ef_write_uint16(executable_file_t *ef, int offset, uint16_t d) {
-    if (offset >= ef->size) {
-        ef->error = 1;
-    } else {
-        if (ef->byte_order == LE) {
-            write_uint16_le(ef->base + offset, &d);
-        } else {
-            write_uint16_be(ef->base + offset, &d);
-        }
-    }
-}
-
-static inline
-void ef_write_uint16_be(executable_file_t *ef, int offset, uint16_t d) {
-    if (offset >= ef->size) {
-        ef->error = 1;
-    } else {
-        write_uint16_be(ef->base + offset, &d);
-    }
-}
-*/
-
-static inline
-void ef_write_uint32(executable_file_t *ef, int offset, uint32_t d) {
-    if (offset + 4 >= ef->size) {
-        ef->error = 1;
-    } else {
-        if (ef->byte_order == LE) {
-            write_uint32_le(ef->base + offset, &d);
-        } else {
-            write_uint32_be(ef->base + offset, &d);
-        }
-    }
-}
-
-static inline
-void ef_write_double(executable_file_t *ef, int offset, double *d) {
-    if (offset + 8 >= ef->size) {
-        ef->error = 1;
-    } else {
-        if (ef->byte_order == LE) {
-            write_double_le(ef->base + offset, d);
-        } else {
-            write_double_be(ef->base + offset, d);
-        }
-    }
-}
-
-static inline
-uint8_t ef_read_byte(executable_file_t *ef, int offset) {
-    if (offset < ef->size) {
-        return ef->base[offset];
-    }
-
-    ef->error = 1; return 0;
-}
-
-static inline
-uint32_t ef_read_uint32(executable_file_t *ef, int offset) {
-    if (offset + 4 < ef->size) {
-        return ef->byte_order == LE ? read_uint32_le(ef->base + offset) :
-               read_uint32_be(ef->base + offset);
-    }
-
-    ef->error = 1; return 0;
-}
-
-static inline
-double ef_read_double(executable_file_t *ef, int offset) {
-    if (offset + 8 < ef->size) {
-        return ef->byte_order == LE ? read_double_le(ef->base + offset) :
-               read_double_be(ef->base + offset);
-    }
-
-    ef->error = 1; return 0;
-}
-
-int executable_file_init(executable_file_t *ef, void *mem_ptr, int mem_size, int byte_order, int num_cnt, int str_cnt, int fn_cnt)
-{
-    if (!ef || !mem_ptr || mem_size < 64) {
-        return -1;
-    }
-
-    ef->error = 0;
-
-    ef->base = mem_ptr;
-    ef->size = mem_size;
-    ef->byte_order = byte_order;
-
-    ef->num_cnt = num_cnt;
-    ef->str_cnt = str_cnt;
-    ef->fn_cnt = fn_cnt;
-
-    ef->num_ent = 64;
-    ef->str_ent = SIZE_ALIGN_8(ef->num_ent + 8 * num_cnt);
-    ef->fn_ent  = SIZE_ALIGN_8(ef->str_ent + 4 * str_cnt);
-
-    ef->end = SIZE_ALIGN_16(ef->fn_ent + 4 * fn_cnt + 16);
-
-    ef_write(ef, 0, "\177ELF", 4);          // magic:
-    ef_write_byte(ef, 4, 1);                // addr size:   1:32, 2:64
-    ef_write_byte(ef, 5, byte_order);       // byte order: LE:BE
-    ef_write_byte(ef, 6, 0);                // version:     0
-    ef_write_zero(ef, 7, 9);                // padding
-    ef_write_uint32(ef, 16, ef->num_cnt);
-    ef_write_uint32(ef, 20, ef->num_ent);
-    ef_write_uint32(ef, 24, ef->str_cnt);
-    ef_write_uint32(ef, 28, ef->str_ent);
-    ef_write_uint32(ef, 32, ef->fn_cnt);
-    ef_write_uint32(ef, 36, ef->fn_ent);
-    ef_write_zero(ef, 40, 24);
-
-    return 0;
-}
-
-int executable_file_load(executable_file_t *ef, uint8_t *input, int size)
-{
-    if (!ef || !input || size < 64) {
-        return -ERR_InvalidInput;
-    }
-
-    ef->base = input;
-    ef->size = size;
-
-    ef->error = 0;
-    ef->addr_size  = ef_read_byte(ef, 4);
-    ef->byte_order = ef_read_byte(ef, 5);
-    ef->version    = ef_read_byte(ef, 6);
-
-    if (memcmp(input, "\177ELF", 4) || ef->version != 0) {
-        return -ERR_InvalidInput;
-    }
-
-    ef->num_cnt = ef_read_uint32(ef, 16);
-    ef->num_ent = ef_read_uint32(ef, 20);
-    ef->str_cnt = ef_read_uint32(ef, 24);
-    ef->str_ent = ef_read_uint32(ef, 28);
-    ef->fn_cnt  = ef_read_uint32(ef, 32);
-    ef->fn_ent  = ef_read_uint32(ef, 36);
-
-    return 0;
-}
-
-void executable_file_fill_data(executable_file_t *ef, int nc, double *nv, int sc, intptr_t *sv)
-{
-    int i, offset;
-
-    if (nc != ef->num_cnt || sc != ef->str_cnt) {
-        ef->error = 1;
-        return;
-    }
-
-    for (i = 0; i < nc; i++) {
-        ef_write_double(ef, ef->num_ent + i * 8, nv + i);
-    }
-
-    offset = ef->end;
-    for (i = 0; !ef->error && i < sc; i++) {
-        char *str = (char *)sv[i];
-        int len = strlen(str) + 1;
-
-        ef_write_uint32(ef, ef->str_ent + i * 4, offset);
-
-        ef_write(ef, offset, str, len);
-        offset += len;
-    }
-
-    ef->end = SIZE_ALIGN_16(offset);
-
-    // padding fill with zero
-    ef_write_zero(ef, offset, ef->end - offset);
-}
-
-void executable_file_fill_code(executable_file_t *ef, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size)
-{
-    int offset;
-
-    if (ef->error || entry >= ef->fn_cnt) {
-        ef->error = 1;
-        return;
-    }
-
-    offset = ef->end;
-    ef->end = SIZE_ALIGN_8(offset + FUNC_HEAD_SIZE + size);
-
-    ef_write_uint32(ef, ef->fn_ent + entry * 4, offset);
-
-    executable_func_set_head(ef->base + offset, vc, ac, size, stack_need, closure);
-    offset += FUNC_HEAD_SIZE;
-    ef_write(ef, offset, code, size);
-
-    // padding fill with zero
-    ef_write_zero(ef, offset + size, ef->end - offset - size);
-}
-
-double *executable_file_number_entry(executable_file_t *ef)
-{
-    if (!ef || ef->error) {
-        return NULL;
-    }
-
-    return (double *)(ef->base + ef->num_ent);
-}
-
-double executable_file_get_number(executable_file_t *ef, int index)
-{
-    if (!ef || ef->error) {
-        return 0;
-    }
-
-    return ef_read_double(ef, ef->num_ent + index * 8);
-}
-
-const char *executable_file_get_string(executable_file_t *ef, int index)
-{
-    uint32_t offset;
-
-    if (!ef || ef->error) {
-        return NULL;
-    }
-
-    offset = ef_read_uint32(ef, ef->str_ent + index * 4);
-
-    return (const char*)(ef->base + offset);
-}
-
-const uint8_t *executable_file_get_function(executable_file_t *ef, int index)
-{
-    uint32_t offset;
-
-    if (!ef || ef->error) {
-        return NULL;
-    }
-
-    offset = ef_read_uint32(ef, ef->fn_ent + index * 4);
-
-    return (const uint8_t*)(ef->base + offset);
-}
-
 int executable_number_find_add(executable_t *exe, double n)
 {
     int i;
@@ -354,3 +85,212 @@ int executable_string_find_add(executable_t *exe, intptr_t s)
         return -1;
     }
 }
+
+static inline
+void image_write(image_info_t *ef, int offset, void *buf, int size) {
+    memcpy(ef->base + offset, buf, size);
+}
+
+static inline
+void image_write_zero(image_info_t *img, int offset, int size) {
+    bzero(img->base + offset, size);
+}
+
+static inline
+void image_write_byte(image_info_t *img, int offset, uint8_t d) {
+    img->base[offset] = d;
+}
+
+static inline
+void image_write_uint32(image_info_t *img, int offset, uint32_t d) {
+    memcpy(img->base + offset, &d, sizeof(d));
+}
+
+static inline
+void image_write_double(image_info_t *img, int offset, double *d) {
+    memcpy(img->base + offset, d, sizeof(*d));
+}
+
+static inline
+void image_read_byte(image_info_t *img, int offset, uint8_t *b) {
+    *b = img->base[offset];
+}
+
+static inline
+void image_read_uint32(image_info_t *img, int offset, uint32_t *u) {
+    memcpy(u, img->base + offset, 4);
+}
+
+int image_load(image_info_t *img, uint8_t *input, int size)
+{
+    if (!img || !input || size < 64) {
+        return -ERR_InvalidInput;
+    }
+
+    if (memcmp(input, "\177ELF", 4)) {
+        return -ERR_InvalidInput;
+    }
+
+    img->base = input;
+    img->size = size;
+    img->end = size;
+
+    image_read_byte(img, 4, &img->addr_size);
+    image_read_byte(img, 5, &img->byte_order);
+    image_read_byte(img, 6, &img->version);
+
+    image_read_uint32(img, 16, &img->num_cnt);
+    image_read_uint32(img, 20, &img->num_ent);
+    image_read_uint32(img, 24, &img->str_cnt);
+    image_read_uint32(img, 28, &img->str_ent);
+    image_read_uint32(img, 32, &img->fn_cnt);
+    image_read_uint32(img, 36, &img->fn_ent);
+
+    return 0;
+}
+
+int image_init(image_info_t *img, void *mem_ptr, int mem_size, int byte_order, int num_cnt, int str_cnt, int fn_cnt)
+{
+    if (!img || !mem_ptr || mem_size < 64) {
+        return -1;
+    }
+
+    img->base = mem_ptr;
+    img->size = mem_size;
+    img->byte_order = SYS_BYTE_ORDER;
+
+    img->num_cnt = num_cnt;
+    img->str_cnt = str_cnt;
+    img->fn_cnt = fn_cnt;
+
+    img->num_ent = 64;
+    img->str_ent = SIZE_ALIGN_8(img->num_ent + 8 * num_cnt);
+    img->fn_ent  = SIZE_ALIGN_8(img->str_ent + 4 * str_cnt);
+
+    img->end = SIZE_ALIGN_16(img->fn_ent + 4 * fn_cnt + 16);
+
+    image_write(img, 0, "\177ELF", 4);          // magic:
+    image_write_byte(img, 4, 1);                // addr size:   1:32, 2:64
+    image_write_byte(img, 5, SYS_BYTE_ORDER);   // byte order: LE:BE
+    image_write_byte(img, 6, 0);                // version:     0
+    image_write_zero(img, 7, 9);                // padding
+    image_write_uint32(img, 16, img->num_cnt);
+    image_write_uint32(img, 20, img->num_ent);
+    image_write_uint32(img, 24, img->str_cnt);
+    image_write_uint32(img, 28, img->str_ent);
+    image_write_uint32(img, 32, img->fn_cnt);
+    image_write_uint32(img, 36, img->fn_ent);
+    image_write_zero(img, 40, 24);
+
+    return 0;
+}
+
+int image_fill_data(image_info_t *img, int nc, double *nv, int sc, intptr_t *sv)
+{
+    int i, offset;
+
+    if (nc != img->num_cnt || sc != img->str_cnt) {
+        return -1;
+    }
+
+    for (i = 0; i < nc; i++) {
+        image_write_double(img, img->num_ent + i * 8, nv + i);
+    }
+
+    offset = img->end;
+    for (i = 0; i < sc; i++) {
+        char *str = (char *)sv[i];
+        int len = strlen(str) + 1;
+
+        if (offset + len > img->size) {
+            return -1;
+        }
+
+        image_write_uint32(img, img->str_ent + i * 4, offset);
+        image_write(img, offset, str, len);
+        offset += len;
+    }
+
+    img->end = SIZE_ALIGN_16(offset);
+
+    // padding fill with zero
+    image_write_zero(img, offset, img->end - offset);
+    return 0;
+}
+
+int image_fill_code(image_info_t *img, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size)
+{
+    int offset, end;
+
+    if (!img || entry >= img->fn_cnt) {
+        return -1;
+    }
+
+    offset = img->end;
+    end = SIZE_ALIGN_8(offset + FUNC_HEAD_SIZE + size);
+    if (end > img->size) {
+        return -1;
+    }
+
+    image_write_uint32(img, img->fn_ent + entry * 4, offset);
+
+    executable_func_set_head(img->base + offset, vc, ac, size, stack_need, closure);
+    offset += FUNC_HEAD_SIZE;
+
+    image_write(img, offset, code, size);
+    offset += size;
+
+    // padding fill with zero
+    image_write_zero(img, offset, end - offset);
+    img->end = end;
+
+    return 0;
+}
+
+double *image_number_entry(image_info_t *img)
+{
+    if (!img) {
+        return NULL;
+    }
+
+    return (double *)(img->base + img->num_ent);
+}
+
+const char *image_get_string(image_info_t *img, int index)
+{
+    int offset;
+    uint32_t entry;
+
+    if (!img) {
+        return NULL;
+    }
+
+    offset = img->str_ent + index * 4;
+    if (offset >= img->end) {
+        return NULL;
+    }
+
+    image_read_uint32(img, offset, &entry);
+
+    return (const char*)(img->base + entry);
+}
+
+const uint8_t *image_get_function(image_info_t *img, int index)
+{
+    int offset;
+    uint32_t entry;
+
+    if (!img) {
+        return NULL;
+    }
+
+    offset = img->fn_ent + index * 4;
+    if (offset >= img->end) {
+        return NULL;
+    }
+
+    image_read_uint32(img, img->fn_ent + index * 4, &entry);
+
+    return (const uint8_t*)(img->base + entry);
+}
+
