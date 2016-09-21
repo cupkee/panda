@@ -32,7 +32,8 @@ biuld your program with panda (example):
 ````
 $ make example
 ````
-* repl
+
+* repl:
   a interactive interpreter of panda language
 ````
 $ ./repl
@@ -40,22 +41,21 @@ $ ./panda/panda -c input.pd   // compile input.pd, output name is: input.pdc
 $ ./panda/panda input.pdc     // interpreter mode, execute compiled file
 ````
 
-* compile
+* compile:
   a compiler，that translate panda script file to panda binary image
 ````
 $ ./compile input             // output: input.pdc
 ````
 
-* dump
+* dump:
   a tool to dump infomation of panda binary image
 ````
 $ ./dump input.pdc
 ````
 
-* panda
+* panda:
   a interpreter panda script or binary image
 ````
 $ ./panda input.pd            // script file
 $ ./panda input.pdc           // image file
 ````
-
