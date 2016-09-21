@@ -1,7 +1,6 @@
 # panda
 
-## quick look
-panda language:
+## panda language quick look:
 ````
 var a = 0, b = 4;             // define variable a, b, initialized as a number
 var c = "hello world";        // define variable c, initialized as a string
@@ -23,12 +22,12 @@ while (a < 10) {
 
 ````
 
-test:
+## test:
 ````
 $ make test
 ````
 
-biuld your program with panda (example):
+## biuld your program with panda (example):
 ````
 $ make example
 ````
