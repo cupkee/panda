@@ -97,6 +97,7 @@ int env_native_add(env_t *env, int cnt, native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
 const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av);
+const uint8_t *env_func_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av);
 void env_frame_restore(env_t *env, const uint8_t **pc, scope_t **scope);
 void env_native_call(env_t *env, val_t *fv, int ac, val_t *av);
 

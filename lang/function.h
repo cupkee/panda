@@ -27,6 +27,7 @@ int function_destroy(intptr_t func);
 
 static inline
 int function_mem_space(function_t *f) {
+    (void) f;
     return SIZE_ALIGN(sizeof(function_t));
 }
 

@@ -1,4 +1,3 @@
-#include "sal/sal.h"
 #include "err.h"
 #include "executable.h"
 #include "function.h"
@@ -151,6 +150,8 @@ int image_load(image_info_t *img, uint8_t *input, int size)
 
 int image_init(image_info_t *img, void *mem_ptr, int mem_size, int byte_order, int num_cnt, int str_cnt, int fn_cnt)
 {
+    (void) byte_order;
+
     if (!img || !mem_ptr || mem_size < 64) {
         return -1;
     }
@@ -185,9 +186,9 @@ int image_init(image_info_t *img, void *mem_ptr, int mem_size, int byte_order, i
     return 0;
 }
 
-int image_fill_data(image_info_t *img, int nc, double *nv, int sc, intptr_t *sv)
+int image_fill_data(image_info_t *img, unsigned int nc, double *nv, unsigned int sc, intptr_t *sv)
 {
-    int i, offset;
+    unsigned int i, offset;
 
     if (nc != img->num_cnt || sc != img->str_cnt) {
         return -1;
@@ -218,9 +219,9 @@ int image_fill_data(image_info_t *img, int nc, double *nv, int sc, intptr_t *sv)
     return 0;
 }
 
-int image_fill_code(image_info_t *img, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size)
+int image_fill_code(image_info_t *img, unsigned int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, unsigned int size)
 {
-    int offset, end;
+    unsigned int offset, end;
 
     if (!img || entry >= img->fn_cnt) {
         return -1;
@@ -258,7 +259,7 @@ double *image_number_entry(image_info_t *img)
 
 const char *image_get_string(image_info_t *img, int index)
 {
-    int offset;
+    unsigned int offset;
     uint32_t entry;
 
     if (!img) {
@@ -277,7 +278,7 @@ const char *image_get_string(image_info_t *img, int index)
 
 const uint8_t *image_get_function(image_info_t *img, int index)
 {
-    int offset;
+    unsigned int offset;
     uint32_t entry;
 
     if (!img) {

@@ -20,6 +20,7 @@ void string_at(env_t *env, val_t *a, val_t *b, val_t *res)
     int l = strlen(s);
     int i = val_2_integer(b);
 
+    (void) env;
     if (i >= 0 && i < l) {
         val_set_inner_string(res, s[i]);
     } else {

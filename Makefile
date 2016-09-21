@@ -1,12 +1,9 @@
 #
 #
 
-BASE = ${PWD}
+MAKE_DIR  = ${PWD}/make
+TEST_DIR  = ${PWD}/test
 
-MAKE_DIR  = ${BASE}/make
-TEST_DIR  = ${BASE}/test
-
-export BASE
 export PREFIX
 
 .PHONY: all test cunit lang example
@@ -21,7 +18,7 @@ cunit:
 	@printf "[Build] cunit\n"
 	@${MAKE} -C cunit -f ${MAKE_DIR}/Makefile.pub
 
-test: cunit lang
+test: lang
 	@printf "[Build] test\n"
 	@${RM} ${TEST_DIR}/test
 	@${MAKE} -C test -f ${MAKE_DIR}/Makefile.pub

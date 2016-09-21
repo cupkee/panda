@@ -34,6 +34,7 @@ static inline val_t *_array_elem_get(env_t *env, val_t *a, val_t *i) {
     array_t *array = (array_t *) val_2_intptr(a);
     int id = val_2_integer(i);
 
+    (void) env;
     if (id >= 0 && id < array_length(array)) {
         return array->elems + (array->elem_bgn + id);
     } else {

@@ -144,8 +144,8 @@ int executable_string_find_add(executable_t *exe, intptr_t s);
 
 int image_init(image_info_t *img, void *mem_ptr, int mem_size, int byte_order, int nc, int sc, int fc);
 int image_load(image_info_t *img, uint8_t *input, int size);
-int image_fill_data(image_info_t *img, int nc, double *nv, int sc, intptr_t *sv);
-int image_fill_code(image_info_t *img, int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, int size);
+int image_fill_data(image_info_t *img, unsigned int nc, double *nv, unsigned int sc, intptr_t *sv);
+int image_fill_code(image_info_t *img, unsigned int entry, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure, uint8_t *code, unsigned int size);
 double *image_number_entry(image_info_t *img);
 double image_get_number(image_info_t *img, int index);
 const char *image_get_string(image_info_t *img, int index);

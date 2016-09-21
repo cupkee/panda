@@ -18,6 +18,7 @@ val_t string_length(env_t *env, int ac, val_t *av);
 val_t string_index_of(env_t *env, int ac, val_t *av);
 
 static inline int string_inline_len(val_t *s) {
+    (void)s;
     return 1;
 }
 

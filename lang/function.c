@@ -15,6 +15,7 @@ intptr_t function_create(env_t *env, uint8_t *entry)
 
 int function_destroy(intptr_t fn)
 {
+    (void) fn;
     return 0;
 }
 

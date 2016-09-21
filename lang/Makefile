@@ -14,7 +14,7 @@ lang_SRCS = heap.c \
 			array.c \
 			string.c
 
-lang_CPPFLAGS = -I${BASE} -Wall -Werror
+lang_CPPFLAGS = -I.. -Wall -Werror
 lang_CFLAGS   = -g
 lang_LDFLAGS  =
 

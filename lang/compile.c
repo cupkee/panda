@@ -153,7 +153,7 @@ static void compile_gc(compile_t *cpl)
      * data relocation
      */
     for (i = 0; i < keep_num; i++) {
-        intptr_t *head = (intptr_t *)(keep_tbl[i]);
+        head = (intptr_t *)(keep_tbl[i]);
         memmove((void*)(head[1]), head, head[0]);
     }
 
@@ -690,7 +690,7 @@ static void compile_expr_logic_or(compile_t *cpl, expr_t *e)
     compile_true_jmp_false_pop(cpl, pos, compile_code_pos(cpl));
 }
 
-void compile_expr_id(compile_t *cpl, expr_t *e)
+static void compile_expr_id(compile_t *cpl, expr_t *e)
 {
     intptr_t sym_id = compile_sym_add(cpl, ast_expr_text(e));
     int generation, id;
@@ -1195,6 +1195,7 @@ static void compile_stmt_break(compile_t *cpl, stmt_t *s)
 {
     int bgn, end, total;
 
+    (void) s;
     bgn = cpl->skip_pos;
     end = compile_code_pos(cpl);
     total = end - bgn + 3;
@@ -1206,6 +1207,7 @@ static void compile_stmt_continue(compile_t *cpl, stmt_t *s)
 {
     int bgn, end, total;
 
+    (void) s;
     bgn = cpl->bgn_pos;
     end = compile_code_pos(cpl);
     total = end - bgn + 3;
@@ -1361,6 +1363,7 @@ static void compile_func_stack_pop(compile_t *cpl, compile_func_t *fn)
 
 static void compile_func_stack_push(compile_t *cpl, compile_func_t *fn)
 {
+    (void) cpl;
     fn->stack_space++;
     if (fn->stack_space > fn->stack_high) {
         fn->stack_high = fn->stack_space;
@@ -1602,7 +1605,8 @@ int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
 
 static void parse_callback(void *ud, parse_event_t *e)
 {
-
+    (void) ud;
+    (void) e;
 }
 
 static int compile_map_image(compile_t *cpl, void *mem_ptr, int mem_size)

@@ -201,7 +201,7 @@ static inline val_t val_mk_owned_string(intptr_t s) {
 }
 
 static inline val_t val_mk_array(void *ptr) {
-    return TAG_ARRAY | (val_t) ptr;
+    return TAG_ARRAY | (intptr_t) ptr;
 }
 
 static inline void val_set_nan(val_t *p) {

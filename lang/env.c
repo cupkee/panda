@@ -36,7 +36,7 @@ static uint32_t hash_pjw(const void *key)
 }
 
 static inline uint32_t htbl_key(uint32_t size, uint32_t hash, int i) {
-    return hash + i * (hash * 2 + 1);
+    return (hash + i * (hash * 2 + 1)) % size;
 }
 
 static inline int scope_mem_space(scope_t *scope) {
@@ -78,7 +78,7 @@ static int env_symbal_lookup(env_t *env, const char *symbal, char **res)
     hash = hash_pjw(symbal);
 
     for (i = 0; i < size; i++) {
-        pos = htbl_key(size, hash, i) % size;
+        pos = htbl_key(size, hash, i);
 
         if (tbl[pos] == 0) {
             break;
@@ -110,7 +110,7 @@ intptr_t env_symbal_insert(env_t *env, const char *symbal, int alloc)
 
     hash = hash_pjw(symbal);
     for (i = 0; i < size; i++) {
-        pos = htbl_key(size, hash, i) % size;
+        pos = htbl_key(size, hash, i);
 
         if (tbl[pos] == 0 || tbl[pos] == VACATED) {
             p = alloc ? env_symbal_put(env, symbal) : (char *)symbal;
@@ -232,6 +232,7 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
 
 int env_deinit(env_t *env)
 {
+    (void) env;
     return 0;
 }
 
@@ -239,8 +240,8 @@ scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, va
 {
     scope_t *scope;
     val_t   *buf;
-    uint32_t  vn, an, vc;
-    int      i, d;
+    int vn, an, vc;
+    int i, d;
 
     if (entry) {
         vn = executable_func_get_var_cnt(entry);
@@ -706,6 +707,8 @@ static void env_heap_gc_scan(env_t *env)
 
 void env_heap_gc(env_t *env, int level)
 {
+    (void) level;
+
     //printf("heap used: %d\n", env->heap->free);
     env_heap_gc_init(env);
     env_heap_gc_scan(env);

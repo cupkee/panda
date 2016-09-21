@@ -152,5 +152,7 @@ static inline void ast_expr_set_rht(expr_t *e, expr_t *rht) {
     e->body.child.rht = rht;
 }
 
+void ast_traveral_expr(expr_t *e, void (*cb)(void *, expr_t *), void *ud);
+
 #endif /* __LANG_AST_INC__ */
 

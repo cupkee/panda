@@ -825,6 +825,7 @@ void interp_push_function(env_t *env, unsigned int id)
 }
 
 #if 0
+#define __INTERP_SHOW__
 static inline void interp_show(const uint8_t *pc, int sp) {
     const char *cmd;
     int param1, param2, n;
@@ -840,8 +841,6 @@ static inline void interp_show(const uint8_t *pc, int sp) {
         printf("[PC: %p, SP: %d] %s %d %d\n", pc, sp, cmd, param1, param2);
     }
 }
-#else
-static inline void interp_show(const uint8_t *pc, int sp) {}
 #endif
 
 static int interp_run(env_t *env, const uint8_t *pc)
@@ -851,7 +850,9 @@ static int interp_run(env_t *env, const uint8_t *pc)
     while(!env->error) {
         uint8_t code;
 
+#if defined(__INTERP_SHOW__)
         interp_show(pc, env->sp);
+#endif
         code = *pc++;
         switch(code) {
         case BC_STOP:       goto DO_END;
@@ -1036,16 +1037,8 @@ DO_END:
 
 static void parse_callback(void *u, parse_event_t *e)
 {
-    if (e->type == PARSE_EOF) {
-    } else
-    if (e->type == PARSE_SIMPLE) {
-    } else
-    if (e->type == PARSE_ENTER_BLOCK) {
-    } else
-    if (e->type == PARSE_LEAVE_BLOCK) {
-    } else
-    if (e->type == PARSE_FAIL) {
-    }
+    (void) u;
+    (void) e;
 }
 
 int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
@@ -1066,7 +1059,7 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
 
 int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, image_info_t *image)
 {
-    int i;
+    unsigned int i;
     executable_t *exe;
 
     if (!image || image->byte_order != SYS_BYTE_ORDER) {
@@ -1179,7 +1172,6 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     stmt_t *stmt;
     parser_t psr;
     compile_t cpl;
-    int stmt_type;
     heap_t *heap = env_heap_get_free((env_t*)env);
 
     if (!env || !input || !v) {
@@ -1193,7 +1185,6 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     if (!stmt) {
         return psr.error ? -psr.error : 0;
     }
-    stmt_type = stmt->type;
 
     compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
     if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {

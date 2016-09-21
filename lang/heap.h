@@ -7,8 +7,8 @@
 #include "config.h"
 
 typedef struct heap_t {
-    unsigned int size;
-    unsigned int free;
+    int size;
+    int free;
     void *base;
 } heap_t;
 

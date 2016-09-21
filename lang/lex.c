@@ -140,7 +140,7 @@ static void lex_get_num_token(lexer_t *lex)
             lex->token_buf[len++] = CURR_CH;
         }
         lex_get_next_ch(lex);
-    } while (isnumber(CURR_CH));
+    } while (isdigit(CURR_CH));
 
     lex->token_buf[len] = 0;
     lex->token_len = len;
@@ -170,7 +170,7 @@ TOKEN_LOCATE:
     if ('\'' == tok || '"' == tok) {
         lex_get_str_token(lex);
     } else
-    if (isnumber(tok)) {
+    if (isdigit(tok)) {
         lex_get_num_token(lex);
     } else {
         if (tok) {
@@ -256,6 +256,7 @@ int lex_init(lexer_t *lex, const char *input, char *(*more)(void))
 
 int lex_deinit(lexer_t *lex)
 {
+    (void) lex;
     return 0;
 }
 
