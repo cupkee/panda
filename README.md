@@ -36,8 +36,13 @@ $ make example
   a interactive interpreter of panda language
 ````
 $ ./repl
-$ ./panda/panda -c input.pd   // compile input.pd, output name is: input.pdc
-$ ./panda/panda input.pdc     // interpreter mode, execute compiled file
+PANDA v0.1.0
+> var a = 0;
+undefined
+> a + 1
+1.0000
+> ....
+> <CTRL-D> // exit
 ````
 
 * compile:
