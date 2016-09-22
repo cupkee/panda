@@ -70,8 +70,8 @@ SOFTWARE.
 
 #define TOKEN_MAX_SIZE              (32)
 
-//#define EXECUTABLE_MINI
-#define EXECUTABLE_SMALL
+#define EXECUTABLE_MINI
+//#define EXECUTABLE_SMALL
 //#define EXECUTABLE_NORMAL
 //#define EXECUTABLE_LARGE
 //#define EXECUTABLE_HUGE
