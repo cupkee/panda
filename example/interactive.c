@@ -34,6 +34,13 @@ SOFTWARE.
 static uint8_t memory[MEM_SIZE];
 static char *input_last = NULL;
 
+static const char *logo = "\
+  ___                 _       \n\
+ | _ \\ __ _  _ _   __| | __ _ \n\
+ |  _// _` || ' \\ / _` |/ _` |\n\
+ |_|  \\__,_||_||_|\\__,_|\\__,_| V%u.%u.%u\n\
+ power by cupkee.cn\n";
+
 static inline void input_release(char *last)
 {
     if (input_last) {
@@ -135,7 +142,7 @@ static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_siz
 
     native_init(&env);
 
-    printf("PANDA V0.1.1\n\n");
+    printf(logo, 0, 1, 0);
 
     while (1) {
         int    err;
