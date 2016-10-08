@@ -1622,8 +1622,14 @@ void compile_code_dump(compile_t *cpl)
 
 int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
 {
+    int num_max, str_max;
+
+    if (env_exe_memery_calc(mem_size, &num_max, &str_max, NULL, NULL)) {
+        return -ERR_NotEnoughMemory;
+    }
+
     return env_init(env, mem_ptr, mem_size, NULL, 0, NULL, 0,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, 0, 0, 0, 0);
+                num_max, str_max, 0, 0, 0, 0);
 }
 
 static void parse_callback(void *ud, parse_event_t *e)

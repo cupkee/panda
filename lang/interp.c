@@ -1066,32 +1066,75 @@ static void parse_callback(void *u, parse_event_t *e)
 
 int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
 {
+    int exe_mem_size = mem_size;
+    int exe_num_max, exe_str_max, exe_fn_max, exe_code_max;
+
+    if (!heap_ptr) {
+        exe_mem_size -= heap_size;
+    }
+
+    if (!stack_ptr) {
+        exe_mem_size -= stack_size * sizeof(val_t);
+    }
+
+    if (env_exe_memery_calc(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
+        return -ERR_NotEnoughMemory;
+    }
+
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_FUNCTION_MAX,
-                EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 1);
+                exe_num_max, exe_str_max, exe_fn_max,
+                exe_code_max / 4, exe_code_max * 3 / 4, 1);
 }
 
 int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
 {
+    int exe_mem_size = mem_size;
+    int exe_num_max, exe_str_max, exe_fn_max, exe_code_max;
+
+    if (!heap_ptr) {
+        exe_mem_size -= heap_size;
+    }
+
+    if (!stack_ptr) {
+        exe_mem_size -= stack_size;
+    }
+
+    if (env_exe_memery_calc(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
+        return -ERR_NotEnoughMemory;
+    }
+
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
-                EXE_NUMBER_MAX, EXE_STRING_MAX, EXE_FUNCTION_MAX,
-                EXE_MAIN_CODE_MAX, EXE_FUNC_CODE_MAX, 0);
+                exe_num_max, exe_str_max, exe_fn_max,
+                exe_code_max / 4, exe_code_max * 3 / 4, 0);
 }
 
 int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, image_info_t *image)
 {
     unsigned int i;
+    int exe_mem_size, exe_str_max, exe_fn_max;
     executable_t *exe;
 
     if (!image || image->byte_order != SYS_BYTE_ORDER) {
         return -1;
     }
 
+    exe_mem_size = mem_size - heap_size - stack_size * sizeof(val_t);
+    if (env_exe_memery_calc(exe_mem_size, NULL, &exe_str_max, &exe_fn_max, NULL)) {
+        return -ERR_NotEnoughMemory;
+    }
+
+    if ((unsigned)exe_str_max < image->str_cnt) {
+        exe_str_max = image->str_cnt;
+    }
+    if ((unsigned)exe_fn_max < image->fn_cnt) {
+        exe_fn_max = image->fn_cnt;
+    }
+
     if (0 != env_init(env, mem_ptr, mem_size,
                     heap_ptr, heap_size, stack_ptr, stack_size,
-                    0, image->str_cnt, image->fn_cnt, 0, 0, 0)) {
+                    0, exe_str_max, exe_fn_max, 0, 0, 0)) {
         return -1;
     }
 

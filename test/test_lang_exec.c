@@ -31,9 +31,13 @@ SOFTWARE.
 
 #include "lang/interp.h"
 
+
 #define STACK_SIZE      128
 #define HEAP_SIZE       4096
-#define ENV_BUF_SIZE    (sizeof(val_t) * STACK_SIZE + HEAP_SIZE + EXE_MEM_SPACE + SYMBAL_MEM_SPACE)
+
+#define EXE_MEM_SPACE   4096
+#define SYM_MEM_SPACE   1024
+#define ENV_BUF_SIZE    (sizeof(val_t) * STACK_SIZE + HEAP_SIZE + EXE_MEM_SPACE + SYM_MEM_SPACE)
 
 uint8_t env_buf[ENV_BUF_SIZE];
 

@@ -87,6 +87,7 @@ typedef struct native_t {
 } native_t;
 
 
+int env_exe_memery_calc(int mem_size, int *num_max, int *str_max, int *fn_max, int *code_max);
 int env_init(env_t *env, void * mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int func_max,

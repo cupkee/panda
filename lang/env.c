@@ -154,6 +154,55 @@ intptr_t env_symbal_get(env_t *env, const char *name) {
     return 0;
 }
 
+int env_exe_memery_calc(int size, int *num_max, int *str_max, int *fn_max, int *code_max)
+{
+    int code_space;
+    int fent_space;
+    int num_space;
+    int str_space;
+
+    if (code_max) {
+        // half of memory as code space
+        code_space = SIZE_ALIGN_8(size / 2);
+        *code_max = code_space;
+    } else {
+        code_space = 0;
+    }
+
+    if (num_max) {
+        // 1/32 of memory as number
+        num_space = SIZE_ALIGN_8(size / 32);
+        *num_max = num_space / sizeof(double);
+    } else {
+        num_space = 0;
+    }
+
+    if (fn_max) {
+        // 1/32 of function entry space
+        fent_space = SIZE_ALIGN_8(size / 32);
+        *fn_max = fent_space / sizeof(intptr_t);
+    } else {
+        fent_space = 0;
+    }
+
+    if (str_max) {
+        str_space = size - code_space - num_space - fent_space;
+        *str_max = str_space / (sizeof(intptr_t) * 2 + DEF_STRING_SIZE);
+    } else {
+        str_space = 0;
+    }
+
+    /*
+    printf("exe space: %d\n", size);
+    printf("num space: %d\n", num_space);
+    printf("str space: %d\n", str_space);
+    printf("code space: %d\n", code_space);
+    printf("fent space: %d\n", fent_space);
+    */
+
+    return 0;
+}
+
 int env_init(env_t *env, void *mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int func_max,
@@ -218,12 +267,12 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     }
     mem_offset += exe_size;
 
-    symbal_tbl_size = EXE_STRING_MAX * sizeof(intptr_t);
+    symbal_tbl_size = string_max * sizeof(intptr_t);
     if (mem_offset + symbal_tbl_size > mem_size) {
         return -1;
     }
     env->symbal_tbl = (intptr_t *) (mem_ptr + mem_offset);
-    env->symbal_tbl_size = EXE_STRING_MAX;
+    env->symbal_tbl_size = string_max;
     env->symbal_tbl_hold = 0;
     memset(mem_ptr + mem_offset, 0, symbal_tbl_size);
     mem_offset += symbal_tbl_size;

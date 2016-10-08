@@ -67,65 +67,21 @@ SOFTWARE.
 
 // lang profile
 #define MAGIC_BASE                  (0xE0)
-
 #define TOKEN_MAX_SIZE              (32)
-
-#define EXECUTABLE_MINI
-//#define EXECUTABLE_SMALL
-//#define EXECUTABLE_NORMAL
-//#define EXECUTABLE_LARGE
-//#define EXECUTABLE_HUGE
-
-#if defined(EXECUTABLE_MINI)
-
-# define INTERACTIVE_VAR_MAX        (16)
-
-# define EXE_FUNCTION_MAX           (16)
-# define EXE_NUMBER_MAX             (32)
-# define EXE_STRING_MAX             (128)
-# define EXE_MAIN_CODE_MAX          (512)
-# define EXE_FUNC_CODE_MAX          (1536)
-
-# define DEF_PROP_SIZE              (4)
-# define DEF_ELEM_SIZE              (4)
-
-# define DEF_FUNC_SIZE              (4)
-# define DEF_VMAP_SIZE              (4)
-# define DEF_FUNC_CODE_SIZE         (32)
-# define LIMIT_VMAP_SIZE            (16)
-# define LIMIT_FUNC_SIZE            (16)
-# define LIMIT_FUNC_CODE_SIZE       (32767)
-
-# define DEF_STRING_SIZE            (8)
-
-#elif defined(EXECUTABLE_SMALL)
 
 # define INTERACTIVE_VAR_MAX        (32)
 
-# define EXE_FUNCTION_MAX           (32)
-# define EXE_NUMBER_MAX             (64)
-# define EXE_STRING_MAX             (256)
-# define EXE_MAIN_CODE_MAX          (1024)
-# define EXE_FUNC_CODE_MAX          (1024 * 3)
-
-# define DEF_PROP_SIZE              (8)
+# define DEF_PROP_SIZE              (4)
 # define DEF_ELEM_SIZE              (8)
-
 # define DEF_FUNC_SIZE              (4)
 # define DEF_VMAP_SIZE              (4)
 # define DEF_FUNC_CODE_SIZE         (32)
-# define LIMIT_VMAP_SIZE            (32)
-# define LIMIT_FUNC_SIZE            (32)
-# define LIMIT_FUNC_CODE_SIZE       (32767)
+
+# define LIMIT_VMAP_SIZE            (32)    // max variable number in function
+# define LIMIT_FUNC_SIZE            (32767) // max function number in  module
+# define LIMIT_FUNC_CODE_SIZE       (32767) // max code of each function
 
 # define DEF_STRING_SIZE            (8)
-#else // NORMAL
-#endif
-
-#define EXE_MEM_SPACE               SIZE_ALIGN(EXE_FUNCTION_MAX * sizeof(void *) + EXE_NUMBER_MAX * sizeof(double)\
-                                    + EXE_STRING_MAX * sizeof(void *) + EXE_MAIN_CODE_MAX + EXE_FUNC_CODE_MAX + 32)
-
-#define SYMBAL_MEM_SPACE            SIZE_ALIGN(EXE_STRING_MAX * (sizeof(void *) + DEF_STRING_SIZE))
 
 // lang compile resource default and limit
 
