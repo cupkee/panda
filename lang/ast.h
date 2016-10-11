@@ -110,6 +110,8 @@ enum STMT_TYPE {
     STMT_WHILE,
     STMT_BREAK,
     STMT_CONTINUE,
+    STMT_THROW,
+    STMT_TRY,
     STMT_PASS,
 };
 

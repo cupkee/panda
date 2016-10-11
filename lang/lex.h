@@ -70,10 +70,13 @@ enum LEX_TOKEN_TYPE{
     TOK_VAR,
     TOK_DEF,
     TOK_RET,
+    TOK_TRY,
     TOK_ELSE,
     TOK_ELIF,
     TOK_WHILE,
     TOK_BREAK,
+    TOK_CATCH,
+    TOK_THROW,
     TOK_CONTINUE
 };
 

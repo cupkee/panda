@@ -56,7 +56,7 @@ static void test_common(void)
     12345 09876\n\
     /* comments 3\r\n comments 3 continue*/\
     abc a12 _11 a_b _a_ $1 $_a \n\
-    undefined null NaN true false var def return while break continue in if elif else\n";
+    undefined null NaN true false var def return while break continue in if elif else try catch throw\n";
 
     CU_ASSERT(0 == lex_init(&lex, input, NULL));
 
@@ -122,6 +122,9 @@ static void test_common(void)
     CU_ASSERT(lex_match(&lex, TOK_IF));
     CU_ASSERT(lex_match(&lex, TOK_ELIF));
     CU_ASSERT(lex_match(&lex, TOK_ELSE));
+    CU_ASSERT(lex_match(&lex, TOK_TRY));
+    CU_ASSERT(lex_match(&lex, TOK_CATCH));
+    CU_ASSERT(lex_match(&lex, TOK_THROW));
 
     CU_ASSERT(0 == lex_deinit(&lex));
 }

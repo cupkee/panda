@@ -781,6 +781,54 @@ static stmt_t *parse_stmt_if(parser_t *psr)
     return s;
 }
 
+static stmt_t *parse_stmt_try(parser_t *psr)
+{
+    stmt_t *block = NULL;
+    stmt_t *other = NULL;
+    expr_t *error = NULL;
+    stmt_t *s;
+
+    parse_match(psr, TOK_TRY);
+
+    if (!(block = parse_stmt_block(psr))) {
+        return NULL;
+    }
+
+    if (!parse_match(psr, TOK_CATCH)) {
+        parse_fail(psr, ERR_InvalidToken);
+        return NULL;
+    }
+
+    if (parse_match(psr, '(')) {
+        token_t token;
+        if (parse_token(psr, &token) != TOK_ID) {
+            parse_fail(psr, ERR_InvalidToken);
+            return NULL;
+        }
+        if(!(error = parse_expr_alloc_str(psr, EXPR_ID, token.text))) {
+            parse_fail(psr, ERR_NotEnoughMemory);
+            return NULL;
+        }
+        parse_match(psr, TOK_ID);
+
+        if (!parse_match(psr, ')')) {
+            parse_fail(psr, ERR_InvalidToken);
+            return NULL;
+        }
+    }
+
+    if (!(other = parse_stmt_block(psr))) {
+        return NULL;
+    }
+
+    s = parse_stmt_alloc_3(psr, STMT_TRY, error, block, other);
+    if (!s) {
+        parse_fail(psr, ERR_NotEnoughMemory);
+    }
+
+    return s;
+}
+
 static stmt_t *parse_stmt_var(parser_t *psr)
 {
     expr_t *expr;
@@ -850,6 +898,26 @@ static stmt_t *parse_stmt_while(parser_t *psr)
     return s;
 }
 
+static stmt_t *parse_stmt_throw(parser_t *psr)
+{
+    expr_t *expr = NULL;
+    stmt_t *s;
+
+    parse_match(psr, TOK_THROW);
+
+    if (!parse_match(psr, ';')) {
+        if (NULL == (expr = parse_expr(psr))) {
+            return NULL;
+        }
+        parse_match(psr, ';');
+    }
+
+    if (!(s = parse_stmt_alloc_1(psr, STMT_THROW, expr))) {
+        parse_fail(psr, ERR_NotEnoughMemory);
+    }
+    return s;
+}
+
 static stmt_t *parse_stmt_break(parser_t *psr)
 {
     stmt_t *s;
@@ -884,9 +952,8 @@ static stmt_t *parse_stmt_expr(parser_t *psr)
 {
     expr_t *expr = parse_expr(psr);
 
-    if (parse_token(psr, NULL) == ';') {
-        parse_match(psr, ';');
-    }
+    while (parse_match(psr, ';'))
+        ;
 
     if (expr) {
         stmt_t *s = parse_stmt_alloc_1(psr, STMT_EXPR, expr);
@@ -911,10 +978,12 @@ stmt_t *parse_stmt(parser_t *psr)
     switch (tok) {
         case TOK_EOF:       parse_post(psr, PARSE_EOF); return NULL;
         case TOK_IF:        parse_post(psr, PARSE_COMPOSE); return parse_stmt_if(psr);
+        case TOK_TRY:       parse_post(psr, PARSE_SIMPLE); return parse_stmt_try(psr);
         case TOK_VAR:       parse_post(psr, PARSE_SIMPLE); return parse_stmt_var(psr);
         case TOK_RET:       parse_post(psr, PARSE_SIMPLE); return parse_stmt_ret(psr);
         case TOK_WHILE:     parse_post(psr, PARSE_COMPOSE); return parse_stmt_while(psr);
         case TOK_BREAK:     parse_post(psr, PARSE_SIMPLE); return parse_stmt_break(psr);
+        case TOK_THROW:     parse_post(psr, PARSE_SIMPLE); return parse_stmt_throw(psr);
         case TOK_CONTINUE:  parse_post(psr, PARSE_SIMPLE); return parse_stmt_continue(psr);
         default:            parse_post(psr, PARSE_SIMPLE); return parse_stmt_expr(psr);
     }

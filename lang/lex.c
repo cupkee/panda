@@ -72,6 +72,7 @@ static int lex_chk_token_type(const char *str, int len)
         if (0 == strcmp("def", str)) return TOK_DEF;
         if (0 == strcmp("var", str)) return TOK_VAR;
         if (0 == strcmp("NaN", str)) return TOK_NAN;
+        if (0 == strcmp("try", str)) return TOK_TRY;
     case 4:
         if (0 == strcmp("else", str)) return TOK_ELSE;
         if (0 == strcmp("elif", str)) return TOK_ELIF;
@@ -81,6 +82,8 @@ static int lex_chk_token_type(const char *str, int len)
         if (0 == strcmp("false", str)) return TOK_FALSE;
         if (0 == strcmp("while", str)) return TOK_WHILE;
         if (0 == strcmp("break", str)) return TOK_BREAK;
+        if (0 == strcmp("catch", str)) return TOK_CATCH;
+        if (0 == strcmp("throw", str)) return TOK_THROW;
     case 6:
         if (0 == strcmp("return", str)) return TOK_RET;
     case 8:

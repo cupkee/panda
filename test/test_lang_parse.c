@@ -720,6 +720,52 @@ static void test_stmt_while(void)
     CU_ASSERT(stmt->expr->type == EXPR_TGT);
 }
 
+static void test_stmt_try(void)
+{
+    parser_t psr;
+    stmt_t   *stmt;
+    char     *input = "\
+    try\n\
+       a = a / b\n\
+    catch {\n\
+       a = b - a\n\
+       b = b - a\n\
+    }\n";
+    parse_init(&psr, input, NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
+    CU_ASSERT_FATAL(stmt->type == STMT_TRY);
+    CU_ASSERT(stmt->block != NULL);
+    CU_ASSERT(stmt->other != NULL);
+    CU_ASSERT(stmt->other->next != NULL);
+
+    input = "\
+    try {\n\
+        b = 0;\n\
+        a = a / b;\n\
+    } catch (err) {\n\
+        print(err);\n\
+        throw Error('test');\n\
+    }\n";
+    parse_init(&psr, input, NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
+    CU_ASSERT(stmt->type == STMT_TRY);
+    CU_ASSERT(stmt->expr != NULL);
+    CU_ASSERT(stmt->block != NULL);
+    CU_ASSERT(stmt->block->next != NULL);
+    CU_ASSERT(stmt->other != NULL);
+
+    // throw
+    parse_init(&psr, "throw;\n", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
+    CU_ASSERT(stmt->type == STMT_THROW);
+    CU_ASSERT(stmt->expr == NULL);
+
+    parse_init(&psr, "throw Error('some error')\n", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (stmt = parse_stmt(&psr)));
+    CU_ASSERT(stmt->type == STMT_THROW);
+    CU_ASSERT(stmt->expr != NULL);
+}
+
 CU_pSuite test_lang_parse_entry()
 {
     CU_pSuite suite = CU_add_suite("lang parse", test_setup, test_clean);
@@ -746,6 +792,7 @@ CU_pSuite test_lang_parse_entry()
         CU_add_test(suite, "parse statements simple",   test_stmt_simple);
         CU_add_test(suite, "parse statements if",       test_stmt_if);
         CU_add_test(suite, "parse statements while",    test_stmt_while);
+        CU_add_test(suite, "parse statements try",      test_stmt_try);
     }
 
     return suite;
