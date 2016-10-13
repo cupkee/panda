@@ -564,9 +564,9 @@ static val_t test_native_call(env_t *env, int ac, val_t *av)
     if (ac > 0 && val_is_function(av)) {
         int i;
 
-        for (i = 0; i < ac -1; i++) {
-            // push arguments from last to first
-            env_push_call_argument(env, av + ac - i - 1);
+        // push arguments from last to first
+        for (i = ac - 1; i > 0; i--) {
+            env_push_call_argument(env, av + i);
         }
         env_push_call_function(env, av);
 
@@ -603,6 +603,10 @@ static void test_exec_native_call_script(void)
     CU_ASSERT(0 < interp_execute_string(&env, "def add2(x) return add(b + c, x);", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = call(add2, 1)", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 4", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "def seta(x) {var b = a; a = x; return b}", &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "4 == call(seta, 5)", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "5 == a", &res) && val_is_boolean(res) && val_is_true(res));
 
     env_deinit(&env);
 }
