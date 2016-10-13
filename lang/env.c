@@ -816,7 +816,7 @@ int env_native_find(env_t *env, intptr_t sym_id)
     return -1;
 }
 
-int env_native_add(env_t *env, int cnt, native_t *ent)
+int env_native_add(env_t *env, int cnt, const native_t *ent)
 {
     int i;
 

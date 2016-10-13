@@ -74,7 +74,7 @@ typedef struct env_t {
     intptr_t *symbal_tbl;
     char     *symbal_buf;
 
-    struct native_t *native_ent;
+    const struct native_t *native_ent;
 
     intptr_t *main_var_map;
 
@@ -117,7 +117,7 @@ intptr_t env_symbal_add_static(env_t *env, const char *name) {
 int env_string_find_add(env_t *env, intptr_t s);
 int env_number_find_add(env_t *env, double);
 
-int env_native_add(env_t *env, int cnt, native_t *ent);
+int env_native_add(env_t *env, int cnt, const native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
 const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av);
