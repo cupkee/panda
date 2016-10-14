@@ -836,17 +836,17 @@ int env_native_find(env_t *env, intptr_t sym_id)
     return -1;
 }
 
-int env_native_add(env_t *env, int cnt, const native_t *ent)
+int env_native_set(env_t *env, const native_t *ent, int num)
 {
     int i;
 
-    for (i = 0; i < cnt; i++) {
+    for (i = 0; i < num; i++) {
         if (0 == env_symbal_add_static(env, ent[i].name)) {
             return -1;
         }
     }
 
-    env->native_num = cnt;
+    env->native_num = num;
     env->native_ent = ent;
     return 0;
 }

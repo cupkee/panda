@@ -99,6 +99,7 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
 int env_deinit(env_t *env);
 int env_reference_set(env_t *env, val_t *ent, int num);
 int env_callback_set(env_t *env, void (*cb)(void));
+int env_native_set(env_t *env, const native_t *ent, int num);
 
 void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
@@ -121,7 +122,6 @@ intptr_t env_symbal_add_static(env_t *env, const char *name) {
 int env_string_find_add(env_t *env, intptr_t s);
 int env_number_find_add(env_t *env, double);
 
-int env_native_add(env_t *env, int cnt, const native_t *ent);
 int env_native_find(env_t *env, intptr_t sym_id);
 
 const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av);

@@ -76,6 +76,6 @@ static native_t native_entry[] = {
 
 int native_init(env_t *env)
 {
-    return env_native_add(env, 1, native_entry);
+    return env_native_set(env, native_entry, 1);
 }
 

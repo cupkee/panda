@@ -545,7 +545,7 @@ static void test_exec_native(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 == env_native_add(&env, 3, native_entry));
+    CU_ASSERT(0 == env_native_set(&env, native_entry, 3));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var a = 1, b = 1;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b = a + one()", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -592,7 +592,7 @@ static void test_exec_native_call_script(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 == env_native_add(&env, 2, native_entry));
+    CU_ASSERT(0 == env_native_set(&env, native_entry, 2));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def zero() return 0;", &res) && val_is_function(res));
@@ -914,7 +914,7 @@ static void test_exec_gc_reference(void)
     }
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
-    CU_ASSERT(0 == env_native_add(&env, 1, native_entry));
+    CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
     CU_ASSERT(0 == env_reference_set(&env, ref, 4));
     CU_ASSERT(0 == env_callback_set(&env, gc_callback));
 
@@ -955,7 +955,6 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec while stmt",   test_exec_while);
 
         CU_add_test(suite, "exec function",     test_exec_function);
-        if (0) {
         CU_add_test(suite, "exec native",       test_exec_native);
         CU_add_test(suite, "exec native call",  test_exec_native_call_script);
         CU_add_test(suite, "exec string",       test_exec_string);
@@ -966,6 +965,7 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
+        if (0) {
         }
     }
 
