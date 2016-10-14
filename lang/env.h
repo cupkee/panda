@@ -55,28 +55,30 @@ typedef struct env_t {
     int fp;
     int ss;
     int sp;
-
     val_t *sb;
 
-    heap_t *heap;
+    scope_t *scope;                     // Root scope
 
+    heap_t *heap;                       // inused heap ptr: top or bot
     heap_t heap_top;
     heap_t heap_bot;
 
-    scope_t *scope;
+    uint16_t ref_num;                   // External reference number
+    uint16_t native_num;                // Native function number
 
-    uint16_t  native_num;
+    uint16_t symbal_tbl_size;           // Symbal hash table size
+    uint16_t symbal_tbl_hold;           // Symbal saved counter
+    uint16_t symbal_buf_end;            // Symbal buffer size
+    uint16_t symbal_buf_used;           // Symbal buffer used
 
-    uint16_t symbal_tbl_size;
-    uint16_t symbal_tbl_hold;
-    uint16_t symbal_buf_end;
-    uint16_t symbal_buf_used;
     intptr_t *symbal_tbl;
     char     *symbal_buf;
-
-    const struct native_t *native_ent;
+    val_t    *ref_ent;                  // External reference entry
+    const struct native_t *native_ent;  // Native function entry
 
     intptr_t *main_var_map;
+
+    void (*gc_callback)(void);
 
     executable_t exe;
 } env_t;
@@ -95,6 +97,8 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
              int interactive);
 
 int env_deinit(env_t *env);
+int env_reference_set(env_t *env, val_t *ent, int num);
+int env_callback_set(env_t *env, void (*cb)(void));
 
 void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);

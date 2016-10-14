@@ -459,13 +459,15 @@ static void test_exec_function(void)
                    }                \
                     return b;       \
                  }";
-/*
-    char *fff = "def fff(n) {                   \
+    char *fn1 = "def fn1(n) {                   \
                      if (n > 1)                 \
-                         return n * fff(n - 1)  \
-                     return 1;                  \
+                         return n + fn1(n - 1)  \
+                     return 0;                  \
                   }";
-*/
+    char *fn2 = "def fn2(n) {                   \
+                     n = 1                      \
+                     return n;                  \
+                  }";
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
@@ -486,10 +488,15 @@ static void test_exec_function(void)
     if (0) {
     }
 
-    // closure & recursion
-    // CU_ASSERT(0 < interp_execute_string(&env, fff, &res) && val_is_function(*res));
-    // CU_ASSERT(0 < interp_execute_string(&env, "a = fff(10)", &res) && val_is_number(*res) && 362880 == val_2_double(*res));
+    // arguments as left value
+    CU_ASSERT(0 < interp_execute_string(&env, fn2, &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "fn2(10) == 1", &res) && val_is_boolean(res) && val_is_true(res));
 
+    // closure & recursion
+    CU_ASSERT(0 < interp_execute_string(&env, fn1, &res) && val_is_function(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = fn1(0)", &res) && val_is_number(res) && 0 == val_2_double(res));
+    // Todo: fix bug!!
+    //    CU_ASSERT(0 < interp_execute_string(&env, "a = fn1(5)", &res) && val_is_number(res) && 15 == val_2_double(res));
 
     env_deinit(&env);
 }
@@ -875,6 +882,65 @@ static void test_exec_gc(void)
     env_deinit(&env);
 }
 
+static val_t ref[4];
+static int gc_count = 0;
+static void gc_callback()
+{
+    gc_count++;
+}
+
+static val_t test_native_ref_check(env_t *env, int ac, val_t *av)
+{
+    int i;
+
+    // push arguments from last to first
+    for (i = 3; i > 0; i--) {
+        env_push_call_argument(env, ref + i);
+    }
+    env_push_call_function(env, ref);
+
+    return interp_execute_call(env, 3);
+}
+
+static void test_exec_gc_reference(void)
+{
+    env_t env;
+    val_t *res;
+    native_t native_entry[] = {
+        {"ref_check", test_native_ref_check}
+    };
+    int i;
+
+    for (i = 0; i < 4; i++) {
+        val_set_undefined(ref + i);
+    }
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+    CU_ASSERT(0 == env_native_add(&env, 1, native_entry));
+    CU_ASSERT(0 == env_reference_set(&env, ref, 4));
+    CU_ASSERT(0 == env_callback_set(&env, gc_callback));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def fn(rs, ra, ro) {return rs == s && ra == a && ro == o}", &res) && val_is_function(res));
+    ref[0] = *res;
+    CU_ASSERT(0 < interp_execute_string(&env, "s = 'hello' + '.' + 'world'", &res) && val_is_string(res));
+    ref[1] = *res;
+    CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_array(res));
+    ref[2] = *res;
+    CU_ASSERT(0 < interp_execute_string(&env, "o", &res) && val_is_dictionary(res));
+    ref[3] = *res;
+
+    // trigger gc
+    gc_count = 0;
+    CU_ASSERT(0 < interp_execute_string(&env, "while(n < 1000) {'aaaaaa' + 'bbbbbb'; n += 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < gc_count);
+
+    CU_ASSERT(0 < interp_execute_string(&env, "n == 1000", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "ref_check() == true", &res) && val_is_true(res));
+
+    env_deinit(&env);
+}
+
 CU_pSuite test_lang_interp_entry()
 {
     CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
@@ -899,6 +965,7 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec stack check",  test_exec_stack_check);
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
+        CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
         if (0) {
         }
     }

@@ -259,6 +259,10 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     env->native_num = 0;
     env->native_ent = NULL;
 
+    // reference init
+    env->ref_num = 0;
+    env->ref_ent = NULL;
+
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
                     number_max, string_max, func_max, main_code_max, func_code_max);
@@ -294,6 +298,9 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     } else {
         env->scope = NULL;
     }
+
+    // Initialise callbacks
+    env->gc_callback = NULL;
 
     if (0 != objects_env_init(env)) {
         return -1;
@@ -694,6 +701,13 @@ static void env_heap_gc_init(env_t *env)
     int fp, sp, ss;
 
     heap_reset(heap);
+
+    if (env->ref_num && env->ref_ent) {
+    //printf("reference: %p", env->ref_ent);
+        env_heap_copy_vals(heap, env->ref_num, env->ref_ent);
+    //printf("\n");
+    }
+
     //printf("Current socpe: %p", env->scope);
     env->scope = env_heap_copy_scope(heap, env->scope);
     //printf("\n");
@@ -785,12 +799,18 @@ void env_heap_gc(env_t *env, int level)
     env_heap_gc_init(env);
     env_heap_gc_scan(env);
 
-    // Todo: this line is not useable looked, but will cause test fail if deleted! Fix it!
+    /*
+     * Todo:
+     * this line is not useable looked, but will cause test fail if deleted! Fix it!
+     */
     heap_clean(env->heap);
 
     env->heap = env_heap_get_free(env);
-
     //printf("heap zipd: %d\n", env->heap->free);
+
+    if (env->gc_callback) {
+        env->gc_callback();
+    }
 }
 
 int env_number_find_add(env_t *env, double n)
@@ -828,6 +848,23 @@ int env_native_add(env_t *env, int cnt, const native_t *ent)
 
     env->native_num = cnt;
     env->native_ent = ent;
+    return 0;
+}
+
+int env_reference_set(env_t *env, val_t *ref, int num)
+{
+    if (env->ref_ent == NULL) {
+        env->ref_ent = ref;
+        env->ref_num = num;
+        return 0;
+    }
+
+    return -1;
+}
+
+int env_callback_set(env_t *env, void (*cb)(void))
+{
+    env->gc_callback = cb;
     return 0;
 }
 
