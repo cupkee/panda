@@ -460,7 +460,7 @@ static void test_exec_function(void)
                     return b;       \
                  }";
     char *fn1 = "def fn1(n) {                   \
-                     if (n > 1)                 \
+                     if (n > 0)                 \
                          return n + fn1(n - 1)  \
                      return 0;                  \
                   }";
@@ -471,7 +471,6 @@ static void test_exec_function(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    //printf("-------------------------------------------\n");
     CU_ASSERT(0 < interp_execute_string(&env, "var a = 1, b = 0;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def zero() return 0", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b = a + zero() + 2", &res) && val_is_number(res) && 3 == val_2_double(res));
@@ -494,9 +493,8 @@ static void test_exec_function(void)
 
     // closure & recursion
     CU_ASSERT(0 < interp_execute_string(&env, fn1, &res) && val_is_function(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a = fn1(0)", &res) && val_is_number(res) && 0 == val_2_double(res));
-    // Todo: fix bug!!
-    //    CU_ASSERT(0 < interp_execute_string(&env, "a = fn1(5)", &res) && val_is_number(res) && 15 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 == fn1(0)", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "15 == fn1(5)", &res) && val_is_boolean(res) && val_is_true(res));
 
     env_deinit(&env);
 }
@@ -955,7 +953,9 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec assign",       test_exec_assign);
         CU_add_test(suite, "exec if stmt",      test_exec_if);
         CU_add_test(suite, "exec while stmt",   test_exec_while);
+
         CU_add_test(suite, "exec function",     test_exec_function);
+        if (0) {
         CU_add_test(suite, "exec native",       test_exec_native);
         CU_add_test(suite, "exec native call",  test_exec_native_call_script);
         CU_add_test(suite, "exec string",       test_exec_string);
@@ -966,7 +966,6 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
-        if (0) {
         }
     }
 

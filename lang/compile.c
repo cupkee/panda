@@ -727,6 +727,7 @@ static void compile_expr_id(compile_t *cpl, expr_t *e)
         if (id >= 0) {
             compile_code_append_arg_u16(cpl, BC_PUSH_NATIVE, id);
         } else {
+            printf("unknow id: %s\n", (char *)sym_id);
             cpl->error = ERR_NotDefinedId;
         }
     }
