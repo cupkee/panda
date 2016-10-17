@@ -868,3 +868,63 @@ int env_callback_set(env_t *env, void (*cb)(void))
     return 0;
 }
 
+int env_symbal_complete(env_t *env, char *sym_buf, int has, int max)
+{
+    char *prefix = sym_buf;
+    char *supply = sym_buf + has;
+    int same = -1;
+    int i;
+
+    // scan main variable symbal
+    for (i = 0; same != 0 && i < env->main_var_num; i++) {
+        const char *sym = (const char *)(env->main_var_map[i]);
+
+        if (strncmp(sym, prefix, has)) {
+            continue;
+        }
+
+        if (same == -1) {
+            char *p = strncpy(supply, sym + has, max - has - 1);
+
+            if (p == supply) {
+                same = strlen(p);
+            } else {
+                *p = 0;
+                same = p - supply;
+            }
+        } else {
+            same = 0;
+            while (sym_buf[has + same] == sym[has + same]) {
+                same++;
+            }
+        }
+    }
+
+    // scan native symbal
+    for (i = 0; same != 0 && i < env->native_num; i++) {
+        const char *sym = env->native_ent[i].name;
+
+        if (strncmp(sym, prefix, has)) {
+            continue;
+        }
+
+        if (same == -1) {
+            char *p = strncpy(supply, sym + has, max - has - 1);
+
+            if (p == supply) {
+                same = strlen(p);
+            } else {
+                *p = 0;
+                same = p - supply;
+            }
+        } else {
+            same = 0;
+            while (sym_buf[has + same] == sym[has + same]) {
+                same++;
+            }
+        }
+    }
+
+    return same;
+}
+

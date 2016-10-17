@@ -118,6 +118,7 @@ static inline
 intptr_t env_symbal_add_static(env_t *env, const char *name) {
     return env_symbal_insert(env, name, 0);
 }
+int env_symbal_complete(env_t *env, char *sym_buf, int has, int max);
 
 int env_string_find_add(env_t *env, intptr_t s);
 int env_number_find_add(env_t *env, double);
