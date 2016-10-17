@@ -868,7 +868,7 @@ int env_callback_set(env_t *env, void (*cb)(void))
     return 0;
 }
 
-int env_symbal_complete(env_t *env, char *sym_buf, int has, int max)
+int env_symbal_complete(env_t *env, char *sym_buf, int has, int max, void (*like_handle)(const char *))
 {
     char *prefix = sym_buf;
     char *supply = sym_buf + has;
@@ -883,18 +883,22 @@ int env_symbal_complete(env_t *env, char *sym_buf, int has, int max)
             continue;
         }
 
+        if (like_handle) {
+            like_handle(sym);
+        }
+
         if (same == -1) {
             char *p = strncpy(supply, sym + has, max - has - 1);
 
             if (p == supply) {
                 same = strlen(p);
             } else {
-                *p = 0;
                 same = p - supply;
+                *p = 0;
             }
         } else {
             same = 0;
-            while (sym_buf[has + same] == sym[has + same]) {
+            while (supply[same] == sym[has + same]) {
                 same++;
             }
         }
@@ -908,23 +912,31 @@ int env_symbal_complete(env_t *env, char *sym_buf, int has, int max)
             continue;
         }
 
+        if (like_handle) {
+            like_handle(sym);
+        }
         if (same == -1) {
             char *p = strncpy(supply, sym + has, max - has - 1);
 
             if (p == supply) {
                 same = strlen(p);
             } else {
-                *p = 0;
                 same = p - supply;
+                *p = 0;
             }
         } else {
             same = 0;
-            while (sym_buf[has + same] == sym[has + same]) {
+            while (supply[same] == sym[has + same]) {
                 same++;
             }
         }
     }
 
-    return same;
+    if (same > 0) {
+        supply[same] = 0;
+        return same;
+    } else {
+        return 0;
+    }
 }
 

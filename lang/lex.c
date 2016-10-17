@@ -308,7 +308,9 @@ int lex_token(lexer_t *lex, token_t *tok)
 int lex_match(lexer_t *lex, int tok)
 {
     if (lex->curr_tok == TOK_EOF && lex->line_more) {
-        lex_init(lex, lex->line_more(), lex->line_more);
+        lex->line_more();
+        return 0;
+        //lex_init(lex, lex->line_more(), lex->line_more);
     }
 
     if (lex->curr_tok == tok) {
