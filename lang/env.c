@@ -868,75 +868,28 @@ int env_callback_set(env_t *env, void (*cb)(void))
     return 0;
 }
 
-int env_symbal_complete(env_t *env, char *sym_buf, int has, int max, void (*like_handle)(const char *))
+void env_symbal_foreach(env_t *env, int (*cb)(const char *, void *), void *param)
 {
-    char *prefix = sym_buf;
-    char *supply = sym_buf + has;
-    int same = -1;
     int i;
 
+    if (!cb) {
+        return;
+    }
+
     // scan main variable symbal
-    for (i = 0; same != 0 && i < env->main_var_num; i++) {
+    for (i = 0; i < env->main_var_num; i++) {
         const char *sym = (const char *)(env->main_var_map[i]);
-
-        if (strncmp(sym, prefix, has)) {
-            continue;
-        }
-
-        if (like_handle) {
-            like_handle(sym);
-        }
-
-        if (same == -1) {
-            char *p = strncpy(supply, sym + has, max - has - 1);
-
-            if (p == supply) {
-                same = strlen(p);
-            } else {
-                same = p - supply;
-                *p = 0;
-            }
-        } else {
-            same = 0;
-            while (supply[same] == sym[has + same]) {
-                same++;
-            }
+        if (cb(sym, param)) {
+            return;
         }
     }
 
     // scan native symbal
-    for (i = 0; same != 0 && i < env->native_num; i++) {
+    for (i = 0; i < env->native_num; i++) {
         const char *sym = env->native_ent[i].name;
-
-        if (strncmp(sym, prefix, has)) {
-            continue;
+        if (cb(sym, param)) {
+            return;
         }
-
-        if (like_handle) {
-            like_handle(sym);
-        }
-        if (same == -1) {
-            char *p = strncpy(supply, sym + has, max - has - 1);
-
-            if (p == supply) {
-                same = strlen(p);
-            } else {
-                same = p - supply;
-                *p = 0;
-            }
-        } else {
-            same = 0;
-            while (supply[same] == sym[has + same]) {
-                same++;
-            }
-        }
-    }
-
-    if (same > 0) {
-        supply[same] = 0;
-        return same;
-    } else {
-        return 0;
     }
 }
 
