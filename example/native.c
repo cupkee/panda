@@ -29,7 +29,11 @@ static void print_value(val_t *v)
 {
     if (val_is_number(v)) {
         char buf[32];
-        snprintf(buf, 32, "%f", val_2_double(v));
+        if (*v & 0xffff) {
+            snprintf(buf, 32, "%f", val_2_double(v));
+        } else {
+            snprintf(buf, 32, "%d", (int)val_2_double(v));
+        }
         output(buf);
     } else
     if (val_is_boolean(v)) {

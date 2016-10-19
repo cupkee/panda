@@ -32,51 +32,51 @@ SOFTWARE.
 #define EXE_MEM_SPACE (1024 * 100)
 #define SYM_MEM_SPACE (1024 * 4)
 #define MEM_SIZE      (STACK_SIZE * sizeof(val_t) + HEAP_SIZE + EXE_MEM_SPACE + SYM_MEM_SPACE)
+#define INPUT_MAX     (1024)
 
 static uint8_t memory[MEM_SIZE];
-static char *input_last = NULL;
+static int  input_cacahed = 0;
+static int  input_mode = 0;
+static char input_buf[INPUT_MAX];
+static int  done = 0;
 
 static const char *logo = "\
   ___                 _       \n\
  | _ \\ __ _  _ _   __| | __ _ \n\
  |  _// _` || ' \\ / _` |/ _` |\n\
- |_|  \\__,_||_||_|\\__,_|\\__,_| V%u.%u.%u\n\
- power by cupkee.cn\n";
+ |_|  \\__,_||_||_|\\__,_|\\__,_|\n\
+ cupkee.cn\n";
 
-static inline void input_release(char *last)
-{
-    if (input_last) {
-        free(input_last);
-    }
-    input_last = last;
-}
 
-static char *input_read(void)
+static void input_read(char *buf, int max)
 {
     char *input;
 
-    input = readline("> ");
-    if (input && strlen(input)) {
-        add_history(input);
+    if (input_mode) {
+        input = readline(". ");
+    } else {
+        input = readline("> ");
     }
 
-    input_release(input);
+    if (!input) {
+        done = 1;
+        return;
+    }
 
-    return input;
+    if (strlen(input)) {
+        strncpy(buf, input, max);
+        add_history(input);
+    } else {
+        buf[0] = 0;
+    }
+
+    free(input);
 }
 
 static char *input_more(void)
 {
-    char *input;
-
-    input = readline(". ");
-    if (strlen(input)) {
-        add_history(input);
-    }
-
-    input_release(input);
-
-    return input;
+    input_mode = 1;
+    return NULL;
 }
 
 static void print_error(int error)
@@ -109,7 +109,11 @@ static void print_value(val_t *v)
 {
     if (val_is_number(v)) {
         char buf[32];
-        snprintf(buf, 32, "%f\n", val_2_double(v));
+        if (*v & 0xffff) {
+            snprintf(buf, 32, "%f\n", val_2_double(v));
+        } else {
+            snprintf(buf, 32, "%d\n", (int)val_2_double(v));
+        }
         output(buf);
     } else
     if (val_is_boolean(v)) {
@@ -133,10 +137,66 @@ static void print_value(val_t *v)
     }
 }
 
+static env_t env;
+static void line_proc(void)
+{
+    int    err;
+    val_t *res;
+
+    input_read(input_buf, INPUT_MAX);
+
+    if (done) {
+        return;
+    }
+
+    err = interp_execute_interactive(&env, input_buf, input_more, &res);
+    if (err < 0) {
+        if (input_mode == 0 || err != -ERR_InvalidToken) {
+            input_mode = 0;
+            print_error(-err);
+        }
+    } else
+    if (err > 0) {
+        input_mode = 0;
+        print_value(res);
+    }
+
+    if (input_mode) {
+        input_cacahed = strlen(input_buf);
+    }
+}
+
+static void mult_proc(void)
+{
+    int    err, len;
+    val_t *res;
+
+    input_read(input_buf + input_cacahed, INPUT_MAX - input_cacahed);
+    if (done) {
+        return;
+    }
+
+    len = strlen(input_buf + input_cacahed);
+    if (len > 0) {
+        input_cacahed += len;
+        return;
+    } else {
+        input_cacahed += len;
+        input_mode = 0;
+    }
+
+    err = interp_execute_interactive(&env, input_buf, input_more, &res);
+    if (err < 0) {
+        print_error(-err);
+    } else
+    if (err > 0) {
+        print_value(res);
+    }
+}
+
+
 static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
-    env_t env;
-
     if(0 != interp_env_init_interactive(&env, mem_ptr, mem_size, NULL, heap_size, NULL, stack_size)) {
         output("env_init fail\n");
         return -1;
@@ -146,23 +206,15 @@ static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_siz
 
     printf(logo, 0, 1, 0);
 
-    while (1) {
-        int    err;
-        val_t *res;
-        char  *line = input_read();
-
-        if (!line) {
-            return 0;
-        }
-
-        err = interp_execute_interactive(&env, line, input_more, &res);
-        if (err < 0) {
-            print_error(-err);
-        } else
-        if (err > 0) {
-            print_value(res);
+    while (!done) {
+        if (input_mode) {
+            mult_proc();
+        } else {
+            line_proc();
         }
     }
+
+    return 0;
 }
 
 int main(int ac, char **av)

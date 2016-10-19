@@ -180,7 +180,7 @@ static expr_t *parse_expr_factor(parser_t *psr)
     expr_t *expr = NULL;
 
     switch (tok) {
-        case TOK_EOF:   parse_fail(psr, ERR_InvalidSyntax); break;
+        case TOK_EOF:   parse_fail(psr, ERR_InvalidToken); break;
         case '(':       expr = parse_expr_form_parenth(psr); break;
         case '[':       expr = parse_expr_form_array(psr); break;
         case '{':       expr = parse_expr_form_dict(psr); break;
