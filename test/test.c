@@ -33,6 +33,7 @@ CU_pSuite test_lang_parse_entry();
 CU_pSuite test_lang_symtbl_entry();
 CU_pSuite test_lang_interp_entry();
 CU_pSuite test_lang_image_entry();
+CU_pSuite test_lang_async_entry();
 
 int main(int argc, const char *argv[])
 {
@@ -61,6 +62,9 @@ int main(int argc, const char *argv[])
     }
     if (!test_lang_image_entry()) {
         printf("Init test suite \"%s\" fail\n", "lang image");
+    }
+    if (!test_lang_async_entry()) {
+        printf("Init test suite \"%s\" fail\n", "lang async");
     }
 
     CU_basic_set_mode(CU_BRM_VERBOSE);

@@ -41,7 +41,8 @@ test_SRCS = test.c \
 			test_lang_parse.c \
 			test_lang_symtbl.c \
 			test_lang_exec.c \
-			test_lang_image.c
+			test_lang_image.c \
+			test_lang_async.c
 test_CPPFLAGS = -I..
 test_CFLAGS   =
 test_LDFLAGS  = -L../lang -L. -llang -lcunit
