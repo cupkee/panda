@@ -528,6 +528,18 @@ static void test_expr_funcdef(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
     CU_ASSERT(!L_(expr));
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+
+    parse_init(&psr, "def () fn()\n", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(!L_(expr));
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
+
+    parse_init(&psr, "def () {;}\n", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_FUNCDEF);
+    CU_ASSERT(!L_(expr));
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_FUNCPROC);
 }
 
 static void test_expr_funcall(void)
@@ -558,6 +570,13 @@ static void test_expr_funcall(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
     CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
     CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_COMMA);
+
+    parse_init(&psr, "a ((def () fn()), 1)\n", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_CALL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID);
+    CU_ASSERT(R_(expr) && ast_expr_type(R_(expr)) == EXPR_COMMA);
+
 }
 
 static void test_expr_array(void)

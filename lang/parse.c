@@ -436,8 +436,7 @@ static expr_t *parse_expr_vardef(parser_t *psr)
     }
 
     expr = parse_expr_factor(psr);
-    if (expr && '=' == parse_token(psr, NULL)) {
-        parse_match(psr, '=');
+    if (expr && parse_match(psr, '=')) {
         expr = parse_expr_form_binary(psr, EXPR_ASSIGN, expr, parse_expr_assign(psr));
     }
 
@@ -448,8 +447,7 @@ static expr_t *parse_expr_vardef_list(parser_t *psr)
 {
     expr_t *expr = parse_expr_vardef(psr);
 
-    if (expr && ',' == parse_token(psr, NULL)) {
-        parse_match(psr, ',');
+    if (expr && parse_match(psr, ',')) {
         expr = parse_expr_form_binary(psr, EXPR_COMMA, expr, parse_expr_vardef_list(psr));
     }
 
@@ -470,7 +468,7 @@ static expr_t *parse_expr_comma(parser_t *psr)
 
 static expr_t *parse_expr_funcdef(parser_t *psr)
 {
-    expr_t *name = NULL, *param = NULL, *head = NULL, *proc = NULL;
+    expr_t *name = NULL, *args = NULL, *head = NULL, *proc = NULL;
     stmt_t *block = NULL;
 
     parse_match(psr, TOK_DEF);
@@ -487,7 +485,7 @@ static expr_t *parse_expr_funcdef(parser_t *psr)
     }
 
     if (!parse_match(psr, ')')) {
-        if (!(param = parse_expr_vardef_list(psr))) {
+        if (!(args = parse_expr_vardef_list(psr))) {
             goto DO_ERROR;
         }
         if (!parse_match(psr, ')')) {
@@ -500,13 +498,13 @@ static expr_t *parse_expr_funcdef(parser_t *psr)
         goto DO_ERROR;
     }
 
-    if (name || param) {
+    if (name || args) {
         if (!(head = parse_expr_alloc_type(psr, EXPR_FUNCHEAD))) {
             parse_fail(psr, ERR_NotEnoughMemory);
             goto DO_ERROR;
         }
         ast_expr_set_lft(head, name);
-        ast_expr_set_rht(head, param);
+        ast_expr_set_rht(head, args);
     }
 
     if (!(proc = parse_expr_alloc_proc(psr, block))) {
@@ -714,7 +712,10 @@ static stmt_t *parse_stmt_block(parser_t *psr)
         stmt_t *last, *curr;
 
         while (!parse_match(psr, '}')) {
-            while (parse_match(psr, ';')); // eat empty stmt
+            // eat empty statements ...
+            if (parse_match(psr, ';')) {
+                continue;
+            }
 
             if (!(curr = parse_stmt(psr))) {
                 return NULL;
