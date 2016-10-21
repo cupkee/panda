@@ -38,16 +38,19 @@ static inline void number_incp(env_t *env, val_t *a, val_t *res) {
 }
 
 static inline void number_inc(env_t *env, val_t *a, val_t *res) {
+    (void) env;
     *res = *a;
     val_set_number(a, val_2_double(a) + 1);
 }
 
 static inline void number_decp(env_t *env, val_t *a, val_t *res) {
+    (void) env;
     val_set_number(a, val_2_double(a) - 1);
     *res = *a;
 }
 
 static inline void number_dec(env_t *env, val_t *a, val_t *res) {
+    (void) env;
     *res = *a;
     val_set_number(a, val_2_double(a) - 1);
 }
