@@ -975,6 +975,27 @@ static void compile_assign(compile_t *cpl, expr_t *e)
     }
 }
 
+static void compile_selfop(compile_t *cpl, expr_t *e)
+{
+    int op  = e->type - EXPR_INC;
+    int lft = ast_expr_lft(e)->type;
+
+    if (lft == EXPR_PROP) {
+        expr_t *prop = ast_expr_rht(ast_expr_lft(e));
+
+        compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
+        compile_code_append_str(cpl, ast_expr_text(prop));
+        compile_code_append(cpl, BC_PROP_INC + op);
+    } else
+    if (lft == EXPR_ELEM) {
+        compile_expr(cpl, ast_expr_lft(ast_expr_lft(e)));
+        compile_expr(cpl, ast_expr_rht(ast_expr_lft(e)));
+        compile_code_append(cpl, BC_ELEM_INC + op);
+    } else {
+        compile_expr_lft(cpl, ast_expr_lft(e));
+        compile_code_append(cpl, BC_INC + op);
+    }
+}
 static inline void compile_comma(compile_t *cpl, expr_t *e)
 {
     compile_expr(cpl, ast_expr_lft(e));
@@ -1025,6 +1046,12 @@ static void compile_expr(compile_t *cpl, expr_t *e)
     case EXPR_NEG:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NEG); break;
     case EXPR_NOT:      compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_NOT); break;
     case EXPR_LOGIC_NOT:compile_expr(cpl, ast_expr_lft(e)); compile_code_append(cpl, BC_LOGIC_NOT); break;
+
+    case EXPR_INC:
+    case EXPR_INC_PRE:
+    case EXPR_DEC:
+    case EXPR_DEC_PRE:  compile_selfop(cpl, e); break;
+
     case EXPR_ARRAY:    compile_array(cpl, e); break;
     case EXPR_DICT:     compile_dict(cpl, e); break;
 

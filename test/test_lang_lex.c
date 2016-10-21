@@ -129,12 +129,37 @@ static void test_common(void)
     CU_ASSERT(0 == lex_deinit(&lex));
 }
 
+static void test_mch_tok(void)
+{
+    lexer_t lex;
+
+    CU_ASSERT(0 == lex_init(&lex, "++ -- << >> += -= *= /= %= &= |= ^= != == && ||", NULL));
+
+    CU_ASSERT(lex_match(&lex, TOK_INC));
+    CU_ASSERT(lex_match(&lex, TOK_DEC));
+    CU_ASSERT(lex_match(&lex, TOK_LSHIFT));
+    CU_ASSERT(lex_match(&lex, TOK_RSHIFT));
+    CU_ASSERT(lex_match(&lex, TOK_ADDASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_SUBASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_MULASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_DIVASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_MODASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_ANDASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_ORASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_XORASSIGN));
+    CU_ASSERT(lex_match(&lex, TOK_NE));
+    CU_ASSERT(lex_match(&lex, TOK_EQ));
+    CU_ASSERT(lex_match(&lex, TOK_LOGICAND));
+    CU_ASSERT(lex_match(&lex, TOK_LOGICOR));
+}
+
 CU_pSuite test_lang_lex_entry()
 {
     CU_pSuite suite = CU_add_suite("lang lex", test_setup, test_clean);
 
     if (suite) {
         CU_add_test(suite, "common", test_common);
+        CU_add_test(suite, "multiCh token", test_mch_tok);
     }
 
     return suite;

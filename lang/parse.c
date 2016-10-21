@@ -226,6 +226,42 @@ static expr_t *parse_expr_primary(parser_t *psr)
     return expr;
 }
 
+static expr_t *parse_expr_selfop(parser_t *psr)
+{
+    int tok = parse_token(psr, NULL);
+    expr_t *expr;
+
+    if (tok == TOK_INC) {
+        parse_match(psr, tok);
+        expr = parse_expr_form_unary(psr, EXPR_INC_PRE, parse_expr_primary(psr));
+    } else
+    if (tok == TOK_DEC) {
+        parse_match(psr, tok);
+        expr = parse_expr_form_unary(psr, EXPR_DEC_PRE, parse_expr_primary(psr));
+    } else {
+        expr = parse_expr_primary(psr);
+        if (parse_match(psr, TOK_INC)) {
+            expr = parse_expr_form_unary(psr, EXPR_INC, expr);
+        } else
+        if (parse_match(psr, TOK_DEC)){
+            expr = parse_expr_form_unary(psr, EXPR_DEC, expr);
+        } else {
+            return expr;
+        }
+    }
+
+    if (expr) {
+        int type = ast_expr_lft(expr)->type;
+
+        if (type != EXPR_ID && type != EXPR_PROP && type != EXPR_ELEM) {
+            parse_fail(psr, ERR_InvalidLeftValue);
+            return NULL;
+        }
+    }
+
+    return expr;
+}
+
 static expr_t *parse_expr_unary(parser_t *psr)
 {
     expr_t *expr;
@@ -240,7 +276,7 @@ static expr_t *parse_expr_unary(parser_t *psr)
         expr = parse_expr_form_unary(psr, tok == '-' ? EXPR_NEG : EXPR_NOT,
                                      parse_expr_unary(psr));
     } else {
-        expr = parse_expr_primary(psr);
+        expr = parse_expr_selfop(psr);
     }
 
     return expr;

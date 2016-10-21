@@ -56,6 +56,12 @@ void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_prop_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_elem_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
 
+void object_prop_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
+void object_elem_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
+
+void object_prop_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
+void object_elem_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
+
 void object_prop_add_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
 void object_elem_add_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
 

@@ -90,6 +90,11 @@ typedef enum bcode_t {
     BC_ELEM,
     BC_ELEM_METH,
 
+    BC_INC,
+    BC_INCP,
+    BC_DEC,
+    BC_DECP,
+
     BC_ASSIGN,
     BC_ADD_ASSIGN,
     BC_SUB_ASSIGN,
@@ -103,6 +108,11 @@ typedef enum bcode_t {
     BC_LSHIFT_ASSIGN,
     BC_RSHIFT_ASSIGN,
 
+    BC_PROP_INC,
+    BC_PROP_INCP,
+    BC_PROP_DEC,
+    BC_PROP_DECP,
+
     BC_PROP_ASSIGN,
     BC_PROP_ADD_ASSIGN,
     BC_PROP_SUB_ASSIGN,
@@ -115,6 +125,11 @@ typedef enum bcode_t {
     BC_PROP_NOT_ASSIGN,
     BC_PROP_LSHIFT_ASSIGN,
     BC_PROP_RSHIFT_ASSIGN,
+
+    BC_ELEM_INC,
+    BC_ELEM_INCP,
+    BC_ELEM_DEC,
+    BC_ELEM_DECP,
 
     BC_ELEM_ASSIGN,
     BC_ELEM_ADD_ASSIGN,

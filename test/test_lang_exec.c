@@ -313,7 +313,6 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 3;", &res) && val_is_true(res));
 
-    /*
     CU_ASSERT(0 < interp_execute_string(&env, "var b = [1];", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
@@ -326,7 +325,6 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] == 3;", &res) && val_is_true(res));
-    */
 
     CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -340,6 +338,69 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c.a <<= 1;", &res) && val_is_number(res) && 6 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a == 3;", &res) && val_is_true(res));
+
+    env_deinit(&env);
+}
+
+static void test_exec_selfop(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a++;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++a;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 3;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a--;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--a;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a++;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a--;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a++;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++c.a;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 3;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a--;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--c.a;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a = true;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--c.a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.y--;", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = [1];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0]++;", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++c[0];", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 3;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0]--;", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 2;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--c[0];", &res) && val_is_number(res) && 1 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 1;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0] = true;", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--c[0];", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0];", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[1]--;", &res) && val_is_nan(res));
 
     env_deinit(&env);
 }
@@ -951,6 +1012,8 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec symbal",       test_exec_symbal);
         CU_add_test(suite, "exec var stmt",     test_exec_var);
         CU_add_test(suite, "exec assign",       test_exec_assign);
+        CU_add_test(suite, "exec selfop",       test_exec_selfop);
+        if (0) {
         CU_add_test(suite, "exec if stmt",      test_exec_if);
         CU_add_test(suite, "exec while stmt",   test_exec_while);
 
@@ -965,7 +1028,6 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
-        if (0) {
         }
     }
 

@@ -45,6 +45,12 @@ enum EXPR_TYPE {
     EXPR_NEG,
     EXPR_NOT,
     EXPR_LOGIC_NOT,
+
+    EXPR_INC,
+    EXPR_INC_PRE,
+    EXPR_DEC,
+    EXPR_DEC_PRE,
+
     EXPR_ARRAY,
     EXPR_DICT,
 

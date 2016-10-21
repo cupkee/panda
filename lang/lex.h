@@ -40,6 +40,9 @@ enum LEX_TOKEN_TYPE{
     TOK_GE,                 // >=
     TOK_LE,                 // <=
 
+    TOK_INC,                // ++
+    TOK_DEC,                // --
+
     TOK_ADDASSIGN,          // +=
     TOK_SUBASSIGN,          // -=
     TOK_MULASSIGN,          // *=

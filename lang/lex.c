@@ -143,13 +143,33 @@ static void lex_get_str_token(lexer_t *lex)
     lex_get_next_ch(lex);
 
     while (CURR_CH != term) {
+        int ch = CURR_CH;
+
+        if (ch == '\\') {
+            lex_get_next_ch(lex);
+            ch = CURR_CH;
+            if (ch == 't') {
+                ch = '\t';
+            } else
+            if (ch == 'r') {
+                ch = '\r';
+            } else
+            if (ch == 'n') {
+                ch = '\n';
+            }
+        }
+
+        if (!ch) {
+            lex->curr_tok = TOK_EOF;
+            return;
+        }
         if (len + 1 < lex->token_buf_size) {
-            lex->token_buf[len++] = CURR_CH;
+            lex->token_buf[len++] = ch;
         }
         lex_get_next_ch(lex);
     }
 
-    // Eat the tail ' Or "
+    // Eat the tail '\'' Or '"'
     lex_get_next_ch(lex);
 
     lex->token_buf[len] = 0;
@@ -220,6 +240,14 @@ TOKEN_LOCATE:
                 case '~': lex_get_next_ch(lex); tok = TOK_NOTASSIGN; break;
                 default: break;
                 }
+            } else
+            if (tok == '+' && CURR_CH == '+') {
+                lex_get_next_ch(lex);
+                tok = TOK_INC;
+            } else
+            if (tok == '-' && CURR_CH == '-') {
+                lex_get_next_ch(lex);
+                tok = TOK_DEC;
             } else
             if (tok == '&' && CURR_CH == '&') {
                 lex_get_next_ch(lex);

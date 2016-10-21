@@ -113,6 +113,11 @@ int bcode_parse(const uint8_t *code, int *offset, const char **name, int *param1
     case BC_NOT:        *name  = "NOT"; if(offset) *offset = shift; return 0;
     case BC_LOGIC_NOT:  *name  = "LOGIC_NOT"; if(offset) *offset = shift; return 0;
 
+    case BC_INC:        *name  = "INC"; if(offset) *offset = shift; return 0;
+    case BC_INCP:       *name  = "INCP"; if(offset) *offset = shift; return 0;
+    case BC_DEC:        *name  = "DEC"; if(offset) *offset = shift; return 0;
+    case BC_DECP:       *name  = "DECP"; if(offset) *offset = shift; return 0;
+
     case BC_MUL:        *name  = "MUL"; if(offset) *offset = shift; return 0;
     case BC_DIV:        *name  = "DIV"; if(offset) *offset = shift; return 0;
     case BC_MOD:        *name  = "MOD"; if(offset) *offset = shift; return 0;

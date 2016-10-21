@@ -169,6 +169,101 @@ static void test_expr_primary(void)
     CU_ASSERT(L_(L_(L_(L_(L_(expr))))) && ast_expr_type(L_(L_(L_(L_(L_(expr)))))) == EXPR_ID && !strcmp("f", TEXT(L_(L_(L_(L_(L_(expr))))))));
 }
 
+static void test_expr_selfop(void)
+{
+    parser_t psr;
+    expr_t   *expr;
+
+    parse_init(&psr, "a++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_INC);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
+
+    parse_init(&psr, "a--", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
+
+    parse_init(&psr, "++a", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_INC_PRE);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
+
+    parse_init(&psr, "--a", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC_PRE);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
+
+    parse_init(&psr, "~--a", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_DEC_PRE);
+
+    parse_init(&psr, "--a * 1", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_MUL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_DEC_PRE);
+
+    parse_init(&psr, "~--a", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NOT);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_DEC_PRE);
+
+    parse_init(&psr, "a-- * 1", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_MUL);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_DEC);
+
+    parse_init(&psr, "a.b--", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_PROP);
+
+    parse_init(&psr, "--a.b", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC_PRE);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_PROP);
+
+    parse_init(&psr, "a[0]--", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ELEM);
+
+    parse_init(&psr, "--a[0]", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_DEC_PRE);
+    CU_ASSERT(L_(expr) && ast_expr_type(L_(expr)) == EXPR_ELEM);
+
+    parse_init(&psr, "--a()", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--(a + 1)", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--true", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--false", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--undefined", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--0", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "--'hello'", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "a()++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "(a + 1)++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "true++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "false++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "undefined++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "0++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+    parse_init(&psr, "'hello'++", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT(0 == (expr = parse_expr(&psr)));
+}
+
 static void test_expr_unary(void)
 {
     parser_t psr;
@@ -792,6 +887,7 @@ CU_pSuite test_lang_parse_entry()
     if (suite) {
         CU_add_test(suite, "parse expression factor",   test_expr_factor);
         CU_add_test(suite, "parse expression primary",  test_expr_primary);
+        CU_add_test(suite, "parse expression selfop",   test_expr_selfop);
         CU_add_test(suite, "parse expression unary",    test_expr_unary);
         CU_add_test(suite, "parse expression multi",    test_expr_mul);
         CU_add_test(suite, "parse expression add",      test_expr_add);

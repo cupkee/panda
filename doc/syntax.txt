@@ -18,8 +18,12 @@ primary ::= factor | prop_form | elem_form | call_form
   call_form ::= callor  | call_form '(' comma ')'
     callor :: id | prop_form | elem_form
 
+selfop :: pre_selfop | aft_selfop
+  pre_selfop :: ('++' | '--') primary
+  aft_selfop :: primary ('++' | '--')
+
 # unary  ::= primary | ( '-' |'~' ) unary | 'new' funcall
-unary  ::= primary | ( '-' | '~' | '!') unary
+unary  ::= selfop | ( '-' | '~' | '!') unary
 
 m_expr ::= u_expr | m_expr '*' u_expr | m_expr '/' u_expr | m_expr '%' u_expr
 a_expr ::= m_expr | a_expr '+' m_expr | a_expr '-' m_expr

@@ -31,6 +31,26 @@ SOFTWARE.
 #include "val.h"
 #include "env.h"
 
+static inline void number_incp(env_t *env, val_t *a, val_t *res) {
+    (void) env;
+    val_set_number(a, val_2_double(a) + 1);
+    *res = *a;
+}
+
+static inline void number_inc(env_t *env, val_t *a, val_t *res) {
+    *res = *a;
+    val_set_number(a, val_2_double(a) + 1);
+}
+
+static inline void number_decp(env_t *env, val_t *a, val_t *res) {
+    val_set_number(a, val_2_double(a) - 1);
+    *res = *a;
+}
+
+static inline void number_dec(env_t *env, val_t *a, val_t *res) {
+    *res = *a;
+    val_set_number(a, val_2_double(a) - 1);
+}
 
 static inline void number_add(env_t *env, val_t *a, val_t *b, val_t *res) {
     (void) env;

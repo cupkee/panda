@@ -296,6 +296,56 @@ static inline void interp_tle(env_t *env) {
     val_set_boolean(res, 0);
 }
 
+static void interp_inc(env_t *env, int pre) {
+    val_t *lft = env_stack_peek(env);
+    val_t *res = lft;
+
+    if (val_is_reference(lft)) {
+        uint8_t id, generation;
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft) {
+            if (val_is_number(lft)) {
+                if (pre) {
+                    number_incp(env, lft, res);
+                } else {
+                    number_inc(env, lft, res);
+                }
+            } else {
+                val_set_nan(lft);
+                *res = *lft;
+            }
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
+static void interp_dec(env_t *env, int pre) {
+    val_t *lft = env_stack_peek(env);
+    val_t *res = lft;
+
+    if (val_is_reference(lft)) {
+        uint8_t id, generation;
+        val_2_reference(lft, &id, &generation);
+        lft = env_get_var(env, id, generation);
+        if (lft) {
+            if (val_is_number(lft)) {
+                if (pre) {
+                    number_decp(env, lft, res);
+                } else {
+                    number_dec(env, lft, res);
+                }
+            } else {
+                val_set_nan(lft);
+                *res = *lft;
+            }
+            return;
+        }
+    }
+    env_set_error(env, ERR_InvalidLeftValue);
+}
+
 static inline void interp_assign(env_t *env) {
     val_t *rht = env_stack_peek(env);
     val_t *lft = rht + 1;
@@ -627,6 +677,24 @@ static inline void interp_elem_set(env_t *env) {
     *res = *val;
 }
 
+static inline void interp_prop_inc(env_t *env, int pre) {
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_inc(env, obj, key, res, pre);
+    env_stack_pop(env);
+}
+
+static inline void interp_prop_dec(env_t *env, int pre) {
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_prop_dec(env, obj, key, res, pre);
+    env_stack_pop(env);
+}
+
 static inline void interp_prop_add_set(env_t *env) {
     val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *key = val + 1;
@@ -635,6 +703,24 @@ static inline void interp_prop_add_set(env_t *env) {
 
     object_prop_add_set(env, obj, key, val, res);
     env_stack_release(env, 2);
+}
+
+static inline void interp_elem_inc(env_t *env, int pre) {
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_inc(env, obj, key, res, pre);
+    env_stack_pop(env);
+}
+
+static inline void interp_elem_dec(env_t *env, int pre) {
+    val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *obj = key + 1;
+    val_t *res = obj;
+
+    object_elem_dec(env, obj, key, res, pre);
+    env_stack_pop(env);
 }
 
 static inline void interp_elem_add_set(env_t *env) {
@@ -978,6 +1064,7 @@ static int interp_run(env_t *env, const uint8_t *pc)
         case BC_NOT:        interp_not(env); break;
         case BC_LOGIC_NOT:  interp_logic_not(env); break;
 
+
         case BC_MUL:        interp_mul(env); break;
         case BC_DIV:        interp_div(env); break;
         case BC_MOD:        interp_mod(env); break;
@@ -1005,18 +1092,26 @@ static int interp_run(env_t *env, const uint8_t *pc)
         case BC_ELEM:       interp_elem_get(env);  break;
         case BC_ELEM_METH:  interp_elem_self(env); break;
 
-        case BC_ASSIGN:     interp_assign(env); break;
-        case BC_ADD_ASSIGN: interp_add_assign(env); break;
-        case BC_SUB_ASSIGN: interp_sub_assign(env); break;
-        case BC_MUL_ASSIGN: interp_mul_assign(env); break;
-        case BC_DIV_ASSIGN: interp_div_assign(env); break;
-        case BC_MOD_ASSIGN: interp_mod_assign(env); break;
-        case BC_AND_ASSIGN: interp_and_assign(env); break;
-        case BC_OR_ASSIGN:  interp_or_assign(env); break;
-        case BC_XOR_ASSIGN: interp_xor_assign(env); break;
+        case BC_INC:                interp_inc(env, 0); break;
+        case BC_INCP:               interp_inc(env, 1); break;
+        case BC_DEC:                interp_dec(env, 0); break;
+        case BC_DECP:               interp_dec(env, 1); break;
+        case BC_ASSIGN:             interp_assign(env); break;
+        case BC_ADD_ASSIGN:         interp_add_assign(env); break;
+        case BC_SUB_ASSIGN:         interp_sub_assign(env); break;
+        case BC_MUL_ASSIGN:         interp_mul_assign(env); break;
+        case BC_DIV_ASSIGN:         interp_div_assign(env); break;
+        case BC_MOD_ASSIGN:         interp_mod_assign(env); break;
+        case BC_AND_ASSIGN:         interp_and_assign(env); break;
+        case BC_OR_ASSIGN:          interp_or_assign(env); break;
+        case BC_XOR_ASSIGN:         interp_xor_assign(env); break;
         case BC_LSHIFT_ASSIGN:      interp_lshift_assign(env); break;
         case BC_RSHIFT_ASSIGN:      interp_rshift_assign(env); break;
 
+        case BC_PROP_INC:           interp_prop_inc(env, 0); break;
+        case BC_PROP_INCP:          interp_prop_inc(env, 1); break;
+        case BC_PROP_DEC:           interp_prop_dec(env, 0); break;
+        case BC_PROP_DECP:          interp_prop_dec(env, 1); break;
         case BC_PROP_ASSIGN:        interp_prop_set(env); break;
         case BC_PROP_ADD_ASSIGN:    interp_prop_add_set(env); break;
         case BC_PROP_SUB_ASSIGN:    interp_prop_sub_set(env); break;
@@ -1029,6 +1124,10 @@ static int interp_run(env_t *env, const uint8_t *pc)
         case BC_PROP_LSHIFT_ASSIGN: interp_prop_lshift_set(env); break;
         case BC_PROP_RSHIFT_ASSIGN: interp_prop_rshift_set(env); break;
 
+        case BC_ELEM_INC:           interp_elem_inc(env, 0); break;
+        case BC_ELEM_INCP:          interp_elem_inc(env, 1); break;
+        case BC_ELEM_DEC:           interp_elem_dec(env, 0); break;
+        case BC_ELEM_DECP:          interp_elem_dec(env, 1); break;
         case BC_ELEM_ASSIGN:        interp_elem_set(env); break;
         case BC_ELEM_ADD_ASSIGN:    interp_elem_add_set(env); break;
         case BC_ELEM_SUB_ASSIGN:    interp_elem_sub_set(env); break;

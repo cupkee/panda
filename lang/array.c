@@ -86,6 +86,45 @@ void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *v)
     }
 }
 
+void array_elem_inc(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            if (pre) {
+                number_incp(env, elem, res);
+            } else {
+                number_inc(env, elem, res);
+            }
+            return;
+        } else {
+            val_set_nan(elem);
+        }
+    }
+    val_set_nan(res);
+}
+
+void array_elem_dec(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
+{
+    val_t *elem = _array_elem_get(env, a, i);
+
+    if (elem) {
+        if (val_is_number(elem)) {
+            if (pre) {
+                number_decp(env, elem, res);
+            } else {
+                number_dec(env, elem, res);
+            }
+            return;
+        } else {
+            val_set_nan(elem);
+        }
+    }
+    val_set_nan(res);
+}
+
+
 void array_elem_add_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 {
     val_t *elem = _array_elem_get(env, a, i);

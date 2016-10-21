@@ -321,6 +321,54 @@ static int _object_prop_get_owned(env_t *env, val_t *o, val_t *k, val_t **p, con
     return 0;
 }
 
+void object_prop_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            if (pre) {
+                number_incp(env, prop, res);
+            } else {
+                number_inc(env, prop, res);
+            }
+            return;
+        }
+        val_set_nan(prop);
+    }
+
+    val_set_nan(res);
+}
+
+void object_prop_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
+{
+    const char  *name;
+    val_t *prop;
+
+    if (0 > _object_prop_get_owned(env, self, key, &prop, &name)) {
+        return;
+    }
+
+    if (prop) {
+        if (val_is_number(prop)) {
+            if (pre) {
+                number_decp(env, prop, res);
+            } else {
+                number_dec(env, prop, res);
+            }
+            return;
+        }
+        val_set_nan(prop);
+    }
+
+    val_set_nan(res);
+}
+
 void object_prop_add_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *res)
 {
     const char  *name;
@@ -581,6 +629,32 @@ void object_prop_rshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val
     if (prop) {
         val_set_nan(prop);
         val_set_nan(res);
+    }
+}
+
+void object_elem_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_inc(env, self, key, res, pre);
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        object_prop_inc(env, self, key, res, pre);
+    }
+}
+
+void object_elem_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
+{
+    if (val_is_number(key)) {
+        if (val_is_array(self)) {
+            array_elem_dec(env, self, key, res, pre);
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        object_prop_dec(env, self, key, res, pre);
     }
 }
 
