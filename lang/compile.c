@@ -727,7 +727,6 @@ static void compile_expr_id(compile_t *cpl, expr_t *e)
         if (id >= 0) {
             compile_code_append_arg_u16(cpl, BC_PUSH_NATIVE, id);
         } else {
-            printf("unknow id: %s\n", (char *)sym_id);
             cpl->error = ERR_NotDefinedId;
         }
     }
@@ -1375,7 +1374,6 @@ int compile_one_stmt(compile_t *cpl, stmt_t *stmt)
     int ret = compile_stmt(cpl, stmt);
 
     if (ret == 0) {
-        //compile_code_dump(cpl);
         compile_code_append(cpl, BC_STOP);
         return compile_save_main_vmap(cpl);
     }
@@ -1617,6 +1615,8 @@ int compile_update(compile_t *cpl)
     return 0;
 }
 
+#if 0
+#warning debug function
 void compile_code_dump(compile_t *cpl)
 {
     uint8_t *code = compile_code_buf(cpl);
@@ -1647,6 +1647,7 @@ void compile_code_dump(compile_t *cpl)
         }
     }
 }
+#endif
 
 int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
 {
