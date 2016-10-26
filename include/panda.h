@@ -33,6 +33,8 @@ SOFTWARE.
 #include "../lang/interp.h"
 #include "../lang/compile.h"
 #include "../lang/executable.h"
+#include "../lang/array.h"
+#include "../lang/object.h"
 
 #endif /* __PANDA_INC__ */
 
