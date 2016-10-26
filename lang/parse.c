@@ -215,9 +215,11 @@ static expr_t *parse_expr_primary(parser_t *psr)
         if (tok == '[') {
             expr = parse_expr_form_elem(psr, expr);
         } else {
+            /*
             if (expr->type != EXPR_ID && expr->type != EXPR_PROP && expr->type != EXPR_ELEM && expr->type != EXPR_CALL) {
                 break;
             }
+            */
             expr = parse_expr_form_call(psr, expr);
         }
         tok = parse_token(psr, NULL);

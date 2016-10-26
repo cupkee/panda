@@ -557,6 +557,10 @@ static void test_exec_function(void)
     CU_ASSERT(0 < interp_execute_string(&env, "0 == fn1(0)", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "15 == fn1(5)", &res) && val_is_boolean(res) && val_is_true(res));
 
+    // immediately call
+    CU_ASSERT(0 < interp_execute_string(&env, "(a = def() return true)()", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a()", &res) && val_is_boolean(res) && val_is_true(res));
+
     env_deinit(&env);
 }
 
@@ -1013,7 +1017,6 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec var stmt",     test_exec_var);
         CU_add_test(suite, "exec assign",       test_exec_assign);
         CU_add_test(suite, "exec selfop",       test_exec_selfop);
-        if (0) {
         CU_add_test(suite, "exec if stmt",      test_exec_if);
         CU_add_test(suite, "exec while stmt",   test_exec_while);
 
@@ -1028,6 +1031,7 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
+        if (0) {
         }
     }
 
