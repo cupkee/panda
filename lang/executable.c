@@ -27,21 +27,14 @@ SOFTWARE.
 #include "function.h"
 
 int executable_init(executable_t *exe, void *mem_ptr, int mem_size,
-                    int number_max, int string_max, int func_max,
-                    int main_code_max, int func_code_max)
+                    int number_max, int string_max, int func_max, int code_max)
 {
     int mem_offset = 0;
 
-    exe->main_code = (uint8_t*) (mem_ptr + mem_offset);
+    exe->code = (uint8_t*) (mem_ptr + mem_offset);
     exe->main_code_end = 0;
-    exe->main_code_max = main_code_max;
-    mem_offset += exe->main_code_max;
-
-    exe->func_code = (uint8_t*) (mem_ptr + mem_offset);
-    exe->func_code_end = 0;
-    exe->func_code_max = func_code_max;
-    mem_offset += exe->func_code_max;
-
+    exe->func_code_end = code_max;
+    mem_offset += code_max;
     mem_offset = SIZE_ALIGN_8(mem_offset);
 
     // static number buffer init
@@ -108,6 +101,96 @@ int executable_string_find_add(executable_t *exe, intptr_t s)
         return -1;
     }
 }
+
+int executable_func_set_head(void *buf, uint8_t vc, uint8_t ac, uint32_t code_size, uint16_t stack_size, int closure) {
+    uint8_t *head = (uint8_t *)buf;
+    int mark = 0;
+
+    if (stack_size & 0x8000) {
+        // stack overflow: not more than 32768
+        return -1;
+    }
+
+    if (closure) {
+        mark = 0x80;
+    }
+
+    head[0] = vc;
+    head[1] = ac;
+
+    head[2] = (stack_size >> 8) | mark; // High bit of stack_size, used as closure flag
+    head[3] = stack_size;
+
+    head[4] = code_size >> 24;
+    head[5] = code_size >> 16;
+    head[6] = code_size >> 8;
+    head[7] = code_size;
+
+    return 0;
+}
+
+int executable_func_get_head(void *buf, uint8_t *vc, uint8_t *ac, uint32_t *code_size, uint16_t *stack_size, int *closure) {
+    uint8_t *head = (uint8_t *)buf;
+    uint32_t size;
+    int mark = 0;
+
+    *vc = head[0];
+    *ac = head[1];
+
+    size = (head[2] * 0x100) + head[3];
+    mark = size & 0x8000 ? 1 : 0;
+    size = size & 0x7FFF;
+    *stack_size = size;
+    *closure = mark;
+
+    size = (head[4] * 0x1000000 + head[5] * 0x10000 + head[6] * 0x100 + head[7]);
+    *code_size = size;
+
+    return 0;
+}
+
+
+int executable_main_add(executable_t *exe, void *code, uint16_t size, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure)
+{
+    uint8_t *entry;
+
+    if (exe->main_code_end + size + FUNC_HEAD_SIZE >= exe->func_code_end) {
+        return ERR_NotEnoughMemory;
+    }
+
+    entry = exe->code + exe->main_code_end;
+    if (exe->func_num == 0) {
+        exe->func_map[0] = entry;
+        exe->func_num = 1;
+    }
+
+    executable_func_set_head(entry, vc, ac, size, stack_need, closure);
+    memcpy(entry + FUNC_HEAD_SIZE, code, size);
+
+    exe->main_code_end += FUNC_HEAD_SIZE + size;
+
+    return 0;
+}
+
+int executable_func_add(executable_t *exe, void *code, uint16_t size, uint8_t vc, uint8_t ac, uint16_t stack_need, int closure)
+{
+    uint8_t *entry;
+
+    if (exe->main_code_end + size + FUNC_HEAD_SIZE >= exe->func_code_end) {
+        return ERR_NotEnoughMemory;
+    }
+
+    exe->func_code_end -= FUNC_HEAD_SIZE + size;
+    entry = exe->code + exe->func_code_end;
+
+    exe->func_map[exe->func_num++] = entry;
+    executable_func_set_head(entry, vc, ac, size, stack_need, closure);
+    memcpy(entry + FUNC_HEAD_SIZE, code, size);
+
+    return 0;
+}
+
+
 
 static inline
 void image_write(image_info_t *ef, int offset, void *buf, int size) {

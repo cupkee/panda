@@ -37,8 +37,6 @@ SOFTWARE.
 #define EXEC_FL_64     2
 
 typedef struct executable_t {
-    uint32_t  memory_size;
-
     uint16_t  string_max;
     uint16_t  string_num;
 
@@ -48,19 +46,14 @@ typedef struct executable_t {
     uint16_t  func_max;
     uint16_t  func_num;
 
-    void     *memory_base;
-
     double   *number_map;
     intptr_t *string_map;
     uint8_t **func_map;
 
     uint32_t  main_code_end;
-    uint32_t  main_code_max;
     uint32_t  func_code_end;
-    uint32_t  func_code_max;
 
-    uint8_t  *main_code;
-    uint8_t  *func_code;
+    uint8_t  *code;
 } executable_t;
 
 typedef struct image_info_t {
@@ -81,56 +74,18 @@ typedef struct image_info_t {
 
 
 int executable_init(executable_t *exe, void *memory, int size,
-                    int number_max, int string_max, int func_max,
-                    int main_code_max, int func_code_max);
+                    int number_max, int string_max, int func_max, int code_max);
 
 static inline
-int executable_func_set_head(void *buf, uint8_t vc, uint8_t ac, uint32_t code_size, uint16_t stack_size, int closure) {
-    uint8_t *head = (uint8_t *)buf;
-    int mark = 0;
-
-    if (stack_size & 0x8000) {
-        return -1;
-    }
-
-    if (closure) {
-        mark = 0x80;
-    }
-
-    head[0] = vc;
-    head[1] = ac;
-
-    head[2] = (stack_size >> 8) | mark;
-    head[3] = stack_size;
-
-    head[4] = code_size >> 24;
-    head[5] = code_size >> 16;
-    head[6] = code_size >> 8;
-    head[7] = code_size;
-
-    return 0;
+void executable_main_clr(executable_t *exe)
+{
+    exe->main_code_end = 0;
 }
 
-static inline
-int executable_func_get_head(void *buf, uint8_t *vc, uint8_t *ac, uint32_t *code_size, uint16_t *stack_size, int *closure) {
-    uint8_t *head = (uint8_t *)buf;
-    uint32_t size;
-    int mark = 0;
-
-    *vc = head[0];
-    *ac = head[1];
-
-    size = (head[2] * 0x100) + head[3];
-    mark = size & 0x8000 ? 1 : 0;
-    size = size & 0x7FFF;
-    *stack_size = size;
-    *closure = mark;
-
-    size = (head[4] * 0x1000000 + head[5] * 0x10000 + head[6] * 0x100 + head[7]);
-    *code_size = size;
-
-    return 0;
-}
+int executable_func_set_head(void *buf, uint8_t vc, uint8_t ac, uint32_t code_size, uint16_t stack_size, int closure);
+int executable_func_get_head(void *buf, uint8_t *vc, uint8_t *ac, uint32_t *code_size, uint16_t *stack_size, int *closure);
+int executable_main_add(executable_t *exe, void *code, uint16_t size, uint8_t vc, uint8_t ac, uint16_t stack_size, int closure);
+int executable_func_add(executable_t *exe, void *code, uint16_t size, uint8_t vc, uint8_t ac, uint16_t stack_size, int closure);
 
 static inline
 uint8_t executable_func_get_var_cnt(const uint8_t *entry) {

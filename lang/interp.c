@@ -1176,14 +1176,14 @@ int interp_env_init_interactive(env_t *env, void *mem_ptr, int mem_size, void *h
         exe_mem_size -= stack_size * sizeof(val_t);
     }
 
-    if (env_exe_memery_calc(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
+    if (env_exe_memery_distribute(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
         return -ERR_NotEnoughMemory;
     }
 
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
                 exe_num_max, exe_str_max, exe_fn_max,
-                exe_code_max / 4, exe_code_max * 3 / 4, 1);
+                exe_code_max, 1);
 }
 
 int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size)
@@ -1199,14 +1199,14 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
         exe_mem_size -= stack_size;
     }
 
-    if (env_exe_memery_calc(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
+    if (env_exe_memery_distribute(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
         return -ERR_NotEnoughMemory;
     }
 
     return env_init(env, mem_ptr, mem_size,
                 heap_ptr, heap_size, stack_ptr, stack_size,
                 exe_num_max, exe_str_max, exe_fn_max,
-                exe_code_max / 4, exe_code_max * 3 / 4, 0);
+                exe_code_max, 0);
 }
 
 int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size, image_info_t *image)
@@ -1220,7 +1220,7 @@ int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_pt
     }
 
     exe_mem_size = mem_size - heap_size - stack_size * sizeof(val_t);
-    if (env_exe_memery_calc(exe_mem_size, NULL, &exe_str_max, &exe_fn_max, NULL)) {
+    if (env_exe_memery_distribute(exe_mem_size, NULL, &exe_str_max, &exe_fn_max, NULL)) {
         return -ERR_NotEnoughMemory;
     }
 
@@ -1233,7 +1233,7 @@ int interp_env_init_image(env_t *env, void *mem_ptr, int mem_size, void *heap_pt
 
     if (0 != env_init(env, mem_ptr, mem_size,
                     heap_ptr, heap_size, stack_ptr, stack_size,
-                    0, exe_str_max, exe_fn_max, 0, 0, 0)) {
+                    0, exe_str_max, exe_fn_max, 0, 0)) {
         return -1;
     }
 

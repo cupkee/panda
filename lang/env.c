@@ -154,7 +154,7 @@ intptr_t env_symbal_get(env_t *env, const char *name) {
     return 0;
 }
 
-int env_exe_memery_calc(int size, int *num_max, int *str_max, int *fn_max, int *code_max)
+int env_exe_memery_distribute(int size, int *num_max, int *str_max, int *fn_max, int *code_max)
 {
     int code_space;
     int fent_space;
@@ -165,40 +165,43 @@ int env_exe_memery_calc(int size, int *num_max, int *str_max, int *fn_max, int *
         // half of memory as code space
         code_space = SIZE_ALIGN_8(size / 2);
         *code_max = code_space;
+        size -= code_space;
     } else {
         code_space = 0;
     }
 
+    if (str_max) {
+        // 7/16 of memory as function entry space
+        str_space = size * 7 / 8;
+        *str_max = str_space / (sizeof(intptr_t) * 2 + DEF_STRING_SIZE);
+        size -= str_space;
+    } else {
+        str_space = 0;
+    }
+
     if (num_max) {
         // 1/32 of memory as number
-        num_space = SIZE_ALIGN_8(size / 32);
+        num_space = SIZE_ALIGN_8(size / 2);
         *num_max = num_space / sizeof(double);
+        size -= num_space;
     } else {
         num_space = 0;
     }
 
     if (fn_max) {
-        // 1/32 of function entry space
-        fent_space = SIZE_ALIGN_8(size / 32);
+        // 1/32 of memory as function entry space
+        fent_space = SIZE_ALIGN_8(size);
         *fn_max = fent_space / sizeof(intptr_t);
     } else {
         fent_space = 0;
     }
 
-    if (str_max) {
-        str_space = size - code_space - num_space - fent_space;
-        *str_max = str_space / (sizeof(intptr_t) * 2 + DEF_STRING_SIZE);
-    } else {
-        str_space = 0;
-    }
-
-    /*
-    printf("exe space: %d\n", size);
+#if 0
     printf("num space: %d\n", num_space);
     printf("str space: %d\n", str_space);
     printf("code space: %d\n", code_space);
     printf("fent space: %d\n", fent_space);
-    */
+#endif
 
     return 0;
 }
@@ -206,7 +209,7 @@ int env_exe_memery_calc(int size, int *num_max, int *str_max, int *fn_max, int *
 int env_init(env_t *env, void *mem_ptr, int mem_size,
              void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
              int number_max, int string_max, int func_max,
-             int main_code_max, int func_code_max, int interactive)
+             int code_max, int interactive)
 {
     int mem_offset;
     int half_size, exe_size, symbal_tbl_size;
@@ -265,7 +268,7 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
 
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
-                    number_max, string_max, func_max, main_code_max, func_code_max);
+                    number_max, string_max, func_max, code_max);
     if (exe_size < 0) {
         return -1;
     }

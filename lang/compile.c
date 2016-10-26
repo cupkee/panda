@@ -1547,7 +1547,7 @@ static int compile_code_relocate(compile_t *cpl)
 {
     executable_t   *exe;
     compile_func_t *cfp;
-    int i;
+    int i, err;
 
     if (!cpl || cpl->error || !cpl->env) {
         return -1;
@@ -1562,44 +1562,32 @@ static int compile_code_relocate(compile_t *cpl)
     /*
      * Main entry function relocation
      */
-    // interactive mode, history of main code should be clear to save space
     cfp = cpl->func_buf;
     if (env_is_interactive(cpl->env)) {
-        exe->main_code_end = 0;
+        // history of main code should be clear to save space, while as interactive mode
+        executable_main_clr(exe);
     }
-    if (exe->main_code_end + cfp->code_num + FUNC_HEAD_SIZE >= exe->main_code_max) {
-        cpl->error = ERR_NotEnoughMemory;
+    err = executable_main_add(exe, cfp->code_buf, cfp->code_num,
+                                   cfp->var_num, cfp->arg_num,
+                                   cfp->stack_high, cfp->closure);
+    if (err) {
+        cpl->error = err;
         return -1;
-    }
-
-    exe->func_map[0] = exe->main_code + exe->main_code_end;
-    executable_func_set_head(exe->main_code + exe->main_code_end,
-            cfp->var_num, cfp->arg_num, cfp->code_num, cfp->stack_high, cfp->closure);
-    memcpy(exe->main_code + exe->main_code_end + FUNC_HEAD_SIZE, cfp->code_buf, cfp->code_num);
-    exe->main_code_end += FUNC_HEAD_SIZE + cfp->code_num;
-    if (exe->func_num == 0) {
-        exe->func_num = 1;
     }
 
     /*
      * Function relocation
      */
-    for (i = 1; i < cpl->func_num; i++) {
+    for (i = 1; err == 0 && i < cpl->func_num; i++) {
         cfp = cpl->func_buf + i;
-
-        if (exe->func_code_end + cfp->code_num + FUNC_HEAD_SIZE >= exe->func_code_max) {
-            cpl->error = ERR_NotEnoughMemory;
-            return -1;
-        }
-
-        exe->func_map[exe->func_num++] = exe->func_code + exe->func_code_end;
-        executable_func_set_head(exe->func_code + exe->func_code_end,
-                cfp->var_num, cfp->arg_num, cfp->code_num, cfp->stack_high, cfp->closure);
-        memcpy(exe->func_code + exe->func_code_end + FUNC_HEAD_SIZE, cfp->code_buf, cfp->code_num);
-        exe->func_code_end += FUNC_HEAD_SIZE + cfp->code_num;
+        err = executable_func_add(exe, cfp->code_buf, cfp->code_num,
+                                       cfp->var_num, cfp->arg_num,
+                                       cfp->stack_high, cfp->closure);
     }
 
-    return 0;
+    cpl->error = err;
+
+    return err;
 }
 
 int compile_update(compile_t *cpl)
@@ -1653,12 +1641,12 @@ int compile_env_init(env_t *env, void *mem_ptr, int mem_size)
 {
     int num_max, str_max;
 
-    if (env_exe_memery_calc(mem_size, &num_max, &str_max, NULL, NULL)) {
+    if (env_exe_memery_distribute(mem_size, &num_max, &str_max, NULL, NULL)) {
         return -ERR_NotEnoughMemory;
     }
 
     return env_init(env, mem_ptr, mem_size, NULL, 0, NULL, 0,
-                num_max, str_max, 0, 0, 0, 0);
+                num_max, str_max, 0, 0, 0);
 }
 
 static void parse_callback(void *ud, parse_event_t *e)
