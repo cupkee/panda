@@ -88,6 +88,7 @@ static int lex_chk_token_type(const char *str, int len)
         if (0 == strcmp("return", str)) return TOK_RET;
     case 8:
         if (0 == strcmp("continue", str)) return TOK_CONTINUE;
+        if (0 == strcmp("function", str)) return TOK_DEF;
     case 9:
         if (0 == strcmp("undefined", str)) return TOK_UND;
     default:
