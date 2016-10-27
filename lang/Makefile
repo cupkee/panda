@@ -26,6 +26,7 @@ lang_SRCS = heap.c \
 			ast.c \
 			env.c\
 			lex.c \
+			val.c \
 			parse.c \
 			bcode.c \
 			compile.c\

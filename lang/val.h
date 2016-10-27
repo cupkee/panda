@@ -33,6 +33,11 @@ typedef union {
     double  d;
 } valnum_t;
 
+extern const val_t _Undefined;
+extern const val_t _True;
+extern const val_t _False;
+extern const val_t _NaN;
+
 /*
  *  Double-precision floating-point number, IEEE 754
  *
