@@ -87,6 +87,12 @@ extern const val_t _NaN;
 #define TAG_MASK            MAKE_TAG(1, 0xF)
 #define VAR_MASK            (~MAKE_TAG(1, 0xF))
 
+#define VAL_INFINITE        TAG_INFINITE
+#define VAL_UNDEFINED       TAG_UNDEFINED
+#define VAL_NAN             TAG_NAN
+#define VAL_TRUE            (TAG_BOOLEAN | 1)
+#define VAL_FALSE           (TAG_BOOLEAN)
+
 static inline double val_2_double(val_t *v) {
     return ((valnum_t*)v)->d;
 }

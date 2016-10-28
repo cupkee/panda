@@ -78,6 +78,12 @@ val_t array_shift(env_t *env, int ac, val_t *av);
 val_t array_unshift(env_t *env, int ac, val_t *av);
 val_t array_foreach(env_t *env, int ac, val_t *av);
 
+static inline
+val_t *_array_element(val_t *array, int i) {
+    array_t *a = (array_t *)val_2_intptr(array);
+    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
+}
+
 
 
 #endif /* __LANG_ARRAY_INC__ */
