@@ -20,43 +20,28 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-export BASE = ${PWD}
-export PREFIX
+lib_NAMES = lang
 
-MAKE_DIR  = ${BASE}/make
+lang_SRCS = heap.c \
+			ast.c \
+			env.c\
+			lex.c \
+			val.c \
+			parse.c \
+			bcode.c \
+			compile.c\
+			executable.c \
+			interp.c \
+			object.c \
+			function.c \
+			array.c \
+			string.c
 
-LANG_BUILD_DIR = ${BASE}/build/lang
-TEST_BUILD_DIR = ${BASE}/build/test
-EXAMPLE_BUILD_DIR = ${BASE}/build/example
+lang_CPPFLAGS = -I..
+lang_CFLAGS   = -g -Wall -Werror
+lang_LDFLAGS  =
 
+VPATH = ${BASE}/lang
 
-.PHONY: all test cunit lang example build pre_lang pre_test pre_example
-
-all: lang
-
-pre_lang:
-	@mkdir -p ${LANG_BUILD_DIR}
-
-pre_test:
-	@mkdir -p ${TEST_BUILD_DIR}
-
-pre_example:
-	@mkdir -p ${EXAMPLE_BUILD_DIR}
-
-lang: pre_lang
-	@printf "[Build] lang\n"
-	@${MAKE} -C ${LANG_BUILD_DIR} -f ${MAKE_DIR}/lang.mk
-
-test: lang pre_test
-	@printf "[Build] test\n"
-	@${RM} ${TEST_BUILD_DIR}/test
-	@${MAKE} -C ${TEST_BUILD_DIR} -f ${MAKE_DIR}/test.mk
-	@${TEST_BUILD_DIR}/test
-
-example: lang pre_example
-	@printf "[Build] example\n"
-	@${MAKE} -C ${EXAMPLE_BUILD_DIR} -f ${MAKE_DIR}/example.mk
-
-clean:
-	@${RM} build
+include ${BASE}/make/Makefile.pub
 

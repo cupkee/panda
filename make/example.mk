@@ -20,43 +20,33 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-export BASE = ${PWD}
-export PREFIX
+lib_NAMES = example
+bin_NAMES = compile dump repl panda
 
-MAKE_DIR  = ${BASE}/make
+example_SRCS = sal.c native.c
+example_CPPFLAGS = -I${BASE} -Wall -Werror
+example_CFLAGS   = -g
 
-LANG_BUILD_DIR = ${BASE}/build/lang
-TEST_BUILD_DIR = ${BASE}/build/test
-EXAMPLE_BUILD_DIR = ${BASE}/build/example
+compile_SRCS = compile.c
+compile_CPPFLAGS = -I${BASE}
+compile_CFLAGS   = -g
+compile_LDFLAGS  = -L. -L${BASE}/build/lang -lexample -llang
 
+dump_SRCS = dump.c
+dump_CPPFLAGS = -I${BASE}
+dump_CFLAGS   = -g
+dump_LDFLAGS  = -L. -L${BASE}/build/lang -lexample -llang
 
-.PHONY: all test cunit lang example build pre_lang pre_test pre_example
+repl_SRCS = interactive.c
+repl_CPPFLAGS = -I${BASE}
+repl_CFLAGS   = -g
+repl_LDFLAGS  = -L. -L${BASE}/build/lang -lexample -llang -lreadline
 
-all: lang
+panda_SRCS = interpreter.c
+panda_CPPFLAGS = -I${BASE}
+panda_CFLAGS   = -g
+panda_LDFLAGS  = -L. -L${BASE}/build/lang -lexample -llang
 
-pre_lang:
-	@mkdir -p ${LANG_BUILD_DIR}
+VPATH = ${BASE}/example
 
-pre_test:
-	@mkdir -p ${TEST_BUILD_DIR}
-
-pre_example:
-	@mkdir -p ${EXAMPLE_BUILD_DIR}
-
-lang: pre_lang
-	@printf "[Build] lang\n"
-	@${MAKE} -C ${LANG_BUILD_DIR} -f ${MAKE_DIR}/lang.mk
-
-test: lang pre_test
-	@printf "[Build] test\n"
-	@${RM} ${TEST_BUILD_DIR}/test
-	@${MAKE} -C ${TEST_BUILD_DIR} -f ${MAKE_DIR}/test.mk
-	@${TEST_BUILD_DIR}/test
-
-example: lang pre_example
-	@printf "[Build] example\n"
-	@${MAKE} -C ${EXAMPLE_BUILD_DIR} -f ${MAKE_DIR}/example.mk
-
-clean:
-	@${RM} build
-
+include ${BASE}/make/Makefile.pub
