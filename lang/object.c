@@ -141,7 +141,7 @@ static inline object_t *_object_proto_get(val_t *obj) {
 static val_t object_length(env_t *env, int ac, val_t *av)
 {
     if (ac > 0) {
-        if (val_is_dictionary(av)) {
+        if (val_is_object(av)) {
             object_t *o = (object_t *)val_2_intptr(av);
             return val_mk_number(o->prop_num);
         } else
@@ -152,10 +152,10 @@ static val_t object_length(env_t *env, int ac, val_t *av)
         if (val_is_inline_string(av)) {
             return val_mk_number(string_inline_len(av));
         } else
-        if (val_is_static_string(av)) {
+        if (val_is_foreign_string(av)) {
             return val_mk_number(string_static_len(av));
         } else
-        if (val_is_owned_string(av)) {
+        if (val_is_heap_string(av)) {
             return val_mk_number(string_owned_len(av));
         } else {
             return val_mk_number(1);
@@ -177,32 +177,32 @@ static val_t object_to_string(env_t *env, int ac, val_t *obj)
         return *obj;
     } else
     if (val_is_number(obj)) {
-        return val_mk_static_string((intptr_t)"number");
+        return val_mk_foreign_string((intptr_t)"number");
     } else
     if (val_is_undefined(obj)) {
-        return val_mk_static_string((intptr_t)"undefined");
+        return val_mk_foreign_string((intptr_t)"undefined");
     } else
     if (val_is_nan(obj)) {
-        return val_mk_static_string((intptr_t)"NaN");
+        return val_mk_foreign_string((intptr_t)"NaN");
     } else
     if (val_is_boolean(obj)) {
-        return val_mk_static_string((intptr_t)(val_2_intptr(obj) ? "true" : "false"));
+        return val_mk_foreign_string((intptr_t)(val_2_intptr(obj) ? "true" : "false"));
     } else
     if (val_is_array(obj)) {
-        return val_mk_static_string((intptr_t)"Array");
+        return val_mk_foreign_string((intptr_t)"Array");
     } else {
-        return val_mk_static_string((intptr_t)"Object");
+        return val_mk_foreign_string((intptr_t)"Object");
     }
 }
 
 static val_t object_foreach(env_t *env, int ac, val_t *av)
 {
-    if (ac > 1 && val_is_dictionary(av) && val_is_function(av + 1)) {
+    if (ac > 1 && val_is_object(av) && val_is_function(av + 1)) {
         object_t *o = (object_t *)val_2_intptr(av);
         int i, max = o->prop_num;
 
         for (i = 0; i < max && !env->error; i++) {
-            val_t key = val_mk_static_string(o->keys[i]);
+            val_t key = val_mk_foreign_string(o->keys[i]);
 
             env_push_call_argument(env, &key);
             env_push_call_argument(env, o->vals + i);
@@ -224,7 +224,7 @@ void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
         return;
     }
 
-    if (val_is_dictionary(self)) {
+    if (val_is_object(self)) {
         obj = (object_t *) val_2_intptr(self);
     } else {
         obj = _object_proto_get(self);
@@ -268,7 +268,7 @@ void object_prop_set(env_t *env, val_t *self, val_t *key, val_t *val)
         return;
     }
 
-    if (val_is_dictionary(self)) {
+    if (val_is_object(self)) {
         object_t *obj = (object_t *) val_2_intptr(self);
         intptr_t sym_id = env_symbal_get(env, name);
         val_t *prop;
@@ -311,7 +311,7 @@ static int _object_prop_get_owned(env_t *env, val_t *o, val_t *k, val_t **p, con
         return -1;
     }
 
-    if (!val_is_dictionary(o)) {
+    if (!val_is_object(o)) {
         env_set_error(env, ERR_HasNoneProperty);
         return -1;
     }
@@ -333,9 +333,9 @@ void object_prop_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
     if (prop) {
         if (val_is_number(prop)) {
             if (pre) {
-                number_incp(env, prop, res);
+                number_incp(prop, res);
             } else {
-                number_inc(env, prop, res);
+                number_inc(prop, res);
             }
             return;
         }
@@ -357,9 +357,9 @@ void object_prop_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre)
     if (prop) {
         if (val_is_number(prop)) {
             if (pre) {
-                number_decp(env, prop, res);
+                number_decp(prop, res);
             } else {
-                number_dec(env, prop, res);
+                number_dec(prop, res);
             }
             return;
         }
@@ -380,7 +380,7 @@ void object_prop_add_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_add(env, prop, val, prop);
+            number_add(prop, val, prop);
         } else
         if (val_is_string(prop)) {
             string_add(env, prop, val, prop);
@@ -409,7 +409,7 @@ void object_prop_sub_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_sub(env, prop, val, prop);
+            number_sub(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -435,7 +435,7 @@ void object_prop_mul_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_mul(env, prop, val, prop);
+            number_mul(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -461,7 +461,7 @@ void object_prop_div_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_div(env, prop, val, prop);
+            number_div(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -487,7 +487,7 @@ void object_prop_mod_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_mod(env, prop, val, prop);
+            number_mod(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -513,7 +513,7 @@ void object_prop_and_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_and(env, prop, val, prop);
+            number_and(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -539,7 +539,7 @@ void object_prop_or_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t *
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_or(env, prop, val, prop);
+            number_or(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -565,7 +565,7 @@ void object_prop_xor_set(env_t *env, val_t *self, val_t *key, val_t *val, val_t 
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_xor(env, prop, val, prop);
+            number_xor(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -591,7 +591,7 @@ void object_prop_lshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_lshift(env, prop, val, prop);
+            number_lshift(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -617,7 +617,7 @@ void object_prop_rshift_set(env_t *env, val_t *self, val_t *key, val_t *val, val
 
     if (prop) {
         if (val_is_number(prop)) {
-            number_rshift(env, prop, val, prop);
+            number_rshift(prop, val, prop);
         } else {
             val_set_nan(prop);
         }
@@ -823,7 +823,7 @@ intptr_t object_create(env_t *env, int n, val_t *av)
 
             key = env_symbal_get(env, name);
             if (!key) {
-                key = env_symbal_insert(env, name, !val_is_static_string(k));
+                key = env_symbal_insert(env, name, !val_is_foreign_string(k));
             }
 
             if (!key) {

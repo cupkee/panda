@@ -217,7 +217,7 @@ static inline void env_push_number(env_t *env, int id) {
 
 static inline void env_push_string(env_t *env, int id) {
     if (env->exe.string_num > id) {
-        val_set_string(env_stack_push(env), env->exe.string_map[id]);
+        val_set_foreign_string(env_stack_push(env), env->exe.string_map[id]);
     } else {
         env_set_error(env, ERR_SysError);
     }

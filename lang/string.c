@@ -70,7 +70,7 @@ void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
         buf[2] = len;
         memcpy(buf + head, val_2_cstring(a), size1);
         memcpy(buf + head + size1, val_2_cstring(b), size2 + 1);
-        val_set_owned_string(res, (intptr_t) buf);
+        val_set_heap_string(res, (intptr_t) buf);
     } else {
         env_set_error(env, ERR_NotEnoughMemory);
         val_set_undefined(res);
@@ -83,10 +83,10 @@ val_t string_length(env_t *env, int ac, val_t *av)
         if (val_is_inline_string(av)) {
             return val_mk_number(1);
         } else
-        if (val_is_static_string(av)) {
+        if (val_is_foreign_string(av)) {
             return val_mk_number(strlen((char *)val_2_intptr(av)));
         } else
-        if (val_is_owned_string(av)) {
+        if (val_is_heap_string(av)) {
             uint8_t *head = (uint8_t *)val_2_intptr(av);
             return val_mk_number(head[1] * 256 + head[2]);
         }

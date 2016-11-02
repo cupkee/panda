@@ -677,9 +677,9 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
     while (i < vc) {
         val_t *v = vp + i;
 
-        if (val_is_owned_string(v)) {
+        if (val_is_heap_string(v)) {
             //printf("val[%d] s %llx reset to ", i, *v);
-            val_set_owned_string(v, env_heap_copy_string(heap, val_2_intptr(v)));
+            val_set_heap_string(v, env_heap_copy_string(heap, val_2_intptr(v)));
             //printf("%llx\n", *v);
         } else
         if (val_is_script(v)) {
@@ -687,8 +687,8 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
             val_set_script(v, env_heap_copy_function(heap, val_2_intptr(v)));
             //printf("%llx\n", *v);
         } else
-        if (val_is_dictionary(v)) {
-            val_set_dictionary(v, (intptr_t)env_heap_copy_object(heap, (object_t *)val_2_intptr(v)));
+        if (val_is_object(v)) {
+            val_set_object(v, (intptr_t)env_heap_copy_object(heap, (object_t *)val_2_intptr(v)));
         } else
         if (val_is_array(v)) {
             val_set_array(v, (intptr_t)env_heap_copy_array(heap, (array_t *)val_2_intptr(v)));

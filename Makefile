@@ -58,5 +58,5 @@ example: lang pre_example
 	@${MAKE} -C ${EXAMPLE_BUILD_DIR} -f ${MAKE_DIR}/example.mk
 
 clean:
-	@${RM} build
+	@${RM} -rf build
 

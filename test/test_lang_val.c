@@ -52,7 +52,7 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
+    CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(!val_is_nan(&v));
     CU_ASSERT(!val_is_true(&v));
 
@@ -63,7 +63,7 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
+    CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(val_is_nan(&v));
     CU_ASSERT(!val_is_true(&v));
 
@@ -75,7 +75,7 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
+    CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(val_is_true(&v));
 
     v = val_mk_boolean(0);
@@ -88,7 +88,7 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_function(&v));
     CU_ASSERT(!val_is_string(&v));
     CU_ASSERT(!val_is_array(&v));
-    CU_ASSERT(!val_is_dictionary(&v));
+    CU_ASSERT(!val_is_object(&v));
     CU_ASSERT(!val_is_nan(&v));
     CU_ASSERT(1 == val_2_integer(&v));
     CU_ASSERT(1.1 == val_2_double(&v));
@@ -109,16 +109,16 @@ static void test_val_make(void)
     CU_ASSERT(!val_is_script(&v));
     CU_ASSERT(val_is_function(&v));
 
-    v = val_mk_static_string(1);
+    v = val_mk_foreign_string(1);
     CU_ASSERT(val_is_string(&v));
-    CU_ASSERT(val_is_static_string(&v));
-    CU_ASSERT(!val_is_owned_string(&v));
+    CU_ASSERT(val_is_foreign_string(&v));
+    CU_ASSERT(!val_is_heap_string(&v));
     CU_ASSERT(!val_is_inline_string(&v));
 
-    v = val_mk_owned_string(1);
+    v = val_mk_heap_string(1);
     CU_ASSERT(val_is_string(&v));
-    CU_ASSERT(!val_is_static_string(&v));
-    CU_ASSERT(val_is_owned_string(&v));
+    CU_ASSERT(!val_is_foreign_string(&v));
+    CU_ASSERT(val_is_heap_string(&v));
     CU_ASSERT(!val_is_inline_string(&v));
 }
 

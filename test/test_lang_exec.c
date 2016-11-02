@@ -91,7 +91,7 @@ static void test_exec_calculate(void)
     CU_ASSERT(0 < interp_execute_string(&env, "2 * 2", &res) && val_is_number(res) && 4 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "0 / 2", &res) && val_is_number(res) && 0 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "6 / 2", &res) && val_is_number(res) && 3 == val_2_integer(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "6 / 0", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "6 / 0", &res) && val_is_infinity(res));
     CU_ASSERT(0 < interp_execute_string(&env, "0 % 2", &res) && val_is_number(res) && 0 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "3 % 2", &res) && val_is_number(res) && 1 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "6 % 0", &res) && val_is_nan(res));
@@ -361,16 +361,16 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a++;", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_boolean(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a--;", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_boolean(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
     CU_ASSERT(0 < interp_execute_string(&env, "++a;", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_boolean(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = true;", &res) && !val_is_number(res));
     CU_ASSERT(0 < interp_execute_string(&env, "--a;", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_boolean(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a == 1;", &res) && val_is_true(res));
@@ -719,7 +719,7 @@ static void test_exec_string(void)
     env_deinit(&env);
 }
 
-static void test_exec_dict(void)
+static void test_exec_object(void)
 {
     env_t env;
     val_t *res;
@@ -727,7 +727,7 @@ static void test_exec_dict(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var a = {a: 1, b: 'hello', c: 2 * 2 - 1};", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.a == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.b == \"hello\"", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.c == 3", &res) && val_is_boolean(res) && val_is_true(res));
@@ -737,11 +737,11 @@ static void test_exec_dict(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a.a + a.b == 'worldhello'", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var b = {a: 1, b: def(self) return self.a};", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b.b() == 1", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var c = {}", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "(c.a = 1) == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "(c.b = 'hello') == 'hello'", &res) && val_is_boolean(res) && val_is_true(res));
@@ -757,7 +757,7 @@ static void test_exec_dict(void)
     CU_ASSERT(0 < interp_execute_string(&env, "o.b.b() == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.c.e() == 0", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "o = {'a': 'hello', 'b': ' ', 'c': 'world'}", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o = {'a': 'hello', 'b': ' ', 'c': 'world'}", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "var ks = '', vs = ''", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.foreach(def(v, k) {ks = ks + k; vs = vs + v })", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "ks == 'abc'", &res) && val_is_boolean(res) && val_is_true(res));
@@ -795,7 +795,7 @@ static void test_exec_array(void)
 
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] = a[1]", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] = a[2]", &res) && val_is_array(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a[2] = a[3]", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[2] = a[3]", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 'hello'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1][0] == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1][1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
@@ -990,7 +990,7 @@ static void test_exec_gc_reference(void)
     ref[1] = *res;
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_array(res));
     ref[2] = *res;
-    CU_ASSERT(0 < interp_execute_string(&env, "o", &res) && val_is_dictionary(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "o", &res) && val_is_object(res));
     ref[3] = *res;
 
     // trigger gc
@@ -1004,9 +1004,616 @@ static void test_exec_gc_reference(void)
     env_deinit(&env);
 }
 
+static void test_exec_op_neg(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "-1", &res) && val_is_number(res) && -1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-0", &res) && val_is_number(res) && -0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-[]", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-{}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-def(){}", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_not(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "~1", &res) && val_is_number(res) && ~1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~0", &res) && val_is_number(res) && ~0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~[]", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~{}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~def(){}", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_mul(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 * 2", &res) && val_is_number(res) && 4 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*[]", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*{}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1*def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true * 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} * 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} * 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_div(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 / 0", &res) && val_is_infinity(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-2 / 0", &res) && val_is_infinity(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 / 2", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 / def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true / 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} / 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} / 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_mod(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 % 0", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-2 % 0", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "3 % 2", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 % def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true % 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} % 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} % 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_add(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + 0", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true + 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} + 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} + 1", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'a'+'b' == 'ab'", &res) && val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_sub(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 - 1", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 - def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true - 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} - 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} - 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_and(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 & 0", &res) && val_is_number(res) && 0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 & 1", &res) && val_is_number(res) && 0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "3 & 1", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 & def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true & 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} & 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} & 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_or(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 | 1", &res) && val_is_number(res) && 3 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "6 | 3", &res) && val_is_number(res) && 7 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 | def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true | 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} | 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} | 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_xor(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 ^ 1", &res) && val_is_number(res) && 3 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "7 ^ 3", &res) && val_is_number(res) && 4 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 ^ def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true ^ 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} ^ 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} ^ 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_lshift(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "2 << 1", &res) && val_is_number(res) && 4 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 << 3", &res) && val_is_number(res) && 0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 << def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true << 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} << 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} << 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_rshift(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> 1", &res) && val_is_number(res) && 0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 >> 1", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> true",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> false", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> NaN", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> undefined", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> ''", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> []", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> {}", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >> def(){}", &res) && val_is_nan(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true >> 1",  &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'' >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} >> 1", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} >> 1", &res) && val_is_nan(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_eq(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 == 1", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' == 'a' + 'b'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' != 'a' + 'b' + 'c'", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == false", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 == true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 == false", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 == NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 == undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined == undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN == undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN == NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined == NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == ''", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == []", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == {}", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 == def(){}", &res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "true == true",  &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false == false", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true == false", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] == 1", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} == 1", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} == 1", &res) && !val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_ne(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 != 0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 != 2", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 != true",  &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 != false", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 != true",  &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 != false", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 != NaN", &res)       && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 != undefined", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 != NaN", &res)       && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 != undefined", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined != undefined", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN != undefined", &res)       && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN != NaN", &res)             && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined != NaN", &res)       && val_is_boolean(res) && val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_ge(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= 1", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 >= 1", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' >= 'a' + 'b'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'abc' >= 'a' + 'b'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' >= 'a' + 'b' + 'c'", &res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= false", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= false", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined >= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN >= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= ''", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= {}", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= def(){}", &res) && !val_is_true(res)); 
+    CU_ASSERT(0 < interp_execute_string(&env, "true >= true",  &res)    && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false >= false", &res)   && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] >= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} >= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} >= 1", &res)     && !val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_gt(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 > 1", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > 1", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 > 1", &res) && val_is_boolean(res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' > 'a' + 'b'", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'abc' > 'a' + 'b'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' > 'a' + 'b' + 'c'", &res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > false", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 > true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 > false", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 > undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined > undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN > undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > ''", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > {}", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > def(){}", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true > true",  &res)    && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false > false", &res)   && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] >= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} >= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} >= 1", &res)     && !val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_le(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 <= 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 <= 1", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' <= 'a' + 'b'", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'abc' <= 'a' + 'b'", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' <= 'a' + 'b' + 'c'", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= false", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 <= true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 <= false", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 <= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 <= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined <= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN <= undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN <= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined <= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= ''", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= {}", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 <= def(){}", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true <= true",  &res)    && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true <= false",  &res)   && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false <= false", &res)   && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} <= 1", &res)     && !val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
+static void test_exec_op_lt(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 < 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < 1", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "2 < 1", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' < 'a' + 'b'", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'abc' < 'a' + 'b'", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "'ab' < 'a' + 'b' + 'c'", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < false", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 < true",  &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 < false", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "0 < NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 < undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined < undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN < undefined", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "NaN < NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "undefined < NaN", &res) && val_is_boolean(res) && !val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < ''", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < {}", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 < def(){}", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true < false",  &res)    && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true < true",  &res)    && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false < false", &res)   && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "{} <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "def(){} <= 1", &res)     && !val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
 CU_pSuite test_lang_interp_entry()
 {
-    CU_pSuite suite = CU_add_suite("lang eval", test_setup, test_clean);
+    CU_pSuite suite = CU_add_suite("lang execute", test_setup, test_clean);
 
     if (suite) {
         CU_add_test(suite, "exec simple",       test_exec_simple);
@@ -1024,13 +1631,34 @@ CU_pSuite test_lang_interp_entry()
         CU_add_test(suite, "exec native",       test_exec_native);
         CU_add_test(suite, "exec native call",  test_exec_native_call_script);
         CU_add_test(suite, "exec string",       test_exec_string);
-        CU_add_test(suite, "exec dictionary",   test_exec_dict);
+        CU_add_test(suite, "exec object",       test_exec_object);
         CU_add_test(suite, "exec array",        test_exec_array);
         CU_add_test(suite, "exec closure",      test_exec_closure);
         CU_add_test(suite, "exec stack check",  test_exec_stack_check);
         CU_add_test(suite, "exec function arg", test_exec_func_arg);
         CU_add_test(suite, "exec gc",           test_exec_gc);
         CU_add_test(suite, "exec gc with ref",  test_exec_gc_reference);
+
+        CU_add_test(suite, "exec op neg",       test_exec_op_neg);
+        CU_add_test(suite, "exec op not",       test_exec_op_not);
+        CU_add_test(suite, "exec op mul",       test_exec_op_mul);
+        CU_add_test(suite, "exec op div",       test_exec_op_div);
+        CU_add_test(suite, "exec op mod",       test_exec_op_mod);
+        CU_add_test(suite, "exec op add",       test_exec_op_add);
+        CU_add_test(suite, "exec op sub",       test_exec_op_sub);
+        CU_add_test(suite, "exec op sub",       test_exec_op_and);
+        CU_add_test(suite, "exec op sub",       test_exec_op_or);
+        CU_add_test(suite, "exec op sub",       test_exec_op_xor);
+        CU_add_test(suite, "exec op lshift",    test_exec_op_lshift);
+        CU_add_test(suite, "exec op rshift",    test_exec_op_rshift);
+
+        CU_add_test(suite, "exec op eq",        test_exec_op_eq);
+        CU_add_test(suite, "exec op ne",        test_exec_op_ne);
+        CU_add_test(suite, "exec op ge",        test_exec_op_ge);
+        CU_add_test(suite, "exec op gt",        test_exec_op_gt);
+        CU_add_test(suite, "exec op le",        test_exec_op_le);
+        CU_add_test(suite, "exec op lt",        test_exec_op_lt);
+
         if (0) {
         }
     }

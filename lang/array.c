@@ -93,9 +93,9 @@ void array_elem_inc(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
     if (elem) {
         if (val_is_number(elem)) {
             if (pre) {
-                number_incp(env, elem, res);
+                number_incp(elem, res);
             } else {
-                number_inc(env, elem, res);
+                number_inc(elem, res);
             }
             return;
         } else {
@@ -112,9 +112,9 @@ void array_elem_dec(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
     if (elem) {
         if (val_is_number(elem)) {
             if (pre) {
-                number_decp(env, elem, res);
+                number_decp(elem, res);
             } else {
-                number_dec(env, elem, res);
+                number_dec(elem, res);
             }
             return;
         } else {
@@ -131,7 +131,7 @@ void array_elem_add_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_add(env, elem, v, elem);
+            number_add(elem, v, elem);
         } else
         if (val_is_string(elem)) {
             string_add(env, elem, v, elem);
@@ -150,7 +150,7 @@ void array_elem_sub_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_sub(env, elem, v, elem);
+            number_sub(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -166,7 +166,7 @@ void array_elem_mul_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_mul(env, elem, v, elem);
+            number_mul(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -182,7 +182,7 @@ void array_elem_div_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_div(env, elem, v, elem);
+            number_div(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -198,7 +198,7 @@ void array_elem_mod_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_mod(env, elem, v, elem);
+            number_mod(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -214,7 +214,7 @@ void array_elem_and_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_and(env, elem, v, elem);
+            number_and(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -230,7 +230,7 @@ void array_elem_or_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_or(env, elem, v, elem);
+            number_or(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -246,7 +246,7 @@ void array_elem_xor_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_xor(env, elem, v, elem);
+            number_xor(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -262,7 +262,7 @@ void array_elem_lshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_lshift(env, elem, v, elem);
+            number_lshift(elem, v, elem);
         } else {
             val_set_nan(elem);
         }
@@ -278,7 +278,7 @@ void array_elem_rshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
 
     if (elem) {
         if (val_is_number(elem)) {
-            number_rshift(env, elem, v, elem);
+            number_rshift(elem, v, elem);
         } else {
             val_set_nan(elem);
         }

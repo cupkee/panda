@@ -37,6 +37,7 @@ extern const val_t _Undefined;
 extern const val_t _True;
 extern const val_t _False;
 extern const val_t _NaN;
+extern const val_t _Infinity;
 
 /*
  *  Double-precision floating-point number, IEEE 754
@@ -68,30 +69,62 @@ extern const val_t _NaN;
 #define MAKE_TAG(s, t) \
   ((val_t)(s) << 63 | (val_t) 0x7ff0 <<48 | (val_t)(t) <<48)
 
-#define TAG_INFINITE        MAKE_TAG(0, 0)
-#define TAG_FUNC_SCRIPT     MAKE_TAG(1, 1) // define (script) function
-#define TAG_FUNC_NATIVE     MAKE_TAG(1, 2) // static (native) function
-#define TAG_STRING_S        MAKE_TAG(1, 3) // static string
-#define TAG_STRING_I        MAKE_TAG(1, 4) // inline string
-#define TAG_STRING_O        MAKE_TAG(1, 5) // owned (computed) string
-#define TAG_UNDEFINED       MAKE_TAG(1, 6)
-#define TAG_BOOLEAN         MAKE_TAG(1, 7)
-#define TAG_NAN             MAKE_TAG(1, 8)
+#define TYPE_NUM            0       // number or infinity
+#define TYPE_STR_I          1       // string (inner/inline)
+#define TYPE_STR_H          2       // string (heap)
+#define TYPE_STR_F          3       // string (foreign)
+#define TYPE_BOOL           4       // boolean
+#define TYPE_FUNC           5       // function script
+#define TYPE_FUNC_C         6       // function c
+#define TYPE_UND            7       // undefined
+#define TYPE_NAN            8       // not a number
+#define TYPE_ARRAY          9       // array
+#define TYPE_BUF            10      // buffer
+#define TYPE_ERR            11      // error
+#define TYPE_DATE           12      // date
+#define TYPE_OBJ            13      // object
+#define TYPE_OBJ_F          14      // object (foreign)
+#define TYPE_REF            15      // reference to variable
+#define TYPE_MAX            16
 
-#define TAG_DICT            MAKE_TAG(1, 9)
-#define TAG_ARRAY           MAKE_TAG(1, 0xA)
-#define TAG_BUFFER          MAKE_TAG(1, 0xB)
+#define TAG_INFINITE        MAKE_TAG(0, TYPE_NUM)
+#define TAG_STRING_I        MAKE_TAG(1, TYPE_STR_I)
+#define TAG_STRING_H        MAKE_TAG(1, TYPE_STR_H)
+#define TAG_STRING_F        MAKE_TAG(1, TYPE_STR_F)
+#define TAG_BOOLEAN         MAKE_TAG(1, TYPE_BOOL)
+#define TAG_FUNC_SCRIPT     MAKE_TAG(1, TYPE_FUNC)
+#define TAG_FUNC_NATIVE     MAKE_TAG(1, TYPE_FUNC_C)
 
-#define TAG_REFERENCE       MAKE_TAG(1, 0xE)
+#define TAG_UNDEFINED       MAKE_TAG(1, TYPE_UND)
+#define TAG_NAN             MAKE_TAG(1, TYPE_NAN)
 
+#define TAG_ARRAY           MAKE_TAG(1, TYPE_ARRAY)
+#define TAG_BUFFER          MAKE_TAG(1, TYPE_BUF)
+#define TAG_ERROR           MAKE_TAG(1, TYPE_ERR)
+#define TAG_DATE            MAKE_TAG(1, TYPE_DATE)
+#define TAG_OBJECT          MAKE_TAG(1, TYPE_OBJ)
+#define TAG_FOREIGN         MAKE_TAG(1, TYPE_OBJ_F)
+#define TAG_REFERENCE       MAKE_TAG(1, TYPE_REF)
+
+#define NUM_MASK            MAKE_TAG(0, 0xF)
 #define TAG_MASK            MAKE_TAG(1, 0xF)
-#define VAR_MASK            (~MAKE_TAG(1, 0xF))
+#define VAL_MASK            (~MAKE_TAG(1, 0xF))
 
 #define VAL_INFINITE        TAG_INFINITE
 #define VAL_UNDEFINED       TAG_UNDEFINED
 #define VAL_NAN             TAG_NAN
 #define VAL_TRUE            (TAG_BOOLEAN | 1)
 #define VAL_FALSE           (TAG_BOOLEAN)
+
+static inline
+int val_type(val_t *v) {
+    int type = (*v) >> 48;
+    if ((type & 0x7ff0) != 0x7ff0) {
+        return 0;
+    } else {
+        return type & 0xf;
+    }
+}
 
 static inline double val_2_double(val_t *v) {
     return ((valnum_t*)v)->d;
@@ -102,20 +135,23 @@ static inline int val_2_integer(val_t *v) {
 }
 
 static inline intptr_t val_2_intptr(val_t *v) {
-    return (intptr_t)(*v & VAR_MASK);
+    return (intptr_t)(*v & VAL_MASK);
 }
 
 static inline void val_2_reference(val_t *v, uint8_t *id, uint8_t *generation) {
+    uint8_t *p = (uint8_t *)v;
 #if SYS_BYTE_ORDER == LE
-    *id = *(((uint8_t *)v) + 1);
-    *generation = *((uint8_t *)v);
+    *id = p[1]; *generation = p[0];
 #else
-    *id = *(((uint8_t *)v) + 6);
-    *generation = *(((uint8_t *)v) + 7);
+    *id = p[6]; *generation = p[7];
 #endif
 }
 
 #define double_2_val(d) (((valnum_t*)&(d))->v)
+
+static inline int val_is_infinity(val_t *v) {
+    return (*v & NUM_MASK) == TAG_INFINITE;
+}
 
 static inline int val_is_number(val_t *v) {
     return (*v & TAG_INFINITE) != TAG_INFINITE;
@@ -145,20 +181,20 @@ static inline int val_is_boolean(val_t *v) {
     return (*v & TAG_MASK) == TAG_BOOLEAN;
 }
 
-static inline int val_is_owned_string(val_t *v) {
-    return (*v & TAG_MASK) == TAG_STRING_O;
-}
-
-static inline int val_is_static_string(val_t *v) {
-    return (*v & TAG_MASK) == TAG_STRING_S;
-}
-
 static inline int val_is_inline_string(val_t *v) {
     return (*v & TAG_MASK) == TAG_STRING_I;
 }
 
+static inline int val_is_heap_string(val_t *v) {
+    return (*v & TAG_MASK) == TAG_STRING_H;
+}
+
+static inline int val_is_foreign_string(val_t *v) {
+    return (*v & TAG_MASK) == TAG_STRING_F;
+}
+
 static inline int val_is_string(val_t *v) {
-    return val_is_owned_string(v) || val_is_static_string(v) || val_is_inline_string(v);
+    return val_is_heap_string(v) || val_is_foreign_string(v) || val_is_inline_string(v);
 }
 
 static inline const char *val_2_cstring(val_t *v) {
@@ -167,18 +203,18 @@ static inline const char *val_2_cstring(val_t *v) {
     if (t == TAG_STRING_I) {
         return ((const char *)v) + 4;
     } else
-    if (t == TAG_STRING_S) {
+    if (t == TAG_STRING_F) {
         return (const char *) val_2_intptr(v);
     } else
-    if (t == TAG_STRING_O) {
+    if (t == TAG_STRING_H) {
         return (const char *) (val_2_intptr(v) + 3);
     } else {
         return NULL;
     }
 }
 
-static inline int val_is_dictionary(val_t *v) {
-    return (*v & TAG_MASK) == TAG_DICT;
+static inline int val_is_object(val_t *v) {
+    return (*v & TAG_MASK) == TAG_OBJECT;
 }
 
 static inline int val_is_reference(val_t *v) {
@@ -189,15 +225,6 @@ static inline int val_is_array(val_t *v) {
     return (*v & TAG_MASK) == TAG_ARRAY;
 }
 
-static inline int val_is_true(val_t *v) {
-    return val_is_boolean(v) ? val_2_intptr(v) :
-           val_is_number(v)  ? val_2_double(v) != 0 :
-           val_is_string(v)  ? *val_2_cstring(v) :
-           //val_is_function ? function_is_true(val_2_intptr(v)) :
-           //val_is_array(v) ? array_is_true(val_2_intptr(v)) :
-           //val_is_object(v) ? object_is_true(val_2_intptr(v)) :
-           0; // "undefined" and "nan", always be false.
-}
 
 static inline val_t val_mk_number(double d) {
     return double_2_val(d);
@@ -220,18 +247,18 @@ static inline val_t val_mk_native(intptr_t n) {
 }
 
 #define INIT_NATIVE_VAL(n)  (TAG_FUNC_NATIVE | (intptr_t)n)
-#define INIT_STRING_VAL(s)  (TAG_STRING_S | (intptr_t)s)
+#define INIT_STRING_VAL(s)  (TAG_STRING_F | (intptr_t)s)
 
 static inline val_t val_mk_boolean(int v) {
     return TAG_BOOLEAN | (!!v);
 }
 
-static inline val_t val_mk_static_string(intptr_t s) {
-    return TAG_STRING_S | s;
+static inline val_t val_mk_foreign_string(intptr_t s) {
+    return TAG_STRING_F | s;
 }
 
-static inline val_t val_mk_owned_string(intptr_t s) {
-    return TAG_STRING_O | s;
+static inline val_t val_mk_heap_string(intptr_t s) {
+    return TAG_STRING_H | s;
 }
 
 static inline val_t val_mk_array(void *ptr) {
@@ -258,12 +285,12 @@ static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
     *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
-static inline void val_set_string(val_t *p, intptr_t s) {
-    *((uint64_t *)p) = TAG_STRING_S | s;
+static inline void val_set_foreign_string(val_t *p, intptr_t s) {
+    *((uint64_t *)p) = TAG_STRING_F | s;
 }
 
-static inline void val_set_owned_string(val_t *p, intptr_t s) {
-    *((uint64_t *)p) = TAG_STRING_O | s;
+static inline void val_set_heap_string(val_t *p, intptr_t s) {
+    *((uint64_t *)p) = TAG_STRING_H | s;
 }
 
 static inline void val_set_inner_string(val_t *p, char c) {
@@ -283,9 +310,31 @@ static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
 }
 
-static inline void val_set_dictionary(val_t *p, intptr_t d) {
-    *((uint64_t *)p) = TAG_DICT | d;
+static inline void val_set_object(val_t *p, intptr_t d) {
+    *((uint64_t *)p) = TAG_OBJECT | d;
 }
+
+int  val_is_true(val_t *v);
+int  val_is_equal(val_t *a, val_t *b);
+int  val_is_ge(val_t *a, val_t *b);
+int  val_is_gt(val_t *a, val_t *b);
+int  val_is_le(val_t *a, val_t *b);
+int  val_is_lt(val_t *a, val_t *b);
+
+void val_op_neg(val_t *ops);
+void val_op_not(val_t *ops);
+
+typedef void (*val_op_t)(void *, val_t *, val_t *, val_t *);
+void val_op_mul(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_div(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_mod(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_add(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_sub(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_and(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_or (void *env, val_t *a, val_t *b, val_t *r);
+void val_op_xor(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_lshift(void *env, val_t *a, val_t *b, val_t *r);
+void val_op_rshift(void *env, val_t *a, val_t *b, val_t *r);
 
 #endif /* __LANG_VALUE_INC__ */
 

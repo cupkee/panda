@@ -31,32 +31,27 @@ SOFTWARE.
 #include "val.h"
 #include "env.h"
 
-static inline void number_incp(env_t *env, val_t *a, val_t *res) {
-    (void) env;
+static inline void number_incp(val_t *a, val_t *res) {
     val_set_number(a, val_2_double(a) + 1);
     *res = *a;
 }
 
-static inline void number_inc(env_t *env, val_t *a, val_t *res) {
-    (void) env;
+static inline void number_inc(val_t *a, val_t *res) {
     *res = *a;
     val_set_number(a, val_2_double(a) + 1);
 }
 
-static inline void number_decp(env_t *env, val_t *a, val_t *res) {
-    (void) env;
+static inline void number_decp(val_t *a, val_t *res) {
     val_set_number(a, val_2_double(a) - 1);
     *res = *a;
 }
 
-static inline void number_dec(env_t *env, val_t *a, val_t *res) {
-    (void) env;
+static inline void number_dec(val_t *a, val_t *res) {
     *res = *a;
     val_set_number(a, val_2_double(a) - 1);
 }
 
-static inline void number_add(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_add(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_double(a) + val_2_double(b));
     } else {
@@ -64,8 +59,7 @@ static inline void number_add(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_sub(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_sub(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_double(a) - val_2_double(b));
     } else {
@@ -73,8 +67,7 @@ static inline void number_sub(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_mul(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_mul(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_double(a) * val_2_double(b));
     } else {
@@ -82,17 +75,15 @@ static inline void number_mul(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_div(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
-    if (val_is_number(b) && 0 != val_2_double(b)) {
+static inline void number_div(val_t *a, val_t *b, val_t *res) {
+    if (val_is_number(b)) {
         val_set_number(res, val_2_double(a) / val_2_double(b));
     } else {
         val_set_nan(res);
     }
 }
 
-static inline void number_mod(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_mod(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b) && 0 != val_2_integer(b)) {
         val_set_number(res, val_2_integer(a) % val_2_integer(b));
     } else {
@@ -100,8 +91,7 @@ static inline void number_mod(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_and(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_and(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_integer(a) & val_2_integer(b));
     } else {
@@ -109,8 +99,7 @@ static inline void number_and(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_or(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_or(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_integer(a) | val_2_integer(b));
     } else {
@@ -118,8 +107,7 @@ static inline void number_or(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_xor(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_xor(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_integer(a) ^ val_2_integer(b));
     } else {
@@ -127,8 +115,7 @@ static inline void number_xor(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_lshift(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_lshift(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_integer(a) << val_2_integer(b));
     } else {
@@ -136,8 +123,7 @@ static inline void number_lshift(env_t *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void number_rshift(env_t *env, val_t *a, val_t *b, val_t *res) {
-    (void) env;
+static inline void number_rshift(val_t *a, val_t *b, val_t *res) {
     if (val_is_number(b)) {
         val_set_number(res, val_2_integer(a) >> val_2_integer(b));
     } else {

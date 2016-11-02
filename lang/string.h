@@ -58,10 +58,10 @@ static inline int string_len(val_t *s) {
     if (val_is_inline_string(s)) {
         return 1;
     } else
-    if (val_is_static_string(s)) {
+    if (val_is_foreign_string(s)) {
         return strlen((void*)val_2_intptr(s));
     } else
-    if (val_is_owned_string(s)) {
+    if (val_is_heap_string(s)) {
         uint8_t *p = (uint8_t *)val_2_intptr(s);
         return p[1] * 256 + p[2];
     } else {
