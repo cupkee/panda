@@ -50,8 +50,14 @@ static inline val_t *array_values(array_t *a) {
     return a->elems + a->elem_bgn;
 }
 
-static inline int array_length(array_t *a) {
+static inline int array_len(array_t *a) {
     return a->elem_end - a->elem_bgn;
+}
+
+static inline
+val_t *_array_element(val_t *array, int i) {
+    array_t *a = (array_t *)val_2_intptr(array);
+    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
 intptr_t array_create(env_t *env, int ac, val_t *av);
@@ -72,19 +78,15 @@ void array_elem_xor_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
 void array_elem_lshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
 void array_elem_rshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r);
 
+val_t array_length(env_t *env, int ac, val_t *av);
 val_t array_push(env_t *env, int ac, val_t *av);
 val_t array_pop(env_t *env, int ac, val_t *av);
 val_t array_shift(env_t *env, int ac, val_t *av);
 val_t array_unshift(env_t *env, int ac, val_t *av);
 val_t array_foreach(env_t *env, int ac, val_t *av);
 
-static inline
-val_t *_array_element(val_t *array, int i) {
-    array_t *a = (array_t *)val_2_intptr(array);
-    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
-}
-
-
+void array_elem_val(val_t *self, int i, val_t *elem);
+val_t *array_elem_ref(val_t *self, int i);
 
 #endif /* __LANG_ARRAY_INC__ */
 

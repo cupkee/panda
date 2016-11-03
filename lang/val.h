@@ -314,6 +314,9 @@ static inline void val_set_object(val_t *p, intptr_t d) {
     *((uint64_t *)p) = TAG_OBJECT | d;
 }
 
+typedef void (*val_op_t)(void *, val_t *, val_t *, val_t *);
+typedef void (*val_self_op_t)(void *, val_t *, val_t *);
+
 int  val_is_true(val_t *v);
 int  val_is_equal(val_t *a, val_t *b);
 int  val_is_ge(val_t *a, val_t *b);
@@ -321,10 +324,19 @@ int  val_is_gt(val_t *a, val_t *b);
 int  val_is_le(val_t *a, val_t *b);
 int  val_is_lt(val_t *a, val_t *b);
 
+void val_op_prop(void *env, val_t *v, val_t *key, val_t *prop);
+void val_op_elem(void *env, val_t *v, val_t *key, val_t *elem);
+val_t *val_prop_ref(void *env, val_t *v, val_t *name);
+val_t *val_elem_ref(void *env, val_t *v, val_t *id);
+
 void val_op_neg(val_t *ops);
 void val_op_not(val_t *ops);
 
-typedef void (*val_op_t)(void *, val_t *, val_t *, val_t *);
+void val_op_inc (void *env, val_t *self, val_t *res);
+void val_op_incp(void *env, val_t *self, val_t *res);
+void val_op_dec (void *env, val_t *self, val_t *res);
+void val_op_decp(void *env, val_t *self, val_t *res);
+
 void val_op_mul(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_div(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_mod(void *env, val_t *a, val_t *b, val_t *r);

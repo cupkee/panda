@@ -59,7 +59,7 @@ static inline val_t *_array_elem_get(env_t *env, val_t *a, val_t *i) {
     int id = val_2_integer(i);
 
     (void) env;
-    if (id >= 0 && id < array_length(array)) {
+    if (id >= 0 && id < array_len(array)) {
         return array->elems + (array->elem_bgn + id);
     } else {
         return NULL;
@@ -297,7 +297,7 @@ static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
     if (a->elem_size - a->elem_end > n) {
         return a;
     }
-    len = array_length(a);
+    len = array_len(a);
 
     if (a->elem_size -len > n) {
         memmove(a->elems, a->elems + a->elem_bgn, len);
@@ -333,7 +333,7 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
     if (a->elem_bgn > n) {
         return a;
     }
-    len = array_length(a);
+    len = array_len(a);
 
     if (a->elem_size - len > n) {
         n = a->elem_size - a->elem_end;
@@ -370,7 +370,7 @@ val_t array_push(env_t *env, int ac, val_t *av)
         if (a) {
             memcpy(a->elems + a->elem_end, av + 1, sizeof(val_t) * n);
             a->elem_end += n;
-            return val_mk_number(array_length(a));
+            return val_mk_number(array_len(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -387,7 +387,7 @@ val_t array_unshift(env_t *env, int ac, val_t *av)
         if (a) {
             memcpy(a->elems + a->elem_bgn - n, av + 1, sizeof(val_t) * n);
             a->elem_bgn -= n;
-            return val_mk_number(array_length(a));
+            return val_mk_number(array_len(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -400,7 +400,7 @@ val_t array_pop(env_t *env, int ac, val_t *av)
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_length(a)) {
+        if (array_len(a)) {
             return a->elems[--a->elem_end];
         }
     } else {
@@ -414,7 +414,7 @@ val_t array_shift(env_t *env, int ac, val_t *av)
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_length(a)) {
+        if (array_len(a)) {
             return a->elems[a->elem_bgn++];
         }
     } else {
@@ -427,7 +427,7 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av) && val_is_function(av + 1)) {
         array_t *a = (array_t *)val_2_intptr(av);
-        int i, max = array_length(a);
+        int i, max = array_len(a);
 
         for (i = 0; i < max && !env->error; i++) {
             val_t key = val_mk_number(i);
@@ -442,3 +442,39 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
 
     return val_mk_undefined();
 }
+
+val_t array_length(env_t *env, int ac, val_t *av)
+{
+    int len;
+    if (ac > 0 && val_is_array(av)) {
+        array_t *a = (array_t *)val_2_intptr(av);
+        len = array_len(a);
+    } else {
+        len = 0;
+    }
+
+    return val_mk_number(len);
+}
+
+val_t *array_elem_ref(val_t *self, int i)
+{
+    array_t *array = (array_t *) val_2_intptr(self);
+
+    if (i >= 0 && i < array_len(array)) {
+        return array->elems + (array->elem_bgn + i);
+    } else {
+        return NULL;
+    }
+}
+
+void array_elem_val(val_t *self, int i, val_t *elem)
+{
+    val_t *ref = array_elem_ref(self, i);
+
+    if (ref) {
+        *elem = *ref;
+    } else {
+        val_set_undefined(elem);
+    }
+}
+

@@ -384,7 +384,7 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c.a == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a = true;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "--c.a;", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "c.a;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.a;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.y--;", &res) && val_is_nan(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var c = [1];", &res) && val_is_undefined(res));
@@ -399,7 +399,7 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[0] = true;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "--c[0];", &res) && val_is_nan(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "c[0];", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c[0];", &res) && val_is_boolean(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[1]--;", &res) && val_is_nan(res));
 
     env_deinit(&env);

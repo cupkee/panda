@@ -33,13 +33,6 @@ SOFTWARE.
 
 #define MAGIC_STRING    (MAGIC_BASE + 3)
 
-int string_compare(val_t *a, val_t *b);
-
-void string_add(env_t *env, val_t *a, val_t *b, val_t *res);
-void string_at(env_t *env, val_t *a, val_t *b, val_t *res);
-val_t string_length(env_t *env, int ac, val_t *av);
-val_t string_index_of(env_t *env, int ac, val_t *av);
-
 static inline int string_inline_len(val_t *s) {
     (void)s;
     return 1;
@@ -78,6 +71,14 @@ static inline int string_mem_space(intptr_t s) {
 static inline intptr_t string_mem_ptr(intptr_t s) {
     return s + 3;
 }
+
+int string_compare(val_t *a, val_t *b);
+
+void string_add(env_t *env, val_t *a, val_t *b, val_t *res);
+void string_at(env_t *env, val_t *a, val_t *b, val_t *res);
+void string_elem_get(val_t *self, int i, val_t *elem);
+val_t string_length(env_t *env, int ac, val_t *av);
+val_t string_index_of(env_t *env, int ac, val_t *av);
 
 #endif /* __LANG_STRING_INC__ */
 

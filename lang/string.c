@@ -77,6 +77,18 @@ void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
     }
 }
 
+void string_elem_get(val_t *self, int i, val_t *elem)
+{
+    const char *s = val_2_cstring(self);
+    int len = string_len(self);
+
+    if (i >= 0 && i < len) {
+        val_set_inner_string(elem, s[i]);
+    } else {
+        val_set_undefined(elem);
+    }
+}
+
 val_t string_length(env_t *env, int ac, val_t *av)
 {
     if (ac > 0) {

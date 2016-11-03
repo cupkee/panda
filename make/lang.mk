@@ -32,6 +32,7 @@ lang_SRCS = heap.c \
 			compile.c\
 			executable.c \
 			interp.c \
+			number.c \
 			object.c \
 			function.c \
 			array.c \

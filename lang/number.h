@@ -131,5 +131,7 @@ static inline void number_rshift(val_t *a, val_t *b, val_t *res) {
     }
 }
 
+val_t number_to_string(env_t *env, int ac, val_t *av);
+
 #endif /* __LANG_NUMBER_INC__ */
 

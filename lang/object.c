@@ -29,22 +29,9 @@ SOFTWARE.
 #include "object.h"
 
 static object_t object_proto;
-static object_t array_proto;
-static object_t undefined_proto;
-static object_t nan_proto;
-static object_t boolean_proto;
-static object_t number_proto;
-static object_t string_proto;
 
 static intptr_t object_prop_keys[3] = {(intptr_t)"length", (intptr_t)"toString", (intptr_t)"foreach"};
 static val_t object_prop_vals[3];
-
-static intptr_t string_prop_keys[1] = {(intptr_t)"indexOf"};
-static val_t string_prop_vals[1];
-
-static intptr_t array_prop_keys[5]  = {(intptr_t)"push", (intptr_t)"pop", (intptr_t)"shift", (intptr_t)"unshift", (intptr_t)"foreach"};
-static val_t array_prop_vals[5];
-
 
 static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
     val_t *vals;
@@ -115,29 +102,6 @@ static inline void object_static_register(env_t *env, object_t *o) {
     }
 }
 
-static inline object_t *_object_proto_get(val_t *obj) {
-    if (val_is_array(obj)) {
-        return &array_proto;
-    } else
-    if (val_is_number(obj)) {
-        return &number_proto;
-    } else
-    if (val_is_string(obj)) {
-        return &string_proto;
-    } else
-    if (val_is_boolean(obj)) {
-        return &boolean_proto;
-    } else
-    if (val_is_undefined(obj)) {
-        return &undefined_proto;
-    } else
-    if (val_is_nan(obj)) {
-        return &nan_proto;
-    } else {
-        return NULL;
-    }
-}
-
 static val_t object_length(env_t *env, int ac, val_t *av)
 {
     if (ac > 0) {
@@ -147,7 +111,7 @@ static val_t object_length(env_t *env, int ac, val_t *av)
         } else
         if (val_is_array(av)) {
             array_t *a = (array_t *)val_2_intptr(av);
-            return val_mk_number(array_length(a));
+            return val_mk_number(array_len(a));
         } else
         if (val_is_inline_string(av)) {
             return val_mk_number(string_inline_len(av));
@@ -214,6 +178,7 @@ static val_t object_foreach(env_t *env, int ac, val_t *av)
 
     return val_mk_undefined();
 }
+
 void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
 {
     const char *name = val_2_cstring(key);
@@ -223,13 +188,7 @@ void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
         env_set_error(env, ERR_InvalidSementic);
         return;
     }
-
-    if (val_is_object(self)) {
-        obj = (object_t *) val_2_intptr(self);
-    } else {
-        obj = _object_proto_get(self);
-    }
-
+    obj = (object_t *) val_2_intptr(self);
     if (obj) {
         val_t *v = object_find_prop(obj, env_symbal_get(env, name));
         if (v) {
@@ -239,7 +198,6 @@ void object_prop_get(env_t *env, val_t *self, val_t *key, val_t *prop)
         }
     } else {
         val_set_undefined(prop);
-        env_set_error(env, ERR_SysError);
     }
 }
 
@@ -842,12 +800,6 @@ intptr_t object_create(env_t *env, int n, val_t *av)
 int objects_env_init(env_t *env)
 {
     object_t *Object    = &object_proto;
-    object_t *String    = &string_proto;
-    object_t *Number    = &number_proto;
-    object_t *Array     = &array_proto;
-    object_t *Undefined = &undefined_proto;
-    object_t *NaN       = &nan_proto;
-    object_t *Boolean   = &boolean_proto;
 
     object_prop_vals[0] = val_mk_native((intptr_t) object_length);
     object_prop_vals[1] = val_mk_native((intptr_t) object_to_string);
@@ -859,46 +811,55 @@ int objects_env_init(env_t *env)
     Object->vals = object_prop_vals;
     object_static_register(env, &object_proto);
 
-    string_prop_vals[0] = val_mk_native((intptr_t) string_index_of);
-    String->magic = MAGIC_OBJECT_STATIC;
-    String->proto = Object;
-    String->prop_num = 1;
-    String->keys = string_prop_keys;
-    String->vals = string_prop_vals;
-    object_static_register(env, &string_proto);
-
-    array_prop_vals[0] = val_mk_native((intptr_t) array_push);
-    array_prop_vals[1] = val_mk_native((intptr_t) array_pop);
-    array_prop_vals[2] = val_mk_native((intptr_t) array_shift);
-    array_prop_vals[3] = val_mk_native((intptr_t) array_unshift);
-    array_prop_vals[4] = val_mk_native((intptr_t) array_foreach);
-    Array->magic = MAGIC_OBJECT_STATIC;
-    Array->proto = Object;
-    Array->prop_num = 5;
-    Array->keys = array_prop_keys;
-    Array->vals = array_prop_vals;
-    object_static_register(env, &array_proto);
-
-    Number->magic = MAGIC_OBJECT_STATIC;
-    Number->proto = Object;
-    Number->prop_num = 0;
-    object_static_register(env, &number_proto);
-
-    Undefined->magic = MAGIC_OBJECT_STATIC;
-    Undefined->proto = Object;
-    Undefined->prop_num = 0;
-    object_static_register(env, &undefined_proto);
-
-    NaN->magic = MAGIC_OBJECT_STATIC;
-    NaN->proto = Object;
-    NaN->prop_num = 0;
-    object_static_register(env, &nan_proto);
-
-    Boolean->magic = MAGIC_OBJECT_STATIC;
-    Boolean->proto = Object;
-    Boolean->prop_num = 0;
-    object_static_register(env, &boolean_proto);
-
     return env->error;
+}
+
+val_t *object_prop_ref(env_t *env, val_t *self, val_t *key)
+{
+    object_t *obj = (object_t *) val_2_intptr(self);
+    const char *name = val_2_cstring(key);
+    val_t *prop = NULL;
+
+    if (name) {
+        intptr_t sym_id = env_symbal_get(env, name);
+
+        if (sym_id) {
+            prop = object_find_prop_owned(obj, sym_id);
+            if (prop) {
+                return prop;
+            }
+            prop = object_add_prop(env, obj, sym_id);
+        } else {
+            prop = object_add_prop(env, obj, env_symbal_add(env, name));
+        }
+
+        if (prop) {
+            val_set_undefined(prop);
+        }
+    }
+    return prop;
+}
+
+void object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop)
+{
+    const char *name = val_2_cstring(key);
+    object_t *obj;
+
+    if (!name) {
+        val_set_undefined(prop);
+        return;
+    }
+    obj = (object_t *) val_2_intptr(self);
+    if (obj) {
+        val_t *v = object_find_prop(obj, env_symbal_get(env, name));
+        if (v) {
+            *prop = *v;
+        } else {
+            val_set_undefined(prop);
+        }
+    } else {
+        val_set_undefined(prop);
+        env_set_error(env, ERR_SysError);
+    }
 }
 

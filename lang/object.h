@@ -97,6 +97,8 @@ static inline int object_mem_space(object_t *o) {
 };
 
 intptr_t object_create(env_t *env, int n, val_t *av);
+void  object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
+val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
 
 #endif /* __LANG_OBJECT_INC__ */
 
