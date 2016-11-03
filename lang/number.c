@@ -28,5 +28,10 @@ SOFTWARE.
 
 val_t number_to_string(env_t *env, int ac, val_t *av)
 {
+    (void) env;
+    (void) ac;
+    (void) av;
+
     return val_mk_foreign_string((intptr_t)"<number>");
 }
+
