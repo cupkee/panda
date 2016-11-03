@@ -233,6 +233,9 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
 val_t array_length(env_t *env, int ac, val_t *av)
 {
     int len;
+
+    (void) env;
+
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
         len = array_len(a);

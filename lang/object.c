@@ -132,6 +132,9 @@ static val_t object_length(env_t *env, int ac, val_t *av)
 
 static val_t object_to_string(env_t *env, int ac, val_t *obj)
 {
+    (void) env;
+    (void) ac;
+    (void) obj;
     return val_mk_foreign_string((intptr_t)"Object");
 }
 
