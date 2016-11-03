@@ -27,267 +27,6 @@ SOFTWARE.
 #include "array.h"
 #include "interp.h"
 
-intptr_t array_create(env_t *env, int ac, val_t *av)
-{
-    array_t *array;
-    int size = ac < DEF_ELEM_SIZE ? DEF_ELEM_SIZE : ac;
-
-    if (ac > UINT16_MAX) {
-        env_set_error(env, ERR_ResourceOutLimit);
-        return 0;
-    }
-
-    array = env_heap_alloc(env, sizeof(array_t) + sizeof(val_t) * size);
-    if (array) {
-        val_t *vals = (val_t *)(array + 1);
-
-        array->magic = MAGIC_ARRAY;
-        array->age = 0;
-        array->elem_size = size;
-        array->elem_bgn  = 0;
-        array->elem_end  = ac;
-        array->elems = vals;
-
-        memcpy(vals, av, sizeof(val_t) * ac);
-    }
-
-    return (intptr_t) array;
-}
-
-static inline val_t *_array_elem_get(env_t *env, val_t *a, val_t *i) {
-    array_t *array = (array_t *) val_2_intptr(a);
-    int id = val_2_integer(i);
-
-    (void) env;
-    if (id >= 0 && id < array_len(array)) {
-        return array->elems + (array->elem_bgn + id);
-    } else {
-        return NULL;
-    }
-}
-
-void array_elem_get(env_t *env, val_t *a, val_t *i, val_t *res)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-    if (elem) {
-        *res= *elem;
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-void array_elem_set(env_t *env, val_t *a, val_t *i, val_t *v)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-    if (elem) {
-        *elem = *v;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_inc(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            if (pre) {
-                number_incp(elem, res);
-            } else {
-                number_inc(elem, res);
-            }
-            return;
-        } else {
-            val_set_nan(elem);
-        }
-    }
-    val_set_nan(res);
-}
-
-void array_elem_dec(env_t *env, val_t *a, val_t *i, val_t *res, int pre)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            if (pre) {
-                number_decp(elem, res);
-            } else {
-                number_dec(elem, res);
-            }
-            return;
-        } else {
-            val_set_nan(elem);
-        }
-    }
-    val_set_nan(res);
-}
-
-
-void array_elem_add_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_add(elem, v, elem);
-        } else
-        if (val_is_string(elem)) {
-            string_add(env, elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_sub_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_sub(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_mul_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_mul(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_div_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_div(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_mod_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_mod(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_and_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_and(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_or_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_or(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_xor_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_xor(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_lshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_lshift(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
-void array_elem_rshift_set(env_t *env, val_t *a, val_t *i, val_t *v, val_t *r)
-{
-    val_t *elem = _array_elem_get(env, a, i);
-
-    if (elem) {
-        if (val_is_number(elem)) {
-            number_rshift(elem, v, elem);
-        } else {
-            val_set_nan(elem);
-        }
-        *r = *elem;
-    } else {
-        env_set_error(env, ERR_HasNoneElement);
-    }
-}
-
 static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
 {
     array_t *a = (array_t *)val_2_intptr(self);
@@ -358,6 +97,54 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
         } else {
             return NULL;
         }
+    }
+}
+intptr_t array_create(env_t *env, int ac, val_t *av)
+{
+    array_t *array;
+    int size = ac < DEF_ELEM_SIZE ? DEF_ELEM_SIZE : ac;
+
+    if (ac > UINT16_MAX) {
+        env_set_error(env, ERR_ResourceOutLimit);
+        return 0;
+    }
+
+    array = env_heap_alloc(env, sizeof(array_t) + sizeof(val_t) * size);
+    if (array) {
+        val_t *vals = (val_t *)(array + 1);
+
+        array->magic = MAGIC_ARRAY;
+        array->age = 0;
+        array->elem_size = size;
+        array->elem_bgn  = 0;
+        array->elem_end  = ac;
+        array->elems = vals;
+
+        memcpy(vals, av, sizeof(val_t) * ac);
+    }
+
+    return (intptr_t) array;
+}
+
+val_t *array_elem_ref(val_t *self, int i)
+{
+    array_t *array = (array_t *) val_2_intptr(self);
+
+    if (i >= 0 && i < array_len(array)) {
+        return array->elems + (array->elem_bgn + i);
+    } else {
+        return NULL;
+    }
+}
+
+void array_elem_val(val_t *self, int i, val_t *elem)
+{
+    val_t *ref = array_elem_ref(self, i);
+
+    if (ref) {
+        *elem = *ref;
+    } else {
+        val_set_undefined(elem);
     }
 }
 
@@ -454,27 +241,5 @@ val_t array_length(env_t *env, int ac, val_t *av)
     }
 
     return val_mk_number(len);
-}
-
-val_t *array_elem_ref(val_t *self, int i)
-{
-    array_t *array = (array_t *) val_2_intptr(self);
-
-    if (i >= 0 && i < array_len(array)) {
-        return array->elems + (array->elem_bgn + i);
-    } else {
-        return NULL;
-    }
-}
-
-void array_elem_val(val_t *self, int i, val_t *elem)
-{
-    val_t *ref = array_elem_ref(self, i);
-
-    if (ref) {
-        *elem = *ref;
-    } else {
-        val_set_undefined(elem);
-    }
 }
 

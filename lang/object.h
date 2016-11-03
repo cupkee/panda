@@ -49,7 +49,7 @@ typedef struct object_t {
 extern val_t *object_string_ptr;
 
 int objects_env_init(env_t *env);
-
+/*
 void object_prop_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 
@@ -91,6 +91,7 @@ void object_elem_lshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val
 
 void object_prop_rshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
 void object_elem_rshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
+*/
 
 static inline int object_mem_space(object_t *o) {
     return SIZE_ALIGN(sizeof(object_t) + (sizeof(intptr_t) + sizeof(val_t)) * o->prop_size);
