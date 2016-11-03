@@ -38,11 +38,15 @@ const val_t _NaN       = TAG_NAN;
 
 static void def_elem_get(val_t *self, int index, val_t *elem)
 {
+    (void) self;
+    (void) index;
     val_set_undefined(elem);
 }
 
 static val_t *def_elem_ref(val_t *self, int index)
 {
+    (void) self;
+    (void) index;
     return NULL;
 }
 
@@ -507,6 +511,7 @@ void val_op_not(val_t *ops)
 
 void val_op_inc(void *env, val_t *op1, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_inc(op1, res); break;
     case TYPE_STR_I:
@@ -529,6 +534,7 @@ void val_op_inc(void *env, val_t *op1, val_t *res)
 
 void val_op_incp(void *env, val_t *op1, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_incp(op1, res); break;
     case TYPE_STR_I:
@@ -551,6 +557,7 @@ void val_op_incp(void *env, val_t *op1, val_t *res)
 
 void val_op_dec(void *env, val_t *op1, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_dec(op1, res); break;
     case TYPE_STR_I:
@@ -573,6 +580,7 @@ void val_op_dec(void *env, val_t *op1, val_t *res)
 
 void val_op_decp(void *env, val_t *op1, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_decp(op1, res); break;
     case TYPE_STR_I:
@@ -595,6 +603,7 @@ void val_op_decp(void *env, val_t *op1, val_t *res)
 
 void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_mul(op1, op2, res); break;
     case TYPE_STR_I:
@@ -617,6 +626,7 @@ void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_div(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_div(op1, op2, res); break;
     case TYPE_STR_I:
@@ -639,6 +649,7 @@ void val_op_div(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_mod(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_mod(op1, op2, res); break;
     case TYPE_STR_I:
@@ -683,6 +694,7 @@ void val_op_add(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_sub(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_sub(op1, op2, res); break;
     case TYPE_STR_I:
@@ -705,6 +717,7 @@ void val_op_sub(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_and(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_and(op1, op2, res); break;
     case TYPE_STR_I:
@@ -727,6 +740,7 @@ void val_op_and(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_or(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_or(op1, op2, res); break;
     case TYPE_STR_I:
@@ -749,6 +763,7 @@ void val_op_or(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_xor(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_xor(op1, op2, res); break;
     case TYPE_STR_I:
@@ -771,6 +786,7 @@ void val_op_xor(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_lshift(op1, op2, res); break;
     case TYPE_STR_I:
@@ -793,6 +809,7 @@ void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
 
 void val_op_rshift(void *env, val_t *op1, val_t *op2, val_t *res)
 {
+    (void) env;
     switch(val_type(op1)) {
     case TYPE_NUM:   number_rshift(op1, op2, res); break;
     case TYPE_STR_I:
