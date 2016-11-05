@@ -36,6 +36,276 @@ const val_t _True      = TAG_BOOLEAN + 1;
 const val_t _False     = TAG_BOOLEAN;
 const val_t _NaN       = TAG_NAN;
 
+static inline int foreign_is_true(val_t *v) {
+    val_foreign_t *vf = (val_foreign_t *)val_2_intptr(v);
+
+    if (vf && vf->op && vf->op->is_true) {
+        return vf->op->is_true(vf->data);
+    } else {
+        return 0;
+    }
+}
+
+static inline int foreign_is_equal(val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->is_equal) {
+        return f->op->is_equal(f->data, b);
+    } else {
+        return 0;
+    }
+}
+
+static inline int foreign_is_gt(val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->is_gt) {
+        return f->op->is_gt(f->data, b);
+    } else {
+        return 0;
+    }
+}
+
+static inline int foreign_is_ge(val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->is_ge) {
+        return f->op->is_ge(f->data, b);
+    } else {
+        return 0;
+    }
+}
+
+static inline int foreign_is_lt(val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->is_lt) {
+        return f->op->is_lt(f->data, b);
+    } else {
+        return 0;
+    }
+}
+
+static inline int foreign_is_le(val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->is_le) {
+        return f->op->is_le(f->data, b);
+    } else {
+        return 0;
+    }
+}
+
+static inline void foreign_neg(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->neg) {
+        return f->op->neg(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_not(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->not) {
+        return f->op->not(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_inc(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->inc) {
+        return f->op->inc(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_incp(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->incp) {
+        return f->op->incp(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_dec(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->dec) {
+        return f->op->dec(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_decp(void *env, val_t *a, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->decp) {
+        return f->op->decp(env, f->data, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_mul(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->mul) {
+        f->op->mul(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_div(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->div) {
+        f->op->div(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_mod(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->mod) {
+        f->op->mod(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_add(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->add) {
+        f->op->add(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_sub(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->sub) {
+        f->op->sub(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_and(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->and) {
+        f->op->and(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_or(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->or) {
+        f->op->or(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_xor(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->xor) {
+        f->op->xor(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_rshift(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->rshift) {
+        f->op->rshift(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_lshift(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->lshift) {
+        f->op->lshift(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->set) {
+        f->op->set(env, f->data, b, res);
+    } else {
+        *res = *b;
+    }
+}
+
+static inline void foreign_prop(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->prop) {
+        f->op->prop(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline void foreign_elem(void *env, val_t *a, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->elem) {
+        f->op->elem(env, f->data, b, res);
+    } else {
+        val_set_undefined(res);
+    }
+}
+
+static inline val_t *foreign_prop_ref(void *env, val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->prop_ref) {
+        return f->op->prop_ref(env, f->data, b);
+    } else {
+        return NULL;
+    }
+}
+
+static inline val_t *foreign_elem_ref(void *env, val_t *a, val_t *b) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+
+    if (f && f->op && f->op->elem_ref) {
+        return f->op->elem_ref(env, f->data, b);
+    } else {
+        return NULL;
+    }
+}
+
 static void def_elem_get(val_t *self, int index, val_t *elem)
 {
     (void) self;
@@ -262,7 +532,7 @@ static const type_desc_t *const type_descs[] = {
     [TYPE_ERR]    = &type_desc_err,
     [TYPE_DATE]   = &type_desc_date,
     [TYPE_OBJ]    = &type_desc_obj,
-    [TYPE_OBJ_F]  = &type_desc_foreign,
+    [TYPE_FOREIGN]  = &type_desc_foreign,
 };
 
 static const prop_desc_t *prop_desc_get(const prop_desc_t *descs, int max, val_t *key)
@@ -318,8 +588,8 @@ int val_is_true(val_t *v)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
+    case TYPE_OBJ:      return 0;
+    case TYPE_FOREIGN:  return foreign_is_true(v);
     default: return 0;
     }
 }
@@ -331,6 +601,9 @@ int val_is_equal(val_t *a, val_t *b)
     } else {
         if (val_is_string(a)) {
             return string_compare(a, b) == 0;
+        } else
+        if (val_is_foreign(a)) {
+            return foreign_is_equal(a, b);
         } else {
             return 0;
         }
@@ -353,8 +626,8 @@ int val_is_ge(val_t *op1, val_t *op2)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
+    case TYPE_OBJ:      return 0;
+    case TYPE_FOREIGN:  return foreign_is_ge(op1, op2);
     default: return 0;
     }
 }
@@ -375,8 +648,8 @@ int val_is_gt(val_t *op1, val_t *op2)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
+    case TYPE_OBJ:      return 0;
+    case TYPE_FOREIGN:  return foreign_is_gt(op1, op2);
     default: return 0;
     }
 }
@@ -397,8 +670,8 @@ int val_is_le(val_t *op1, val_t *op2)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
+    case TYPE_OBJ:      return 0;
+    case TYPE_FOREIGN:  return foreign_is_le(op1, op2);
     default: return 0;
     }
 }
@@ -419,101 +692,17 @@ int val_is_lt(val_t *op1, val_t *op2)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
+    case TYPE_OBJ:      return 0;
+    case TYPE_FOREIGN:  return foreign_is_lt(op1, op2);
     default: return 0;
     }
 }
 
-static void foreign_prop_val(val_t *self, val_t *key, val_t *prop)
-{
-    (void) self;
-    (void) key;
-    val_set_undefined(prop);
-}
-
-void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)
-{
-    int type = val_type(self);
-
-    if (type == TYPE_OBJ) {
-        object_prop_val(env, self, key, prop);
-    } else
-    if (type == TYPE_OBJ_F) {
-        foreign_prop_val(self, key, prop);
-    } else {
-        type_prop_val(type, key, prop);
-    }
-}
-
-void val_op_elem(void *env, val_t *self, val_t *key, val_t *prop)
-{
-    int type = val_type(self);
-
-    if (val_is_number(key)) {
-        type_elem_val(type, self, val_2_integer(key), prop);
-    } else {
-        if (type == TYPE_OBJ) {
-            object_prop_val(env, self, key, prop);
-        } else
-        if (type == TYPE_OBJ_F) {
-            foreign_prop_val(self, key, prop);
-        } else {
-            type_prop_val(type, key, prop);
-        }
-    }
-}
-
-val_t *val_prop_ref(void *env, val_t *self, val_t *key)
-{
-    int type = val_type(self);
-
-    if (type == TYPE_OBJ) {
-        return object_prop_ref(env, self, key);
-    } else {
-        return NULL;
-    }
-}
-
-
-val_t * val_elem_ref(void *env, val_t *self, val_t *id)
-{
-    int type = val_type(self);
-
-    if (val_is_number(id)) {
-        return type_elem_ref(type, self, val_2_integer(id));
-    } else {
-        if (type == TYPE_OBJ) {
-            return object_prop_ref(env, self, id);
-        } else {
-            return NULL;
-        }
-    }
-}
-
-void val_op_neg(val_t *ops)
-{
-    if (val_is_number(ops)) {
-        return val_set_number(ops, -val_2_double(ops));
-    } else {
-        return val_set_nan(ops);
-    }
-}
-
-void val_op_not(val_t *ops)
-{
-    if (val_is_number(ops)) {
-        return val_set_number(ops, ~val_2_integer(ops));
-    } else {
-        return val_set_nan(ops);
-    }
-}
-
-void val_op_inc(void *env, val_t *op1, val_t *res)
+void val_op_neg(void *env, val_t *ops)
 {
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_inc(op1, res); break;
+    switch(val_type(ops)) {
+    case TYPE_NUM:      val_set_number(ops, -val_2_double(ops)); break;
     case TYPE_STR_I:
     case TYPE_STR_H:
     case TYPE_STR_F:
@@ -526,9 +715,57 @@ void val_op_inc(void *env, val_t *op1, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(ops); break;
+    case TYPE_FOREIGN:
+    default:
+                        foreign_neg(env, ops, ops);
+    }
+}
+
+void val_op_not(void *env, val_t *ops)
+{
+    (void) env;
+    switch(val_type(ops)) {
+    case TYPE_NUM:      val_set_number(ops, ~val_2_integer(ops)); break;
+    case TYPE_STR_I:
+    case TYPE_STR_H:
+    case TYPE_STR_F:
+    case TYPE_BOOL:
+    case TYPE_FUNC:
+    case TYPE_FUNC_C:
+    case TYPE_UND:
+    case TYPE_NAN:
+    case TYPE_ARRAY:
+    case TYPE_BUF:
+    case TYPE_ERR:
+    case TYPE_DATE:
+    case TYPE_OBJ:      val_set_nan(ops); break;
+    case TYPE_FOREIGN:
+    default:
+                        foreign_not(env, ops, ops); break;
+    }
+}
+
+void val_op_inc(void *env, val_t *op1, val_t *res)
+{
+    (void) env;
+    switch(val_type(op1)) {
+    case TYPE_NUM:      number_inc(op1, res); break;
+    case TYPE_STR_I:
+    case TYPE_STR_H:
+    case TYPE_STR_F:
+    case TYPE_BOOL:
+    case TYPE_FUNC:
+    case TYPE_FUNC_C:
+    case TYPE_UND:
+    case TYPE_NAN:
+    case TYPE_ARRAY:
+    case TYPE_BUF:
+    case TYPE_ERR:
+    case TYPE_DATE:
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_inc(env, op1, res);
     }
 }
 
@@ -549,9 +786,9 @@ void val_op_incp(void *env, val_t *op1, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_incp(env, op1, res);
     }
 }
 
@@ -572,9 +809,9 @@ void val_op_dec(void *env, val_t *op1, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_dec(env, op1, res);
     }
 }
 
@@ -595,9 +832,9 @@ void val_op_decp(void *env, val_t *op1, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_decp(env, op1, res);
     }
 }
 
@@ -605,7 +842,7 @@ void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
 {
     (void) env;
     switch(val_type(op1)) {
-    case TYPE_NUM:   number_mul(op1, op2, res); break;
+    case TYPE_NUM:      number_mul(op1, op2, res); break;
     case TYPE_STR_I:
     case TYPE_STR_H:
     case TYPE_STR_F:
@@ -618,9 +855,9 @@ void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_mul(env, op1, op2, res);
     }
 }
 
@@ -641,9 +878,9 @@ void val_op_div(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_div(env, op1, op2, res);
     }
 }
 
@@ -664,9 +901,9 @@ void val_op_mod(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_mod(env, op1, op2, res);
     }
 }
 
@@ -686,9 +923,9 @@ void val_op_add(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_add(env, op1, op2, res);
     }
 }
 
@@ -709,9 +946,9 @@ void val_op_sub(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_sub(env, op1, op2, res);
     }
 }
 
@@ -732,9 +969,9 @@ void val_op_and(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_and(env, op1, op2, res);
     }
 }
 
@@ -755,9 +992,9 @@ void val_op_or(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_or(env, op1, op2, res);
     }
 }
 
@@ -778,15 +1015,16 @@ void val_op_xor(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_xor(env, op1, op2, res);
     }
 }
 
 void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
 {
     (void) env;
+
     switch(val_type(op1)) {
     case TYPE_NUM:   number_lshift(op1, op2, res); break;
     case TYPE_STR_I:
@@ -801,9 +1039,9 @@ void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_lshift(env, op1, op2, res);
     }
 }
 
@@ -824,8 +1062,99 @@ void val_op_rshift(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:
-    case TYPE_OBJ_F:
-    default: val_set_nan(res);
+    case TYPE_OBJ:      val_set_nan(res); break;
+    case TYPE_FOREIGN:
+    default:            foreign_rshift(env, op1, op2, res);
     }
 }
+
+void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)
+{
+    int type = val_type(self);
+
+    if (type == TYPE_OBJ) {
+        object_prop_val(env, self, key, prop);
+    } else
+    if (type == TYPE_FOREIGN) {
+        foreign_prop(env, self, key, prop);
+    } else {
+        type_prop_val(type, key, prop);
+    }
+}
+
+void val_op_elem(void *env, val_t *self, val_t *key, val_t *prop)
+{
+    int type = val_type(self);
+
+    if (type == TYPE_OBJ) {
+        object_prop_val(env, self, key, prop);
+    } else
+    if (type == TYPE_FOREIGN) {
+        foreign_elem(env, self, key, prop);
+    } else {
+        if (val_is_number(key)) {
+            type_elem_val(type, self, val_2_integer(key), prop);
+        } else {
+            type_prop_val(type, key, prop);
+        }
+    }
+}
+
+void val_op_set(void *env, val_t *a, val_t *b, val_t *r)
+{
+    if (!val_is_foreign(a)) {
+        *r = *a = *b;
+    } else {
+        foreign_set(env, a, b, r);
+    }
+}
+
+val_t *val_prop_ref(void *env, val_t *self, val_t *key)
+{
+    int type = val_type(self);
+
+    if (type == TYPE_OBJ) {
+        return object_prop_ref(env, self, key);
+    } else
+    if (type == TYPE_FOREIGN) {
+        return foreign_prop_ref(env, self, key);
+    } else {
+        return NULL;
+    }
+}
+
+
+val_t *val_elem_ref(void *env, val_t *self, val_t *id)
+{
+    int type = val_type(self);
+
+    if (type == TYPE_OBJ) {
+        return object_prop_ref(env, self, id);
+    } else
+    if (type == TYPE_FOREIGN) {
+        return foreign_elem_ref(env, self, id);
+    } else {
+        if (val_is_number(id)) {
+            return type_elem_ref(type, self, val_2_integer(id));
+        } else {
+            return NULL;
+        }
+    }
+}
+
+val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data)
+{
+    val_foreign_t *vf = env_heap_alloc(env, SIZE_ALIGN(sizeof(val_foreign_t)));
+
+    if (vf) {
+        vf->magic = MAGIC_FOREIGN;
+        vf->age = 0;
+        vf->op = op;
+        vf->data = data;
+        return val_mk_foreign((intptr_t)vf);
+    } else {
+        env_set_error(env, ERR_NotEnoughMemory);
+        return VAL_UNDEFINED;
+    }
+}
+

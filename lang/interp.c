@@ -151,11 +151,11 @@ static inline void interp_elem_op_set(env_t *env, val_op_t operate) {
 
 
 static inline void interp_neg(env_t *env) {
-    val_op_neg(env_stack_peek(env));
+    val_op_neg(env, env_stack_peek(env));
 }
 
 static inline void interp_not(env_t *env) {
-    val_op_not(env_stack_peek(env));
+    val_op_not(env, env_stack_peek(env));
 }
 
 static inline void interp_logic_not(env_t *env) {
@@ -210,11 +210,11 @@ static inline void interp_set(env_t *env) {
     val_t *ref = rht + 1;
     val_t *lft = interp_var_ref(env, ref);
     if (lft) {
-        *ref = *lft = *rht;
-        env_stack_pop(env);
+        val_op_set(env, lft, rht, ref);
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
+    env_stack_pop(env);
 }
 
 static inline const uint8_t *interp_call(env_t *env, int ac, const uint8_t *pc) {

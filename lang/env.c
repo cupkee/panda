@@ -570,6 +570,20 @@ static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
     return (intptr_t) dup;
 }
 
+static intptr_t heap_dup_foreign(heap_t *heap, val_foreign_t *foreign)
+{
+    int size = foreign_mem_space(foreign);
+    void *dup = heap_alloc(heap, size);
+
+    //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
+    //printf("[str size: %d, '%s']", size, (char *)str + 3);
+    memcpy(dup, (void*)foreign, size);
+    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
+
+    ADDR_VALUE(foreign) = dup;
+    return (intptr_t) dup;
+}
+
 static intptr_t heap_dup_function(heap_t *heap, intptr_t func)
 {
     function_t *dup = heap_alloc(heap, function_mem_space((function_t*)func));
@@ -601,7 +615,7 @@ static scope_t *env_heap_copy_scope(heap_t *heap, scope_t *scope)
 
 static object_t *env_heap_copy_object(heap_t *heap, object_t *obj)
 {
-    if (!obj || obj->magic == MAGIC_OBJECT_STATIC || heap_is_owned(heap, obj)) {
+    if (!obj || MAGIC_BYTE(obj) == MAGIC_OBJECT_STATIC || heap_is_owned(heap, obj)) {
         //printf("[object is nil or owned or static: %p]", obj);
         return obj;
     }
@@ -650,6 +664,24 @@ static intptr_t env_heap_copy_string(heap_t *heap, intptr_t str)
     return heap_dup_string(heap, str);
 }
 
+static intptr_t env_heap_copy_foreign(heap_t *heap, val_foreign_t *foreign)
+{
+    if (!foreign || heap_is_owned(heap, foreign)) {
+        //printf("[string is nil or owned: %lx]", str);
+        return (intptr_t) foreign;
+    }
+
+    if (MAGIC_BYTE(foreign) != MAGIC_FOREIGN) {
+        //printf("[string had copy to: %p]", ADDR_VALUE(str));
+        return (intptr_t) ADDR_VALUE(foreign);
+    }
+    //intptr_t dup = heap_dup_string(heap, str);
+    //printf("[string(%lx) copy to: %lx]", str, dup);
+    //return dup;
+
+    return heap_dup_foreign(heap, foreign);
+}
+
 static intptr_t env_heap_copy_function(heap_t *heap, intptr_t func)
 {
     if (!func || heap_is_owned(heap, (void *)func)) {
@@ -672,8 +704,6 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
 {
     int i = 0;
 
-    //printf("%s(%p, %d, %p)\n", __func__, heap, vc, vp);
-
     while (i < vc) {
         val_t *v = vp + i;
 
@@ -692,6 +722,9 @@ static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
         } else
         if (val_is_array(v)) {
             val_set_array(v, (intptr_t)env_heap_copy_array(heap, (array_t *)val_2_intptr(v)));
+        } else
+        if (val_is_foreign(v)) {
+            val_set_foreign(v, (intptr_t)env_heap_copy_foreign(heap, (val_foreign_t *)val_2_intptr(v)));
         }
         i++;
     }
@@ -706,14 +739,10 @@ static void env_heap_gc_init(env_t *env)
     heap_reset(heap);
 
     if (env->ref_num && env->ref_ent) {
-    //printf("reference: %p", env->ref_ent);
         env_heap_copy_vals(heap, env->ref_num, env->ref_ent);
-    //printf("\n");
     }
 
-    //printf("Current socpe: %p", env->scope);
     env->scope = env_heap_copy_scope(heap, env->scope);
-    //printf("\n");
 
     fp = env->fp, sp = env->sp, ss = env->ss;
     sb = env->sb;
@@ -724,10 +753,8 @@ static void env_heap_gc_init(env_t *env)
         } else {
             frame_t *frame = (frame_t *)(sb + fp);
 
-            //printf("frame socpe: %p", (scope_t*)frame->scope);
-            frame->scope = (intptr_t)env_heap_copy_scope(heap, (scope_t *)frame->scope);
-            //printf("\n");
             env_heap_copy_vals(heap, fp - sp, sb + sp);
+            frame->scope = (intptr_t)env_heap_copy_scope(heap, (scope_t *)frame->scope);
 
             fp = frame->fp;
             sp = frame->sp;
@@ -789,6 +816,9 @@ static void env_heap_gc_scan(env_t *env)
 
             break;
             }
+        case MAGIC_FOREIGN:
+            scan += foreign_mem_space((val_foreign_t *) (base + scan));
+            break;
         default: break;
         }
     }
@@ -798,18 +828,9 @@ void env_heap_gc(env_t *env, int level)
 {
     (void) level;
 
-    //printf("heap used: %d\n", env->heap->free);
     env_heap_gc_init(env);
     env_heap_gc_scan(env);
-
-    /*
-     * Todo:
-     * this line is not useable looked, but will cause test fail if deleted! Fix it!
-     */
-    heap_clean(env->heap);
-
     env->heap = env_heap_get_free(env);
-    //printf("heap zipd: %d\n", env->heap->free);
 
     if (env->gc_callback) {
         env->gc_callback();

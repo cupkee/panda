@@ -46,60 +46,15 @@ typedef struct object_t {
     val_t    *vals;
 } object_t;
 
-extern val_t *object_string_ptr;
-
 int objects_env_init(env_t *env);
-/*
-void object_prop_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
-void object_elem_get(env_t *env, val_t *obj, val_t *key, val_t *prop);
 
-void object_prop_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
-void object_elem_set(env_t *env, val_t *obj, val_t *key, val_t *prop);
-
-void object_prop_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
-void object_elem_inc(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
-
-void object_prop_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
-void object_elem_dec(env_t *env, val_t *self, val_t *key, val_t *res, int pre);
-
-void object_prop_add_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_add_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_sub_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_sub_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_mul_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_mul_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_div_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_div_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_mod_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_mod_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_and_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_and_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_or_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_or_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_xor_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_xor_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_lshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_lshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-
-void object_prop_rshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-void object_elem_rshift_set(env_t *env, val_t *obj, val_t *key, val_t *prop, val_t *res);
-*/
+intptr_t object_create(env_t *env, int n, val_t *av);
+void   object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
+val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
 
 static inline int object_mem_space(object_t *o) {
     return SIZE_ALIGN(sizeof(object_t) + (sizeof(intptr_t) + sizeof(val_t)) * o->prop_size);
 };
-
-intptr_t object_create(env_t *env, int n, val_t *av);
-void  object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
-val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
 
 #endif /* __LANG_OBJECT_INC__ */
 
