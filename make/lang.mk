@@ -39,8 +39,8 @@ lang_SRCS = heap.c \
 			array.c \
 			string.c
 
-lang_CPPFLAGS = -I..
-lang_CFLAGS   = -g -Wall -Werror
+lang_CPPFLAGS = -I.. -Wall -Wundef
+lang_CFLAGS   = -g -Werror
 lang_LDFLAGS  =
 
 VPATH = ${BASE}/lang

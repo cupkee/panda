@@ -100,6 +100,8 @@ void string_elem_get(val_t *self, int i, val_t *elem)
 
 val_t string_length(env_t *env, int ac, val_t *av)
 {
+    (void) env;
+
     if (ac > 0) {
         return val_mk_number(string_len(av));
     } else {

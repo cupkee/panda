@@ -87,6 +87,5 @@ $(foreach lib,${lib_NAMES},$(eval $(call build_lib_rule,${lib})))
 
 $(foreach bin,${bin_NAMES},$(eval $(call build_prog_rule,${bin})))
 
-
 .PHONY: clean bin lib all
 
