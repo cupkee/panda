@@ -262,7 +262,7 @@ static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
     if (f && f->op && f->op->set) {
         f->op->set(env, f->data, b, res);
     } else {
-        *res = *b;
+        *res = *a = *b;
     }
 }
 
@@ -584,11 +584,11 @@ int val_is_true(val_t *v)
     case TYPE_FUNC_C:   return 1;
     case TYPE_UND:
     case TYPE_NAN:      return 0;
-    case TYPE_ARRAY:
+    case TYPE_ARRAY:    return array_is_true(v);
     case TYPE_BUF:
     case TYPE_ERR:
-    case TYPE_DATE:
-    case TYPE_OBJ:      return 0;
+    case TYPE_DATE:     return 0;
+    case TYPE_OBJ:      return object_is_true(v);
     case TYPE_FOREIGN:  return foreign_is_true(v);
     default: return 0;
     }
@@ -1155,6 +1155,23 @@ val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data)
     } else {
         env_set_error(env, ERR_NotEnoughMemory);
         return VAL_UNDEFINED;
+    }
+}
+
+int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t data, val_t *foreign)
+{
+    val_foreign_t *vf = env_heap_alloc(env, SIZE_ALIGN(sizeof(val_foreign_t)));
+
+    if (vf) {
+        vf->magic = MAGIC_FOREIGN;
+        vf->age = 0;
+        vf->op = op;
+        vf->data = data;
+        val_set_foreign(foreign, (intptr_t)vf);
+        return 0;
+    } else {
+        env_set_error(env, ERR_NotEnoughMemory);
+        return -1;
     }
 }
 

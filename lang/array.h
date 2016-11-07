@@ -46,6 +46,11 @@ static inline int array_mem_space(array_t *a) {
     return SIZE_ALIGN(sizeof(array_t) + sizeof(val_t) * a->elem_size);
 }
 
+static inline int array_is_true(val_t *v) {
+    array_t *a = (array_t *)val_2_intptr(v);
+    return a->elem_end - a->elem_bgn > 0 ? 1 : 0;
+}
+
 static inline val_t *array_values(array_t *a) {
     return a->elems + a->elem_bgn;
 }

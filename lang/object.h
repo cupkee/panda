@@ -46,8 +46,17 @@ typedef struct object_t {
     val_t    *vals;
 } object_t;
 
+typedef struct object_iter_t {
+    object_t *obj;
+    int       cur;
+} object_iter_t;
+
 int objects_env_init(env_t *env);
 
+static inline int object_is_true(val_t *v) {
+    object_t *o = (object_t *)val_2_intptr(v);
+    return o->prop_num;
+};
 intptr_t object_create(env_t *env, int n, val_t *av);
 void   object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
 val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
@@ -55,6 +64,25 @@ val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
 static inline int object_mem_space(object_t *o) {
     return SIZE_ALIGN(sizeof(object_t) + (sizeof(intptr_t) + sizeof(val_t)) * o->prop_size);
 };
+
+static inline void _object_iter_init(object_iter_t *it, object_t *obj) {
+    it->obj = obj;
+    it->cur = 0;
+};
+
+static inline int _object_iter_next(object_iter_t *it, const char **name, val_t **v)
+{
+    if (it->cur < it->obj->prop_num) {
+        int id = it->cur++;
+
+        *name = (const char *)(it->obj->keys[id]);
+        *v = it->obj->vals + id;
+
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 #endif /* __LANG_OBJECT_INC__ */
 

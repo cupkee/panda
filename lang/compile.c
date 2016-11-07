@@ -116,7 +116,6 @@ static void *compile_malloc(compile_t *cpl, int size)
     size += sizeof(intptr_t) * 2;
     size = SIZE_ALIGN(size);
 
-    //printf("compile alloc: %d, size: %u, free: %u\n", size, cpl->heap.size, cpl->heap.free);
     if (cpl->heap.free + size + keep_size > cpl->heap.size) {
         compile_gc(cpl);
         if (cpl->heap.free + size + keep_size > cpl->heap.size) {
@@ -138,21 +137,23 @@ static inline intptr_t *compile_mem_head(void *mem) {
 static void compile_gc(compile_t *cpl)
 {
     intptr_t *keep_tbl = (intptr_t *)(cpl->heap.base + cpl->heap.free);
-    int keep_num = cpl->func_num * 2 + 1;
     intptr_t *head;
     int i, n, free = 0;
 
     keep_tbl[0] = (intptr_t) compile_mem_head(cpl->func_buf);
     for (i = 0, n = 1; i < cpl->func_num; i++) {
-        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].var_map);
-        keep_tbl[n++] = (intptr_t)compile_mem_head(cpl->func_buf[i].code_buf);
+        compile_func_t *fn = cpl->func_buf + i;
+        if (fn->var_map)
+            keep_tbl[n++] = (intptr_t)compile_mem_head(fn->var_map);
+        if (fn->code_buf)
+            keep_tbl[n++] = (intptr_t)compile_mem_head(fn->code_buf);
     }
 
     /*
      * compute & recorde new address
      */
-    heap_sort(keep_tbl, keep_num);
-    for (i = 0; i < keep_num; i++) {
+    heap_sort(keep_tbl, n);
+    for (i = 0; i < n; i++) {
         head = (intptr_t *)(keep_tbl[i]);
 
         head[1] = (intptr_t)cpl->heap.base + free;
@@ -165,17 +166,23 @@ static void compile_gc(compile_t *cpl)
     head = compile_mem_head(cpl->func_buf);
     cpl->func_buf = (compile_func_t *) (head[1] + sizeof(intptr_t) * 2);
     for (i = 0; i < cpl->func_num; i++) {
-        head = compile_mem_head(cpl->func_buf[i].var_map);
-        cpl->func_buf[i].var_map = (intptr_t *)(head[1] + sizeof(intptr_t) * 2);
+        compile_func_t *fn = cpl->func_buf + i;
 
-        head = compile_mem_head(cpl->func_buf[i].code_buf);
-        cpl->func_buf[i].code_buf = (uint8_t *)(head[1] + sizeof(intptr_t) * 2);
+        if (fn->var_map) {
+            head = compile_mem_head(fn->var_map);
+            fn->var_map = (intptr_t *)(head[1] + sizeof(intptr_t) * 2);
+        }
+
+        if (fn->code_buf) {
+            head = compile_mem_head(fn->code_buf);
+            fn->code_buf = (uint8_t *)(head[1] + sizeof(intptr_t) * 2);
+        }
     }
 
     /*
      * data relocation
      */
-    for (i = 0; i < keep_num; i++) {
+    for (i = 0; i < n; i++) {
         head = (intptr_t *)(keep_tbl[i]);
         memmove((void*)(head[1]), head, head[0]);
     }
@@ -827,11 +834,12 @@ static void compile_arg_list(compile_t *cpl, expr_t *e, int *ac)
 static void compile_stmt_block(compile_t *cpl, stmt_t *s)
 {
     while(s && !cpl->error) {
-        compile_stmt(cpl, s);
-        if (s->type == STMT_EXPR) {
-            compile_code_append(cpl, BC_POP);
+        if (0 == compile_stmt(cpl, s)) {
+            if (s->type == STMT_EXPR) {
+                compile_code_append(cpl, BC_POP);
+            }
+            s = s->next;
         }
-        s = s->next;
     }
 }
 
@@ -1106,7 +1114,6 @@ static void compile_expr(compile_t *cpl, expr_t *e)
 static void compile_stmt_expr(compile_t *cpl, stmt_t *s)
 {
     compile_expr(cpl, s->expr);
-//    compile_code_append(cpl, BC_POP_RESULT);
 }
 
 static void compile_stmt_return(compile_t *cpl, stmt_t *s)

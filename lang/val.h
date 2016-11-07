@@ -416,6 +416,7 @@ void val_op_rshift(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_set(void *env, val_t *a, val_t *b, val_t *r);
 
 val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data);
+int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t data, val_t *foreign);
 
 static inline
 int foreign_mem_space(val_foreign_t *foreign) {
