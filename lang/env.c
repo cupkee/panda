@@ -27,6 +27,7 @@ SOFTWARE.
 #include "string.h"
 #include "array.h"
 #include "function.h"
+#include "gc.h"
 
 #define VACATED     (-1)
 #define FRAME_SIZE  (sizeof(frame_t) / sizeof(val_t))
@@ -37,6 +38,51 @@ typedef struct frame_t {
     intptr_t pc;
     intptr_t scope;
 } frame_t;
+
+static inline
+int env_is_valid_ptr(env_t *env, void *p) {
+    return heap_is_owned(env->heap, p);
+}
+
+static inline
+void env_heap_setup(env_t *env, void *heap_ptr, int heap_size) {
+    int half_size = heap_size / 2;
+    heap_init(&env->heap_top, heap_ptr, half_size);
+    heap_init(&env->heap_bot, heap_ptr + half_size, half_size);
+    env->heap = &env->heap_top;
+}
+
+static void env_heap_gc_init(env_t *env)
+{
+    heap_t  *heap = env_heap_get_free(env);
+    val_t   *sb;
+    int fp, sp, ss;
+
+    heap_reset(heap);
+
+    if (env->ref_num && env->ref_ent) {
+        gc_copy_vals(heap, env->ref_num, env->ref_ent);
+    }
+
+    env->scope = gc_copy_scope(heap, env->scope);
+
+    fp = env->fp, sp = env->sp, ss = env->ss;
+    sb = env->sb;
+    while (1) {
+        if (fp == ss) {
+            gc_copy_vals(heap, fp - sp, sb + sp);
+            break;
+        } else {
+            frame_t *frame = (frame_t *)(sb + fp);
+
+            gc_copy_vals(heap, fp - sp, sb + sp);
+            frame->scope = (intptr_t)gc_copy_scope(heap, (scope_t *)frame->scope);
+
+            fp = frame->fp;
+            sp = frame->sp;
+        }
+    }
+}
 
 static uint32_t hash_pjw(const void *key)
 {
@@ -60,10 +106,6 @@ static uint32_t hash_pjw(const void *key)
 
 static inline uint32_t htbl_key(uint32_t size, uint32_t hash, int i) {
     return (hash + i * (hash * 2 + 1)) % size;
-}
-
-static inline int scope_mem_space(scope_t *scope) {
-    return SIZE_ALIGN(sizeof(scope_t)) + SIZE_ALIGN(sizeof(val_t) * scope->num);
 }
 
 static inline char *env_symbal_buf_alloc(env_t *env, int size)
@@ -212,7 +254,7 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
              int code_max, int interactive)
 {
     int mem_offset;
-    int half_size, exe_size, symbal_tbl_size;
+    int exe_size, symbal_tbl_size;
 
     env->error = 0;
 
@@ -244,10 +286,7 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
             return -1;
         }
     }
-    half_size = heap_size / 2;
-    heap_init(&env->heap_top, heap_ptr, half_size);
-    heap_init(&env->heap_bot, heap_ptr + half_size, half_size);
-    env->heap = &env->heap_top;
+    env_heap_setup(env, heap_ptr, heap_size);
 
     // main_var_map init
     if (interactive) {
@@ -369,22 +408,6 @@ scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, va
     return scope;
 }
 
-int env_scope_set(env_t *env, int id, val_t *v) {
-    if (env && env->scope && id >= 0 && id < env->scope->num) {
-        env->scope->var_buf[id] = *v;
-        return 0;
-    }
-    return -1;
-}
-
-int env_scope_get(env_t *env, int id, val_t **v) {
-    if (env && env->scope && id >= 0 && id < env->scope->num) {
-        *v = env->scope->var_buf + id;
-        return 0;
-    }
-    return -1;
-}
-
 const uint8_t *env_frame_setup(env_t *env, const uint8_t *pc, val_t *fv, int ac, val_t *av)
 {
     function_t *fn = (function_t *)val_2_intptr(fv);
@@ -493,348 +516,20 @@ void *env_heap_alloc(env_t *env, int size)
     return ptr;
 }
 
-#define MAGIC_BYTE(x) (*((uint8_t *)(x)))
-#define ADDR_VALUE(x) (*((void **)(x)))
-
-static scope_t *heap_dup_scope(heap_t *heap, scope_t *scope)
+void env_heap_gc(env_t *env, int flags)
 {
-    scope_t *dup;
-    val_t   *buf = NULL;
+    heap_t *free_heap = env_heap_get_free(env);
 
-    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
-    dup = heap_alloc(heap, scope_mem_space(scope));
-    buf = (val_t *)(dup + 1);
-
-    //printf("%s: free %d\n", __func__, heap->free);
-    memcpy(dup, scope, sizeof(scope_t));
-    memcpy(buf, scope->var_buf, sizeof(val_t) * scope->num);
-    dup->var_buf = buf;
-
-    ADDR_VALUE(scope) = dup;
-    return dup;
-}
-
-static object_t *heap_dup_object(heap_t *heap, object_t *obj)
-{
-    object_t *dup;
-    intptr_t *keys;
-    val_t    *vals;
-
-    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
-    dup = heap_alloc(heap, object_mem_space(obj));
-    keys = (intptr_t *) (dup + 1);
-    vals = (val_t *)(keys + obj->prop_size);
-
-    //printf("%s: free %d\n", __func__, heap->free);
-    memcpy(dup, obj, sizeof(object_t));
-    memcpy(keys, obj->keys, sizeof(intptr_t) * obj->prop_num);
-    memcpy(vals, obj->vals, sizeof(val_t) * obj->prop_num);
-    dup->keys = keys;
-    dup->vals = vals;
-
-    ADDR_VALUE(obj) = dup;
-
-    return dup;
-}
-
-static array_t *heap_dup_array(heap_t *heap, array_t *a)
-{
-    array_t *dup;
-    val_t   *vals;
-
-    //dup = heap_alloc(heap, sizeof(scope_t) + sizeof(val_t) * scope->num);
-    dup = heap_alloc(heap, array_mem_space(a));
-    vals = (val_t *)(dup + 1);
-
-    //printf("%s: free %d\n", __func__, heap->free);
-    memcpy(dup, a, sizeof(array_t));
-    memcpy(vals, array_values(a), sizeof(val_t) * array_len(a));
-    dup->elems = vals;
-
-    ADDR_VALUE(a) = dup;
-
-    return dup;
-}
-
-static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
-{
-    int size = string_mem_space(str);
-    void *dup = heap_alloc(heap, size);
-
-    //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
-    //printf("[str size: %d, '%s']", size, (char *)str + 3);
-    memcpy(dup, (void*)str, size);
-    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
-
-    ADDR_VALUE(str) = dup;
-    return (intptr_t) dup;
-}
-
-static intptr_t heap_dup_foreign(heap_t *heap, val_foreign_t *foreign)
-{
-    int size = foreign_mem_space(foreign);
-    void *dup = heap_alloc(heap, size);
-
-    //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
-    //printf("[str size: %d, '%s']", size, (char *)str + 3);
-    memcpy(dup, (void*)foreign, size);
-    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
-
-    ADDR_VALUE(foreign) = dup;
-    return (intptr_t) dup;
-}
-
-static intptr_t heap_dup_function(heap_t *heap, intptr_t func)
-{
-    function_t *dup = heap_alloc(heap, function_mem_space((function_t*)func));
-
-    //printf("%s: free %d\n", __func__, heap->free);
-    memcpy(dup, (void*)func, sizeof(function_t));
-
-    ADDR_VALUE(func) = dup;
-    return (intptr_t) dup;
-}
-
-static scope_t *env_heap_copy_scope(heap_t *heap, scope_t *scope)
-{
-    if (!scope || heap_is_owned(heap, scope)) {
-        //printf("[scope is nil or owned: %p]", scope);
-        return scope;
-    }
-
-    if (MAGIC_BYTE(scope) != MAGIC_SCOPE) {
-        //printf("[scope had copy to: %p]", ADDR_VALUE(scope));
-        return ADDR_VALUE(scope);
-    }
-    //scope_t *dup = heap_dup_scope(heap, scope);
-    //printf("[scope(%p) copy to: %p]", scope, dup);
-    //return dup;
-
-    return heap_dup_scope(heap, scope);
-}
-
-static object_t *env_heap_copy_object(heap_t *heap, object_t *obj)
-{
-    if (!obj || MAGIC_BYTE(obj) == MAGIC_OBJECT_STATIC || heap_is_owned(heap, obj)) {
-        //printf("[object is nil or owned or static: %p]", obj);
-        return obj;
-    }
-
-    if (MAGIC_BYTE(obj) != MAGIC_OBJECT) {
-        //printf("[obj had copy to: %p]", ADDR_VALUE(obj));
-        return ADDR_VALUE(obj);
-    }
-    //scope_t *dup = heap_dup_scope(heap, scope);
-    //printf("[scope(%p) copy to: %p]", scope, dup);
-    //return dup;
-
-    return heap_dup_object(heap, obj);
-}
-
-static inline array_t *env_heap_copy_array(heap_t *heap, array_t *a)
-{
-    if (!a || heap_is_owned(heap, a)) {
-        //printf("[array is nil or owned: %p]", a);
-        return a;
-    }
-
-    if (MAGIC_BYTE(a) != MAGIC_ARRAY) {
-        //printf("[array had copy to: %p]", ADDR_VALUE(a));
-        return ADDR_VALUE(a);
-    }
-
-    return heap_dup_array(heap, a);
-}
-
-static intptr_t env_heap_copy_string(heap_t *heap, intptr_t str)
-{
-    if (!str || heap_is_owned(heap, (void*)str)) {
-        //printf("[string is nil or owned: %lx]", str);
-        return (intptr_t) str;
-    }
-
-    if (MAGIC_BYTE(str) != MAGIC_STRING) {
-        //printf("[string had copy to: %p]", ADDR_VALUE(str));
-        return (intptr_t) ADDR_VALUE(str);
-    }
-    //intptr_t dup = heap_dup_string(heap, str);
-    //printf("[string(%lx) copy to: %lx]", str, dup);
-    //return dup;
-
-    return heap_dup_string(heap, str);
-}
-
-static intptr_t env_heap_copy_foreign(heap_t *heap, val_foreign_t *foreign)
-{
-    if (!foreign || heap_is_owned(heap, foreign)) {
-        //printf("[string is nil or owned: %lx]", str);
-        return (intptr_t) foreign;
-    }
-
-    if (MAGIC_BYTE(foreign) != MAGIC_FOREIGN) {
-        //printf("[string had copy to: %p]", ADDR_VALUE(str));
-        return (intptr_t) ADDR_VALUE(foreign);
-    }
-    //intptr_t dup = heap_dup_string(heap, str);
-    //printf("[string(%lx) copy to: %lx]", str, dup);
-    //return dup;
-
-    return heap_dup_foreign(heap, foreign);
-}
-
-static intptr_t env_heap_copy_function(heap_t *heap, intptr_t func)
-{
-    if (!func || heap_is_owned(heap, (void *)func)) {
-        //printf("[fn is nil or owned: %lx]", func);
-        return (intptr_t) func;
-    }
-
-    if (MAGIC_BYTE(func) != MAGIC_FUNCTION) {
-        //printf("[fn had copy to: %p]", ADDR_VALUE(func));
-        return (intptr_t) ADDR_VALUE(func);
-    }
-    //intptr_t dup = heap_dup_function(heap, func);
-    //printf("[fn(%lx) copy to: %lx]", func, dup);
-    //return dup;
-
-    return heap_dup_function(heap, func);
-}
-
-static void env_heap_copy_vals(heap_t *heap, int vc, val_t *vp)
-{
-    int i = 0;
-
-    while (i < vc) {
-        val_t *v = vp + i;
-
-        if (val_is_heap_string(v)) {
-            //printf("val[%d] s %llx reset to ", i, *v);
-            val_set_heap_string(v, env_heap_copy_string(heap, val_2_intptr(v)));
-            //printf("%llx\n", *v);
-        } else
-        if (val_is_script(v)) {
-            //printf("val[%d] f %llx reset to ", i, *v);
-            val_set_script(v, env_heap_copy_function(heap, val_2_intptr(v)));
-            //printf("%llx\n", *v);
-        } else
-        if (val_is_object(v)) {
-            val_set_object(v, (intptr_t)env_heap_copy_object(heap, (object_t *)val_2_intptr(v)));
-        } else
-        if (val_is_array(v)) {
-            val_set_array(v, (intptr_t)env_heap_copy_array(heap, (array_t *)val_2_intptr(v)));
-        } else
-        if (val_is_foreign(v)) {
-            val_set_foreign(v, (intptr_t)env_heap_copy_foreign(heap, (val_foreign_t *)val_2_intptr(v)));
-        }
-        i++;
-    }
-}
-
-static void env_heap_gc_init(env_t *env)
-{
-    heap_t  *heap = env_heap_get_free(env);
-    val_t   *sb;
-    int fp, sp, ss;
-
-    heap_reset(heap);
-
-    if (env->ref_num && env->ref_ent) {
-        env_heap_copy_vals(heap, env->ref_num, env->ref_ent);
-    }
-
-    env->scope = env_heap_copy_scope(heap, env->scope);
-
-    fp = env->fp, sp = env->sp, ss = env->ss;
-    sb = env->sb;
-    while (1) {
-        if (fp == ss) {
-            env_heap_copy_vals(heap, fp - sp, sb + sp);
-            break;
-        } else {
-            frame_t *frame = (frame_t *)(sb + fp);
-
-            env_heap_copy_vals(heap, fp - sp, sb + sp);
-            frame->scope = (intptr_t)env_heap_copy_scope(heap, (scope_t *)frame->scope);
-
-            fp = frame->fp;
-            sp = frame->sp;
-        }
-    }
-}
-
-static void env_heap_gc_scan(env_t *env)
-{
-    heap_t *heap = env_heap_get_free(env);
-    uint8_t*base = heap->base;
-    int     scan = 0;
-
-    while(scan < heap->free) {
-        uint8_t magic = base[scan];
-
-        switch(magic) {
-        case MAGIC_STRING:
-            scan += string_mem_space((intptr_t)(base + scan));
-            break;
-
-        case MAGIC_FUNCTION: {
-            function_t *func = (function_t *)(base + scan);
-            scan += function_mem_space(func);
-
-            //printf("func super socpe: %p", func->super);
-            func->super = env_heap_copy_scope(heap, func->super);
-            //printf("\n");
-
-            break;
-            }
-        case MAGIC_SCOPE: {
-            scope_t *scope = (scope_t *) (base + scan);
-
-            scan += scope_mem_space(scope);
-
-            //printf("super socpe: %p", scope->super);
-            scope->super = env_heap_copy_scope(heap, scope->super);
-            //printf("\n");
-            env_heap_copy_vals(heap, scope->num, scope->var_buf);
-
-            break;
-            }
-        case MAGIC_OBJECT: {
-            object_t *obj = (object_t *) (base + scan);
-
-            scan += object_mem_space(obj);
-
-            obj->proto = env_heap_copy_object(heap, obj->proto);
-            env_heap_copy_vals(heap, obj->prop_num, obj->vals);
-
-            break;
-            }
-        case MAGIC_ARRAY: {
-            array_t *array= (array_t*) (base + scan);
-
-            scan += array_mem_space(array);
-            env_heap_copy_vals(heap, array_len(array), array_values(array));
-
-            break;
-            }
-        case MAGIC_FOREIGN:
-            scan += foreign_mem_space((val_foreign_t *) (base + scan));
-            break;
-        default: break;
-        }
-    }
-}
-
-void env_heap_gc(env_t *env, int level)
-{
-    (void) level;
+    (void) flags;
 
     env_heap_gc_init(env);
-    env_heap_gc_scan(env);
-    env->heap = env_heap_get_free(env);
+    gc_scan(free_heap);
 
     if (env->gc_callback) {
         env->gc_callback();
     }
+
+    env->heap = free_heap;
 }
 
 int env_number_find_add(env_t *env, double n)

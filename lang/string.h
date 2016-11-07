@@ -33,43 +33,36 @@ SOFTWARE.
 
 #define MAGIC_STRING    (MAGIC_BASE + 3)
 
-static inline int string_inline_len(val_t *s) {
-    (void)s;
-    return 1;
-}
+typedef struct string_t {
+    uint8_t magic;
+    uint8_t age;
+    uint16_t size;
+    char    str[0];
+} string_t;
 
-static inline int string_static_len(val_t *s) {
-    return strlen((void*)val_2_intptr(s));
-}
-
-static inline int string_owned_len(val_t *s) {
-    uint8_t *p = (uint8_t *)val_2_intptr(s);
-    return p[1] * 256 + p[2];
-}
-
-static inline int string_len(val_t *s) {
-    if (val_is_inline_string(s)) {
+static inline int string_len(val_t *v) {
+    if (val_is_inline_string(v)) {
         return 1;
     } else
-    if (val_is_foreign_string(s)) {
-        return strlen((void*)val_2_intptr(s));
+    if (val_is_foreign_string(v)) {
+        return strlen((void*)val_2_intptr(v));
     } else
-    if (val_is_heap_string(s)) {
-        uint8_t *p = (uint8_t *)val_2_intptr(s);
-        return p[1] * 256 + p[2];
+    if (val_is_heap_string(v)) {
+        string_t *s = (string_t *) val_2_intptr(v);
+        return strlen(s->str);
     } else {
         return -1;
     }
 }
 
-static inline int string_mem_space(intptr_t s) {
-    uint8_t *p = (uint8_t *)s;
+static inline int string_mem_space(intptr_t p) {
+    string_t *s = (string_t *) p;
 
-    return SIZE_ALIGN(p[1] * 256 + p[2] + 4);
+    return SIZE_ALIGN(sizeof(string_t) + s->size);
 }
 
 static inline intptr_t string_mem_ptr(intptr_t s) {
-    return s + 3;
+    return s + sizeof(string_t);
 }
 
 int string_compare(val_t *a, val_t *b);

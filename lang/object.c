@@ -104,30 +104,12 @@ static inline void object_static_register(env_t *env, object_t *o) {
 
 static val_t object_length(env_t *env, int ac, val_t *av)
 {
-    if (ac > 0) {
-        if (val_is_object(av)) {
-            object_t *o = (object_t *)val_2_intptr(av);
-            return val_mk_number(o->prop_num);
-        } else
-        if (val_is_array(av)) {
-            array_t *a = (array_t *)val_2_intptr(av);
-            return val_mk_number(array_len(a));
-        } else
-        if (val_is_inline_string(av)) {
-            return val_mk_number(string_inline_len(av));
-        } else
-        if (val_is_foreign_string(av)) {
-            return val_mk_number(string_static_len(av));
-        } else
-        if (val_is_heap_string(av)) {
-            return val_mk_number(string_owned_len(av));
-        } else {
-            return val_mk_number(1);
-        }
+    if (ac > 0 && val_is_object(av)) {
+        object_t *o = (object_t *)val_2_intptr(av);
+        return val_mk_number(o->prop_num);
+    } else {
+        return val_mk_undefined();
     }
-
-    env_set_error(env, ERR_InvalidInput);
-    return val_mk_undefined();
 }
 
 static val_t object_to_string(env_t *env, int ac, val_t *obj)

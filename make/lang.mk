@@ -25,6 +25,7 @@ lib_NAMES = lang
 lang_SRCS = heap.c \
 			ast.c \
 			env.c\
+			gc.c \
 			lex.c \
 			val.c \
 			parse.c \

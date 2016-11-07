@@ -27,7 +27,6 @@ SOFTWARE.
 
 #include "config.h"
 
-#define MAGIC_FOREIGN       (MAGIC_BASE + 15)
 
 typedef uint64_t val_t;
 
@@ -36,44 +35,6 @@ typedef union {
     double  d;
 } valnum_t;
 
-
-typedef struct val_foreign_op_t {
-    int (*is_true)(intptr_t self);
-    int (*is_equal)(intptr_t self, val_t *av);
-    int (*is_gt)(intptr_t self, val_t *av);
-    int (*is_ge)(intptr_t self, val_t *av);
-    int (*is_lt)(intptr_t self, val_t *av);
-    int (*is_le)(intptr_t self, val_t *av);
-    void (*neg)(void *env, intptr_t self, val_t *result);
-    void (*not)(void *env, intptr_t self, val_t *result);
-    void (*inc)(void *env, intptr_t self, val_t *result);
-    void (*dec)(void *env, intptr_t self, val_t *result);
-    void (*incp)(void *env, intptr_t self, val_t *result);
-    void (*decp)(void *env, intptr_t self, val_t *result);
-    void (*mul)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*div)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*mod)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*add)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*sub)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*and)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*or) (void *env, intptr_t self, val_t *av, val_t *result);
-    void (*xor)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*lshift)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*rshift)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*prop)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*elem)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*set)(void *env, intptr_t self, val_t *av, val_t *result);
-    val_t *(*prop_ref)(void *env, intptr_t self, val_t *av);
-    val_t *(*elem_ref)(void *env, intptr_t self, val_t *av);
-} val_foreign_op_t;
-
-typedef struct val_foreign_t {
-    uint8_t magic;
-    uint8_t age;
-    uint8_t reserved[2];
-    const val_foreign_op_t *op;
-    intptr_t  data;
-} val_foreign_t;
 
 
 extern const val_t _Undefined;
@@ -158,6 +119,53 @@ extern const val_t _Infinity;
 #define VAL_NAN             TAG_NAN
 #define VAL_TRUE            (TAG_BOOLEAN | 1)
 #define VAL_FALSE           (TAG_BOOLEAN)
+
+/*
+#include "number.h"
+#include "string.h"
+#include "array.h"
+#include "object.h"
+*/
+
+#define MAGIC_FOREIGN       (MAGIC_BASE + 15)
+typedef struct val_foreign_op_t {
+    int (*is_true)(intptr_t self);
+    int (*is_equal)(intptr_t self, val_t *av);
+    int (*is_gt)(intptr_t self, val_t *av);
+    int (*is_ge)(intptr_t self, val_t *av);
+    int (*is_lt)(intptr_t self, val_t *av);
+    int (*is_le)(intptr_t self, val_t *av);
+    void (*neg)(void *env, intptr_t self, val_t *result);
+    void (*not)(void *env, intptr_t self, val_t *result);
+    void (*inc)(void *env, intptr_t self, val_t *result);
+    void (*dec)(void *env, intptr_t self, val_t *result);
+    void (*incp)(void *env, intptr_t self, val_t *result);
+    void (*decp)(void *env, intptr_t self, val_t *result);
+    void (*mul)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*div)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*mod)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*add)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*sub)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*and)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*or) (void *env, intptr_t self, val_t *av, val_t *result);
+    void (*xor)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*lshift)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*rshift)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*prop)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*elem)(void *env, intptr_t self, val_t *av, val_t *result);
+    void (*set)(void *env, intptr_t self, val_t *av, val_t *result);
+    val_t *(*prop_ref)(void *env, intptr_t self, val_t *av);
+    val_t *(*elem_ref)(void *env, intptr_t self, val_t *av);
+} val_foreign_op_t;
+
+typedef struct val_foreign_t {
+    uint8_t magic;
+    uint8_t age;
+    uint8_t reserved[2];
+    const val_foreign_op_t *op;
+    intptr_t  data;
+} val_foreign_t;
+
 
 static inline
 int val_type(val_t *v) {
@@ -250,7 +258,7 @@ static inline const char *val_2_cstring(val_t *v) {
         return (const char *) val_2_intptr(v);
     } else
     if (t == TAG_STRING_H) {
-        return (const char *) (val_2_intptr(v) + 3);
+        return (const char *) (val_2_intptr(v) + 4);
     } else {
         return NULL;
     }

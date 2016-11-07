@@ -51,6 +51,18 @@ void string_at(env_t *env, val_t *a, val_t *b, val_t *res)
     }
 }
 
+static inline string_t *string_alloc(env_t *env, int size)
+{
+    string_t *s = env_heap_alloc(env, SIZE_ALIGN(sizeof(string_t) + size));
+
+    if (s) {
+        s->magic = MAGIC_STRING;
+        s->age = 0;
+        s->size = size;
+    }
+    return s;
+}
+
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 {
     if (!val_is_string(b)) {
@@ -60,17 +72,14 @@ void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 
     int size1 = string_len(a);
     int size2 = string_len(b);
-    int len = size1 + size2, head = 3;
-    char *buf = env_heap_alloc(env, head + size1 + size2 + 1);
+    int len = size1 + size2;
+    string_t *s = string_alloc(env, len + 1);
 
-    // Todo: length overflow should be check! or variable length field.
-    if (buf) {
-        buf[0] = MAGIC_STRING;
-        buf[1] = len >> 8;
-        buf[2] = len;
-        memcpy(buf + head, val_2_cstring(a), size1);
-        memcpy(buf + head + size1, val_2_cstring(b), size2 + 1);
-        val_set_heap_string(res, (intptr_t) buf);
+    if (s) {
+        // Todo: length overflow should be check! or variable length field.
+        memcpy(s->str + 0, val_2_cstring(a), size1);
+        memcpy(s->str + size1, val_2_cstring(b), size2 + 1);
+        val_set_heap_string(res, (intptr_t) s);
     } else {
         env_set_error(env, ERR_NotEnoughMemory);
         val_set_undefined(res);
@@ -92,19 +101,10 @@ void string_elem_get(val_t *self, int i, val_t *elem)
 val_t string_length(env_t *env, int ac, val_t *av)
 {
     if (ac > 0) {
-        if (val_is_inline_string(av)) {
-            return val_mk_number(1);
-        } else
-        if (val_is_foreign_string(av)) {
-            return val_mk_number(strlen((char *)val_2_intptr(av)));
-        } else
-        if (val_is_heap_string(av)) {
-            uint8_t *head = (uint8_t *)val_2_intptr(av);
-            return val_mk_number(head[1] * 256 + head[2]);
-        }
+        return val_mk_number(string_len(av));
+    } else {
+        return val_mk_undefined();
     }
-    env_set_error(env, ERR_InvalidInput);
-    return val_mk_undefined();
 }
 
 val_t string_index_of(env_t *env, int ac, val_t *av)

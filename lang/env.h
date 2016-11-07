@@ -32,19 +32,7 @@ SOFTWARE.
 #include "err.h"
 #include "heap.h"
 #include "executable.h"
-
-#define MAGIC_SCOPE             (MAGIC_BASE + 1)
-
-#define SCOPE_FL_HEAP           (1)     // variable space alloced in heap
-
-typedef struct scope_t {
-    uint8_t magic;
-    uint8_t age;
-    uint8_t num;                // all variables number
-    uint8_t nao;                // nonamed arguments offset
-    val_t   *var_buf;
-    struct scope_t *super;
-} scope_t;
+#include "scope.h"
 
 struct native_t;
 
@@ -135,11 +123,6 @@ const uint8_t *env_entry_setup(env_t *env, uint8_t *entry, int ac, val_t *av);
 static inline
 void env_set_error(env_t *env, int error) {
     if (env) env->error = error;
-}
-
-static inline
-int env_is_valid_ptr(env_t *env, void *p) {
-    return heap_is_owned(env->heap, p);
 }
 
 static inline val_t *env_stack_peek(env_t *env) {

@@ -22,52 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifndef __LANG_SCOPE_INC__
+#define __LANG_SCOPE_INC__
 
+#define MAGIC_SCOPE             (MAGIC_BASE + 1)
 
-#ifndef __LANG_HEAP_INC__
-#define __LANG_HEAP_INC__
+#define SCOPE_FL_HEAP           (1)     // variable space alloced in heap
 
-#include "config.h"
+typedef struct scope_t {
+    uint8_t magic;
+    uint8_t age;
+    uint8_t num;                // all variables number
+    uint8_t nao;                // nonamed arguments offset
+    val_t   *var_buf;
+    struct scope_t *super;
+} scope_t;
 
-typedef struct heap_t {
-    int size;
-    int free;
-    void *base;
-} heap_t;
-
-void heap_init(heap_t *heap, void *base, int size);
-void heap_clean(heap_t *heap);
-
-void *heap_alloc(heap_t *heap, int size);
-
-static inline
-int heap_is_owned(heap_t *heap, void *p) {
-    int dis = p - heap->base;
-    return dis >= 0 && dis < heap->size;
+static inline int scope_mem_space(scope_t *scope) {
+    return SIZE_ALIGN(sizeof(scope_t)) + SIZE_ALIGN(sizeof(val_t) * scope->num);
 }
 
-static inline
-void heap_reset(heap_t *heap) {
-    heap->free = 0;
-}
-
-static inline
-void heap_copy(heap_t *dst, heap_t *src) {
-    dst->base = src->base;
-    dst->size = src->size;
-    dst->free = src->free;
-}
-
-static inline
-int heap_free_size(heap_t *heap) {
-    return heap->size - heap->free;
-}
-
-static inline
-void *heap_free_addr(heap_t *heap) {
-    return heap->base + heap->free;
-}
-
-
-#endif /* __LANG_HEAP_INC__ */
+#endif /* __LANG_SCOPE_INC__ */
 
