@@ -99,14 +99,15 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
         }
     }
 }
-intptr_t array_create(env_t *env, int ac, val_t *av)
+
+array_t *_array_create(env_t *env, int n)
 {
     array_t *array;
-    int size = ac < DEF_ELEM_SIZE ? DEF_ELEM_SIZE : ac;
+    int size = n < DEF_ELEM_SIZE ? DEF_ELEM_SIZE : n;
 
-    if (ac > UINT16_MAX) {
+    if (size > UINT16_MAX) {
         env_set_error(env, ERR_ResourceOutLimit);
-        return 0;
+        return NULL;
     }
 
     array = env_heap_alloc(env, sizeof(array_t) + sizeof(val_t) * size);
@@ -117,10 +118,19 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
         array->age = 0;
         array->elem_size = size;
         array->elem_bgn  = 0;
-        array->elem_end  = ac;
+        array->elem_end  = n;
         array->elems = vals;
+    }
 
-        memcpy(vals, av, sizeof(val_t) * ac);
+    return array;
+}
+
+intptr_t array_create(env_t *env, int ac, val_t *av)
+{
+    array_t *array = _array_create(env, ac);
+
+    if (array) {
+        memcpy(array->elems + array->elem_bgn, av, sizeof(val_t) * ac);
     }
 
     return (intptr_t) array;

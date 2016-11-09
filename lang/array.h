@@ -65,6 +65,12 @@ val_t *_array_element(val_t *array, int i) {
     return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
+static inline
+val_t *_array_elem(array_t *a, int i) {
+    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
+}
+
+array_t *_array_create(env_t *env, int len);
 intptr_t array_create(env_t *env, int ac, val_t *av);
 
 val_t array_length(env_t *env, int ac, val_t *av);
