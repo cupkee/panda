@@ -27,15 +27,12 @@ SOFTWARE.
 
 #include "config.h"
 
-
 typedef uint64_t val_t;
 
 typedef union {
     val_t   v;
     double  d;
 } valnum_t;
-
-
 
 extern const val_t _Undefined;
 extern const val_t _True;
@@ -114,20 +111,15 @@ extern const val_t _Infinity;
 #define TAG_MASK            MAKE_TAG(1, 0xF)
 #define VAL_MASK            (~MAKE_TAG(1, 0xF))
 
-#define VAL_INFINITE        TAG_INFINITE
 #define VAL_UNDEFINED       TAG_UNDEFINED
+#define VAL_NULL            TAG_OBJECT
+#define VAL_INFINITE        TAG_INFINITE
 #define VAL_NAN             TAG_NAN
 #define VAL_TRUE            (TAG_BOOLEAN | 1)
 #define VAL_FALSE           (TAG_BOOLEAN)
 
-/*
-#include "number.h"
-#include "string.h"
-#include "array.h"
-#include "object.h"
-*/
-
 #define MAGIC_FOREIGN       (MAGIC_BASE + 15)
+
 typedef struct val_foreign_op_t {
     int (*is_true)(intptr_t self);
     int (*is_equal)(intptr_t self, val_t *av);
@@ -162,10 +154,9 @@ typedef struct val_foreign_t {
     uint8_t magic;
     uint8_t age;
     uint8_t reserved[2];
-    const val_foreign_op_t *op;
     intptr_t  data;
+    const val_foreign_op_t *op;
 } val_foreign_t;
-
 
 static inline
 int val_type(val_t *v) {
@@ -280,7 +271,6 @@ static inline int val_is_foreign(val_t *v) {
     return (*v & TAG_MASK) == TAG_FOREIGN;
 }
 
-
 static inline val_t val_mk_number(double d) {
     return double_2_val(d);
 }
@@ -304,9 +294,6 @@ static inline val_t val_mk_native(intptr_t n) {
 static inline val_t val_mk_foreign(intptr_t f) {
     return TAG_FOREIGN | f;
 }
-
-#define INIT_NATIVE_VAL(n)  (TAG_FUNC_NATIVE | (intptr_t)n)
-#define INIT_STRING_VAL(s)  (TAG_STRING_F | (intptr_t)s)
 
 static inline val_t val_mk_boolean(int v) {
     return TAG_BOOLEAN | (!!v);
@@ -377,9 +364,8 @@ static inline void val_set_object(val_t *p, intptr_t d) {
     *((uint64_t *)p) = TAG_OBJECT | d;
 }
 
-
-typedef void (*val_op_t)(void *, val_t *, val_t *, val_t *);
-typedef void (*val_self_op_t)(void *, val_t *, val_t *);
+typedef void (*val_op_t)(void *env, val_t *oprand1, val_t *oprand2, val_t *result);
+typedef void (*val_op_unary_t)(void *env, val_t *oprand, val_t *result);
 
 int  val_is_true(val_t *v);
 int  val_is_equal(val_t *a, val_t *b);
@@ -394,8 +380,8 @@ void val_op_elem(void *env, val_t *v, val_t *key, val_t *elem);
 val_t *val_prop_ref(void *env, val_t *v, val_t *name);
 val_t *val_elem_ref(void *env, val_t *v, val_t *id);
 
-void val_op_neg(void *env, val_t *ops);
-void val_op_not(void *env, val_t *ops);
+void val_op_neg(void *env, val_t *oprand, val_t *res);
+void val_op_not(void *env, val_t *oprand, val_t *res);
 
 void val_op_inc (void *env, val_t *self, val_t *res);
 void val_op_incp(void *env, val_t *self, val_t *res);
@@ -412,7 +398,6 @@ void val_op_or (void *env, val_t *a, val_t *b, val_t *r);
 void val_op_xor(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_lshift(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_rshift(void *env, val_t *a, val_t *b, val_t *r);
-
 void val_op_set(void *env, val_t *a, val_t *b, val_t *r);
 
 val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data);

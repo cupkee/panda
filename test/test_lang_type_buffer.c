@@ -22,45 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "cunit/CUnit.h"
 #include "cunit/CUnit_Basic.h"
 
-CU_pSuite test_hello_entry();
 
-CU_pSuite test_lang_lex_entry();
-CU_pSuite test_lang_val_entry();
-CU_pSuite test_lang_parse_entry();
-CU_pSuite test_lang_symtbl_entry();
-CU_pSuite test_lang_interp_entry();
-CU_pSuite test_lang_image_entry();
-CU_pSuite test_lang_async_entry();
-
-CU_pSuite test_lang_type_buffer();
-CU_pSuite test_lang_type_foreign();
-
-int main(int argc, const char *argv[])
+static int test_setup()
 {
-    if (CUE_SUCCESS != CU_initialize_registry()) {
-        return CU_get_error();
+    return 0;
+}
+
+static int test_clean()
+{
+    return 0;
+}
+
+static void test_example(void)
+{
+    CU_ASSERT(1);
+}
+
+CU_pSuite test_lang_type_buffer(void)
+{
+    CU_pSuite suite = CU_add_suite("TYPE: Buffer", test_setup, test_clean);
+
+    if (suite) {
+        CU_add_test(suite, "hello", test_example);
     }
-
-    // Set test suite here:
-    test_hello_entry();
-    test_lang_lex_entry();
-    test_lang_val_entry();
-    test_lang_parse_entry();
-    test_lang_symtbl_entry();
-    test_lang_interp_entry();
-    test_lang_image_entry();
-    test_lang_async_entry();
-
-    test_lang_type_buffer();
-    test_lang_type_foreign();
-
-    CU_basic_set_mode(CU_BRM_VERBOSE);
-    CU_basic_run_tests();
-    CU_cleanup_registry();
-
-    return CU_get_error();
+    return suite;
 }
 

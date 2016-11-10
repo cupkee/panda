@@ -366,9 +366,9 @@ static void test_foreign_gc(void)
     env_deinit(&env);
 }
 
-CU_pSuite test_lang_foreign_entry()
+CU_pSuite test_lang_type_foreign(void)
 {
-    CU_pSuite suite = CU_add_suite("lang foreign", test_setup, test_clean);
+    CU_pSuite suite = CU_add_suite("TYPE: foreign", test_setup, test_clean);
 
     if (suite) {
         CU_add_test(suite, "foreign simple",       test_foreign_simple);

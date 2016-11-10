@@ -698,11 +698,11 @@ int val_is_lt(val_t *op1, val_t *op2)
     }
 }
 
-void val_op_neg(void *env, val_t *ops)
+void val_op_neg(void *env, val_t *oprand, val_t *result)
 {
     (void) env;
-    switch(val_type(ops)) {
-    case TYPE_NUM:      val_set_number(ops, -val_2_double(ops)); break;
+    switch(val_type(oprand)) {
+    case TYPE_NUM:      val_set_number(result, -val_2_double(oprand)); break;
     case TYPE_STR_I:
     case TYPE_STR_H:
     case TYPE_STR_F:
@@ -715,18 +715,18 @@ void val_op_neg(void *env, val_t *ops)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(ops); break;
+    case TYPE_OBJ:      val_set_nan(result); break;
     case TYPE_FOREIGN:
     default:
-                        foreign_neg(env, ops, ops);
+                        foreign_neg(env, oprand, result);
     }
 }
 
-void val_op_not(void *env, val_t *ops)
+void val_op_not(void *env, val_t *oprand, val_t *result)
 {
     (void) env;
-    switch(val_type(ops)) {
-    case TYPE_NUM:      val_set_number(ops, ~val_2_integer(ops)); break;
+    switch(val_type(oprand)) {
+    case TYPE_NUM:      val_set_number(result, ~val_2_integer(oprand)); break;
     case TYPE_STR_I:
     case TYPE_STR_H:
     case TYPE_STR_F:
@@ -739,10 +739,10 @@ void val_op_not(void *env, val_t *ops)
     case TYPE_BUF:
     case TYPE_ERR:
     case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(ops); break;
+    case TYPE_OBJ:      val_set_nan(result); break;
     case TYPE_FOREIGN:
     default:
-                        foreign_not(env, ops, ops); break;
+                        foreign_not(env, oprand, result); break;
     }
 }
 

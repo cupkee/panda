@@ -59,7 +59,7 @@ void interp_op(env_t *env, val_op_t operate) {
 }
 
 static inline
-void interp_op_self(env_t *env, val_self_op_t operate) {
+void interp_op_self(env_t *env, val_op_unary_t operate) {
     val_t *ref = env_stack_peek(env);
     val_t *lft = interp_var_ref(env, ref);
 
@@ -71,7 +71,7 @@ void interp_op_self(env_t *env, val_self_op_t operate) {
 }
 
 static inline
-void interp_prop_op_self(env_t *env, val_self_op_t operate) {
+void interp_prop_op_self(env_t *env, val_op_unary_t operate) {
     val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
@@ -87,7 +87,7 @@ void interp_prop_op_self(env_t *env, val_self_op_t operate) {
 }
 
 static inline
-void interp_elem_op_self(env_t *env, val_self_op_t operate) {
+void interp_elem_op_self(env_t *env, val_op_unary_t operate) {
     val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
@@ -149,13 +149,10 @@ static inline void interp_elem_op_set(env_t *env, val_op_t operate) {
     env_stack_release(env, 2);
 }
 
+static inline void interp_op_unary(env_t *env, val_op_unary_t operate) {
+    val_t *val = env_stack_peek(env);
 
-static inline void interp_neg(env_t *env) {
-    val_op_neg(env, env_stack_peek(env));
-}
-
-static inline void interp_not(env_t *env) {
-    val_op_not(env, env_stack_peek(env));
+    operate(env, val, val);
 }
 
 static inline void interp_logic_not(env_t *env) {
@@ -465,8 +462,8 @@ static int interp_run(env_t *env, const uint8_t *pc)
 
         case BC_POP:        env_stack_pop(env); break;
 
-        case BC_NEG:        interp_neg(env); break;
-        case BC_NOT:        interp_not(env); break;
+        case BC_NEG:        interp_op_unary(env, val_op_neg); break;
+        case BC_NOT:        interp_op_unary(env, val_op_not); break;
         case BC_LOGIC_NOT:  interp_logic_not(env); break;
 
         case BC_MUL:        interp_op(env, val_op_mul); break;
