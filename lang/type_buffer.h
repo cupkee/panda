@@ -38,6 +38,11 @@ typedef struct type_buffer_t {
     uint8_t  buf[0];
 } type_buffer_t;
 
+type_buffer_t *buffer_create(env_t *env, int size);
+type_buffer_t *buffer_slice(env_t *env, type_buffer_t *b, int start, int size);
+int buffer_read_int(type_buffer_t *b, int off, int size, int be, int *v);
+int buffer_write_int(type_buffer_t *b, int off, int size, int be, int num);
+
 val_t buffer_native_create(env_t *env, int ac, val_t *av);
 val_t buffer_native_write_int(env_t *env, int ac, val_t *av);
 val_t buffer_native_write_uint(env_t *env, int ac, val_t *av);

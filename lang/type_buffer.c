@@ -170,6 +170,8 @@ val_t buffer_native_read_int(env_t *env, int ac, val_t *av)
     type_buffer_t *buf = NULL;
     int off = 0, size = 1, be = 0, num;
 
+    (void) env;
+
     if (ac < 1 || !val_is_buffer(av)) {
         return VAL_UNDEFINED;
     }
@@ -187,6 +189,8 @@ val_t buffer_native_write_int(env_t *env, int ac, val_t *av)
 {
     type_buffer_t *buf = NULL;
     int off = 0, size = 1, be = 0, num;
+
+    (void) env;
 
     if (ac < 2 || !val_is_buffer(av) || !val_is_number(av + 1)) {
         return val_mk_number(0);
