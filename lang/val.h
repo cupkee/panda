@@ -199,8 +199,24 @@ static inline int val_is_number(val_t *v) {
     return (*v & TAG_INFINITE) != TAG_INFINITE;
 }
 
-static inline int val_is_nan(val_t *v) {
-    return (*v & TAG_MASK) == TAG_NAN;
+static inline int val_is_inline_string(val_t *v) {
+    return (*v & TAG_MASK) == TAG_STRING_I;
+}
+
+static inline int val_is_heap_string(val_t *v) {
+    return (*v & TAG_MASK) == TAG_STRING_H;
+}
+
+static inline int val_is_foreign_string(val_t *v) {
+    return (*v & TAG_MASK) == TAG_STRING_F;
+}
+
+static inline int val_is_string(val_t *v) {
+    return val_is_heap_string(v) || val_is_foreign_string(v) || val_is_inline_string(v);
+}
+
+static inline int val_is_boolean(val_t *v) {
+    return (*v & TAG_MASK) == TAG_BOOLEAN;
 }
 
 static inline int val_is_script(val_t *v) {
@@ -219,24 +235,28 @@ static inline int val_is_undefined(val_t *v) {
     return (*v & TAG_MASK) == TAG_UNDEFINED;
 }
 
-static inline int val_is_boolean(val_t *v) {
-    return (*v & TAG_MASK) == TAG_BOOLEAN;
+static inline int val_is_nan(val_t *v) {
+    return (*v & TAG_MASK) == TAG_NAN;
 }
 
-static inline int val_is_inline_string(val_t *v) {
-    return (*v & TAG_MASK) == TAG_STRING_I;
+static inline int val_is_array(val_t *v) {
+    return (*v & TAG_MASK) == TAG_ARRAY;
 }
 
-static inline int val_is_heap_string(val_t *v) {
-    return (*v & TAG_MASK) == TAG_STRING_H;
+static inline int val_is_buffer(val_t *v) {
+    return (*v & TAG_MASK) == TAG_BUFFER;
 }
 
-static inline int val_is_foreign_string(val_t *v) {
-    return (*v & TAG_MASK) == TAG_STRING_F;
+static inline int val_is_object(val_t *v) {
+    return (*v & TAG_MASK) == TAG_OBJECT;
 }
 
-static inline int val_is_string(val_t *v) {
-    return val_is_heap_string(v) || val_is_foreign_string(v) || val_is_inline_string(v);
+static inline int val_is_foreign(val_t *v) {
+    return (*v & TAG_MASK) == TAG_FOREIGN;
+}
+
+static inline int val_is_reference(val_t *v) {
+    return (*v & TAG_MASK) == TAG_REFERENCE;
 }
 
 static inline const char *val_2_cstring(val_t *v) {
@@ -255,48 +275,8 @@ static inline const char *val_2_cstring(val_t *v) {
     }
 }
 
-static inline int val_is_object(val_t *v) {
-    return (*v & TAG_MASK) == TAG_OBJECT;
-}
-
-static inline int val_is_reference(val_t *v) {
-    return (*v & TAG_MASK) == TAG_REFERENCE;
-}
-
-static inline int val_is_array(val_t *v) {
-    return (*v & TAG_MASK) == TAG_ARRAY;
-}
-
-static inline int val_is_foreign(val_t *v) {
-    return (*v & TAG_MASK) == TAG_FOREIGN;
-}
-
 static inline val_t val_mk_number(double d) {
     return double_2_val(d);
-}
-
-static inline val_t val_mk_nan(void) {
-    return TAG_NAN;
-}
-
-static inline val_t val_mk_undefined(void) {
-    return TAG_UNDEFINED;
-}
-
-static inline val_t val_mk_script(intptr_t s) {
-    return TAG_FUNC_SCRIPT | s;
-}
-
-static inline val_t val_mk_native(intptr_t n) {
-    return TAG_FUNC_NATIVE | n;
-}
-
-static inline val_t val_mk_foreign(intptr_t f) {
-    return TAG_FOREIGN | f;
-}
-
-static inline val_t val_mk_boolean(int v) {
-    return TAG_BOOLEAN | (!!v);
 }
 
 static inline val_t val_mk_foreign_string(intptr_t s) {
@@ -307,16 +287,36 @@ static inline val_t val_mk_heap_string(intptr_t s) {
     return TAG_STRING_H | s;
 }
 
+static inline val_t val_mk_boolean(int v) {
+    return TAG_BOOLEAN | (!!v);
+}
+
+static inline val_t val_mk_script(intptr_t s) {
+    return TAG_FUNC_SCRIPT | s;
+}
+
+static inline val_t val_mk_native(intptr_t n) {
+    return TAG_FUNC_NATIVE | n;
+}
+
+static inline val_t val_mk_nan(void) {
+    return TAG_NAN;
+}
+
+static inline val_t val_mk_undefined(void) {
+    return TAG_UNDEFINED;
+}
+
 static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (intptr_t) ptr;
 }
 
-static inline void val_set_nan(val_t *p) {
-    *((uint64_t *)p) = TAG_NAN;
+static inline val_t val_mk_buffer(void *ptr) {
+    return TAG_BUFFER | (intptr_t) ptr;
 }
 
-static inline void val_set_undefined(val_t *p) {
-    *((uint64_t *)p) = TAG_UNDEFINED;
+static inline val_t val_mk_foreign(intptr_t f) {
+    return TAG_FOREIGN | f;
 }
 
 static inline void val_set_boolean(val_t *p, int b) {
@@ -325,10 +325,6 @@ static inline void val_set_boolean(val_t *p, int b) {
 
 static inline void val_set_number(val_t *p, double d) {
     *((double *)p) = d;
-}
-
-static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
-    *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
 static inline void val_set_foreign_string(val_t *p, intptr_t s) {
@@ -352,16 +348,32 @@ static inline void val_set_native(val_t *p, intptr_t f) {
     *((uint64_t *)p) = TAG_FUNC_NATIVE | f;
 }
 
-static inline void val_set_foreign(val_t *p, intptr_t f) {
-    *((uint64_t *)p) = TAG_FOREIGN | f;
+static inline void val_set_nan(val_t *p) {
+    *((uint64_t *)p) = TAG_NAN;
+}
+
+static inline void val_set_undefined(val_t *p) {
+    *((uint64_t *)p) = TAG_UNDEFINED;
 }
 
 static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
 }
 
+static inline void val_set_buffer(val_t *p, void *b) {
+    *((uint64_t *)p) = TAG_BUFFER | (intptr_t)b;
+}
+
 static inline void val_set_object(val_t *p, intptr_t d) {
     *((uint64_t *)p) = TAG_OBJECT | d;
+}
+
+static inline void val_set_foreign(val_t *p, intptr_t f) {
+    *((uint64_t *)p) = TAG_FOREIGN | f;
+}
+
+static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
+    *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
 typedef void (*val_op_t)(void *env, val_t *oprand1, val_t *oprand2, val_t *result);

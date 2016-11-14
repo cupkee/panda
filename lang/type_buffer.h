@@ -22,25 +22,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __LANG_ERR_INC__
-#define __LANG_ERR_INC__
+#ifndef __LANG_TYPE_BUFFER_INC__
+#define __LANG_TYPE_BUFFER_INC__
 
-#define ERR_SysError            30000
+#include "config.h"
 
-#define ERR_InvalidToken        30001
-#define ERR_InvalidSyntax       30002
-#define ERR_InvalidLeftValue    30003
-#define ERR_InvalidSementic     30004
+#include "val.h"
+#include "env.h"
 
-#define ERR_NotEnoughMemory     30005
-#define ERR_NotImplemented      30006
-#define ERR_StackOverflow       30007
-#define ERR_ResourceOutLimit    30008
+#define MAGIC_BUFFER        (MAGIC_BASE + 13)
+typedef struct type_buffer_t {
+    uint8_t  magic;
+    uint8_t  age;
+    uint16_t len;
+    uint8_t  buf[0];
+} type_buffer_t;
 
-#define ERR_InvalidByteCode     30009
-#define ERR_InvalidInput        30010
-#define ERR_InvalidCallor       30011
-#define ERR_NotDefinedId        30012
+val_t buffer_native_create(env_t *env, int ac, val_t *av);
+val_t buffer_native_write_int(env_t *env, int ac, val_t *av);
+val_t buffer_native_write_uint(env_t *env, int ac, val_t *av);
+val_t buffer_native_read_int(env_t *env, int ac, val_t *av);
+val_t buffer_native_read_uint(env_t *env, int ac, val_t *av);
+val_t buffer_native_slice(env_t *env, int ac, val_t *av);
 
-#endif /* __LANG_ERR_INC__ */
+void buffer_elem_get(val_t *self, int index, val_t *elem);
+
+static inline
+int buffer_mem_space(type_buffer_t *buf) {
+    return SIZE_ALIGN(sizeof(type_buffer_t) + buf->len);
+}
+
+#endif /* __LANG_TYPE_BUFFER_INC__ */
 

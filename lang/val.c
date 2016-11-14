@@ -29,6 +29,7 @@ SOFTWARE.
 #include "array.h"
 #include "object.h"
 #include "function.h"
+#include "type_buffer.h"
 
 const val_t _Infinity  = TAG_INFINITE;
 const val_t _Undefined = TAG_UNDEFINED;
@@ -352,6 +353,21 @@ static val_t def_to_string(env_t *env, int ac, val_t *obj)
     }
 }
 
+static val_t def_length(env_t *env, int ac, val_t *obj)
+{
+    (void) env;
+    if (ac < 1) {
+        return val_mk_number(0);
+    }
+
+    if (val_is_buffer(obj)) {
+        type_buffer_t *b = (type_buffer_t *)val_2_intptr(obj);
+        return val_mk_number(b->len);
+    } else {
+        return val_mk_number(0);
+    }
+}
+
 typedef struct prop_desc_t {
     const char *name;
     const function_native_t entry;
@@ -435,9 +451,25 @@ static const prop_desc_t err_prop_descs [] = {
 };
 static const prop_desc_t buf_prop_descs [] = {
     {
+        .name = "readInt",
+        .entry = buffer_native_read_int
+    },
+    {
+        .name = "writeInt",
+        .entry = buffer_native_write_int
+    },
+    {
+        .name = "slice",
+        .entry = buffer_native_slice
+    },
+    {
         .name = "toString",
         .entry = def_to_string
-    }
+    },
+    {
+        .name = "length",
+        .entry = def_length
+    },
 };
 static const prop_desc_t date_prop_descs [] = {
     {
@@ -495,7 +527,7 @@ static const type_desc_t type_desc_err = {
     .prop_descs = err_prop_descs,
 };
 static const type_desc_t type_desc_buf = {
-    .elem_get = def_elem_get,
+    .elem_get = buffer_elem_get,
     .elem_ref = def_elem_ref,
     .prop_num = sizeof(buf_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = buf_prop_descs,

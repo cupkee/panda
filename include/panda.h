@@ -30,11 +30,12 @@ SOFTWARE.
 #include "../lang/err.h"
 #include "../lang/val.h"
 #include "../lang/env.h"
-#include "../lang/interp.h"
 #include "../lang/compile.h"
+#include "../lang/interp.h"
 #include "../lang/executable.h"
 #include "../lang/array.h"
 #include "../lang/object.h"
+#include "../lang/type_buffer.h"
 
 #endif /* __PANDA_INC__ */
 
