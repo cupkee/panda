@@ -33,6 +33,7 @@ SOFTWARE.
 #include "../lang/compile.h"
 #include "../lang/interp.h"
 #include "../lang/executable.h"
+#include "../lang/string.h"
 #include "../lang/array.h"
 #include "../lang/object.h"
 #include "../lang/type_buffer.h"

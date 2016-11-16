@@ -57,5 +57,17 @@ int buffer_mem_space(type_buffer_t *buf) {
     return SIZE_ALIGN(sizeof(type_buffer_t) + buf->len);
 }
 
+static inline
+void *buffer_addr(val_t *v) {
+    type_buffer_t *buf = (type_buffer_t *) val_2_intptr(v);
+    return buf->buf;
+}
+
+static inline
+int buffer_size(val_t *v) {
+    type_buffer_t *buf = (type_buffer_t *) val_2_intptr(v);
+    return buf->len;
+}
+
 #endif /* __LANG_TYPE_BUFFER_INC__ */
 
