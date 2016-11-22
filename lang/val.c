@@ -629,7 +629,7 @@ int val_is_true(val_t *v)
 int val_is_equal(val_t *a, val_t *b)
 {
     if (*a == *b) {
-        return !((val_is_nan(a) || val_is_undefined(a)));
+        return !(val_is_nan(a) || val_is_undefined(a));
     } else {
         if (val_is_string(a)) {
             return string_compare(a, b) == 0;
