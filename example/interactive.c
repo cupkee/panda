@@ -86,7 +86,6 @@ static void print_error(int error)
 
     case ERR_NotEnoughMemory:   output("Error: Not enought memory\n"); break;
     case ERR_NotImplemented:    output("Error: Not implemented\n"); break;
-    case ERR_StaticNumberOverrun: output("Error: ..\n"); break;
     case ERR_StackOverflow:     output("Error: Stack overflow\n"); break;
     case ERR_ResourceOutLimit:  output("Error: Resource out of limited\n"); break;
 
@@ -99,8 +98,6 @@ static void print_error(int error)
     case ERR_InvalidInput:      output("Error: Invalid input\n"); break;
     case ERR_InvalidCallor:     output("Error: Invalid callor\n"); break;
     case ERR_NotDefinedId:      output("Error: Not defined id\n"); break;
-    case ERR_NotDefinedProp:    output("Error: Not defined proprity\n"); break;
-    case ERR_HasNoneElement:    output("Error: Not defined element\n"); break;
     default: output("Error: unknown error\n");
     }
 }
