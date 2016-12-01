@@ -34,9 +34,12 @@ SOFTWARE.
 #define MEM_SIZE      (STACK_SIZE * sizeof(val_t) + HEAP_SIZE + EXE_MEM_SPACE + SYM_MEM_SPACE)
 #define INPUT_MAX     (1024)
 
+#define MODE_LINE     0
+#define MODE_MULTI    1
+
 static uint8_t memory[MEM_SIZE];
 static int  input_cacahed = 0;
-static int  input_mode = 0;
+static int  input_mode = MODE_LINE;
 static char input_buf[INPUT_MAX];
 static int  done = 0;
 
@@ -45,14 +48,13 @@ static const char *logo = "\
  | _ \\ __ _  _ _   __| | __ _ \n\
  |  _// _` || ' \\ / _` |/ _` |\n\
  |_|  \\__,_||_||_|\\__,_|\\__,_|\n\
- cupkee.cn\n";
-
+ www.cupkee.cn\n";
 
 static void input_read(char *buf, int max)
 {
     char *input;
 
-    if (input_mode) {
+    if (input_mode == MODE_MULTI) {
         input = readline(". ");
     } else {
         input = readline("> ");
@@ -75,29 +77,30 @@ static void input_read(char *buf, int max)
 
 static char *input_more(void)
 {
-    input_mode = 1;
+    input_mode = MODE_MULTI;
     return NULL;
 }
 
 static void print_error(int error)
 {
     switch (error) {
-    case ERR_SysError:          output("Error: System error\n"); break;
-
-    case ERR_NotEnoughMemory:   output("Error: Not enought memory\n"); break;
-    case ERR_NotImplemented:    output("Error: Not implemented\n"); break;
-    case ERR_StackOverflow:     output("Error: Stack overflow\n"); break;
+    case ERR_NotEnoughMemory:   output("Error: Not enought memory\n");      break;
+    case ERR_NotImplemented:    output("Error: Not implemented\n");         break;
+    case ERR_StackOverflow:     output("Error: Stack overflow\n");          break;
     case ERR_ResourceOutLimit:  output("Error: Resource out of limited\n"); break;
 
-    case ERR_InvalidToken:      output("Error: Invalid Token\n"); break;
-    case ERR_InvalidSyntax:     output("Error: Invalid syntax\n"); break;
-    case ERR_InvalidLeftValue:  output("Error: Invalid left value\n"); break;
-    case ERR_InvalidSementic:   output("Error: Invalid Sementic\n"); break;
+    case ERR_InvalidToken:      output("Error: Invalid Token\n");           break;
+    case ERR_InvalidSyntax:     output("Error: Invalid syntax\n");          break;
+    case ERR_InvalidLeftValue:  output("Error: Invalid left value\n");      break;
+    case ERR_InvalidSementic:   output("Error: Invalid Sementic\n");        break;
 
-    case ERR_InvalidByteCode:   output("Error: Invalid Byte code\n"); break;
-    case ERR_InvalidInput:      output("Error: Invalid input\n"); break;
-    case ERR_InvalidCallor:     output("Error: Invalid callor\n"); break;
-    case ERR_NotDefinedId:      output("Error: Not defined id\n"); break;
+    case ERR_InvalidByteCode:   output("Error: Invalid Byte code\n");       break;
+    case ERR_InvalidInput:      output("Error: Invalid input\n");           break;
+    case ERR_InvalidCallor:     output("Error: Invalid callor\n");          break;
+    case ERR_NotDefinedId:      output("Error: Not defined id\n");          break;
+
+    case ERR_SysError:          output("Error: System error\n");            break;
+
     default: output("Error: unknown error\n");
     }
 }
@@ -135,6 +138,7 @@ static void print_value(val_t *v)
 }
 
 static env_t env;
+
 static void line_proc(void)
 {
     int    err;
@@ -148,18 +152,17 @@ static void line_proc(void)
 
     err = interp_execute_interactive(&env, input_buf, input_more, &res);
     if (err < 0) {
-        if (input_mode == 0 || err != -ERR_InvalidToken) {
-            input_mode = 0;
+        if (input_mode == MODE_LINE) {
             print_error(-err);
+        } else {
+            input_cacahed = strlen(input_buf);
         }
-    } else
-    if (err > 0) {
-        input_mode = 0;
-        print_value(res);
-    }
-
-    if (input_mode) {
-        input_cacahed = strlen(input_buf);
+        env_set_error(&env, 0);
+    } else {
+        input_mode = MODE_LINE;
+        if (err > 0) {
+            print_value(res);
+        }
     }
 }
 
@@ -177,20 +180,18 @@ static void mult_proc(void)
     if (len > 0) {
         input_cacahed += len;
         return;
-    } else {
-        input_cacahed += len;
-        input_mode = 0;
     }
 
-    err = interp_execute_interactive(&env, input_buf, input_more, &res);
+    err = interp_execute_string(&env, input_buf, &res);
     if (err < 0) {
         print_error(-err);
+        env_set_error(&env, 0);
     } else
     if (err > 0) {
         print_value(res);
     }
+    input_mode = MODE_LINE;
 }
-
 
 static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_size)
 {
@@ -204,7 +205,7 @@ static int interactive(void *mem_ptr, int mem_size, int heap_size, int stack_siz
     printf(logo, 0, 1, 0);
 
     while (!done) {
-        if (input_mode) {
+        if (input_mode == MODE_MULTI) {
             mult_proc();
         } else {
             line_proc();
