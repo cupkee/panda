@@ -1,6 +1,6 @@
 # panda简介
 
-panda是脚本语言，它基于javascript，但裁剪了部分语法特性;
+panda是脚本语言解释器，它基于javascript，但裁剪了部分语法特性;
 
 panda是轻量级语言，它被设计用来作为嵌入式硬件的解释器;
 
@@ -23,10 +23,15 @@ $ panda/repl
 > 
 ```
 
-## 获取源代码
-[panda](https://github.com/cupkee/panda)
-
 ## 编译panda解释器
+
+### 获取源代码
+```
+cd your_workspace_path
+git clone https://github.com/cupkee/panda.git
+```
+
+### 编译
 
 在编译panda之前，你需要安装gcc编译器以及libreadline库
 
