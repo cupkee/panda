@@ -49,7 +49,7 @@ git clone https://github.com/cupkee/panda.git
 你完全可以将panda用到自己的项目中，作为配置解释器、命令行或其它。
 
 ## bug反馈
-我非常需要用中发现的bug反馈，以便不断对程序进行完善。
+我非常需要实际使用中发现bug的反馈，以便不断对程序进行完善。
 
 欢迎你通过以下两种方式提交bug：
 
@@ -110,14 +110,22 @@ var a = 0, b, c = 'hello'
 3. 基本表达式举例
 
 ```
-1 + 1                   // 2
-(10 + 5) * 3 / 5        // 9
-1, 2, 3, 5 + 6          // 11
-1 > 2                   // false
-'hello' + 'world'       // 'helloworld'
-'a1' < 'b2'             // true
-'hello' + 1             // NaN
-1 * 'hello'             // NaN
+> 1 + 1
+2
+> (10 + 5) * 3 / 5
+9
+> 1, 2, 3, 5 + 6
+11
+> 1 > 2
+false
+> 'hello' + 'world'
+"helloworld"
+> 'a1' < 'b2'
+true
+> 'hello' + 1
+NaN
+> 1 * 'hello'
+NaN
 ...
 ```
 
