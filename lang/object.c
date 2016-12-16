@@ -259,3 +259,17 @@ void object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop)
     }
 }
 
+int object_iter_next(object_iter_t *it, const char **name, val_t **v)
+{
+    if (it->cur < it->obj->prop_num) {
+        int id = it->cur++;
+
+        *name = (const char *)(it->obj->keys[id]);
+        *v = it->obj->vals + id;
+
+        return 1;
+    } else {
+        return 0;
+    }
+}
+

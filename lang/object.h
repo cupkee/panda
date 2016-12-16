@@ -70,19 +70,16 @@ static inline void _object_iter_init(object_iter_t *it, object_t *obj) {
     it->cur = 0;
 };
 
-static inline int _object_iter_next(object_iter_t *it, const char **name, val_t **v)
+static inline int object_iter_init(object_iter_t *it, val_t *obj)
 {
-    if (it->cur < it->obj->prop_num) {
-        int id = it->cur++;
-
-        *name = (const char *)(it->obj->keys[id]);
-        *v = it->obj->vals + id;
-
-        return 1;
-    } else {
+    if (val_is_object(obj)) {
+        _object_iter_init(it, (object_t *)val_2_intptr(obj));
         return 0;
     }
+    return -1;
 }
+
+int object_iter_next(object_iter_t *it, const char **k, val_t **v);
 
 #endif /* __LANG_OBJECT_INC__ */
 
