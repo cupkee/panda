@@ -40,6 +40,16 @@ typedef struct string_t {
     char    str[0];
 } string_t;
 
+static inline int string_mem_space(intptr_t p) {
+    string_t *s = (string_t *) p;
+
+    return SIZE_ALIGN(sizeof(string_t) + s->size);
+}
+
+static inline intptr_t string_mem_ptr(intptr_t s) {
+    return s + sizeof(string_t);
+}
+
 static inline int string_len(val_t *v) {
     if (val_is_inline_string(v)) {
         return 1;
@@ -55,15 +65,7 @@ static inline int string_len(val_t *v) {
     }
 }
 
-static inline int string_mem_space(intptr_t p) {
-    string_t *s = (string_t *) p;
-
-    return SIZE_ALIGN(sizeof(string_t) + s->size);
-}
-
-static inline intptr_t string_mem_ptr(intptr_t s) {
-    return s + sizeof(string_t);
-}
+val_t string_create_heap_val(env_t *env, int size);
 
 int string_compare(val_t *a, val_t *b);
 

@@ -63,6 +63,19 @@ static inline string_t *string_alloc(env_t *env, int size)
     return s;
 }
 
+val_t string_create_heap_val(env_t *env, int size)
+{
+    string_t *s;
+
+    size += 1;
+    s = string_alloc(env, size);
+    if (s) {
+        memset(s->str, 0, size);
+        return val_mk_heap_string((intptr_t)s);
+    }
+    return VAL_UNDEFINED;
+}
+
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 {
     if (!val_is_string(b)) {

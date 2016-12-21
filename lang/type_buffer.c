@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 #include "err.h"
+#include "string.h"
 #include "type_buffer.h"
 
 static inline type_buffer_t *buffer_alloc(env_t *env, int size)
@@ -205,6 +206,40 @@ val_t buffer_native_write_int(env_t *env, int ac, val_t *av)
     } else {
         return val_mk_number(0);
     }
+}
+
+val_t buffer_native_to_string(env_t *env, int ac, val_t *av)
+{
+    type_buffer_t *buf;
+    uint8_t *ptr;
+    void    *str;
+    val_t s;
+    int len;
+
+    if (ac < 1 || !val_is_buffer(av)) {
+        env_set_error(env, ERR_InvalidInput);
+        return VAL_UNDEFINED;
+    }
+
+    buf = (type_buffer_t *)val_2_intptr(av);
+    for (len = 0; len < buf->len; len++) {
+        uint8_t ch = buf->buf[len];
+        if (ch < ' ' || ch >= 127) {
+            break;
+        }
+    }
+
+    s = string_create_heap_val(env, len);
+    str = (void *)val_2_cstring(&s);
+    if (str && len) {
+        // defence GC
+        buf = (type_buffer_t *)val_2_intptr(av);
+        ptr = buf->buf;
+
+        memcpy(str, ptr, len);
+    }
+
+    return s;
 }
 
 val_t buffer_native_slice(env_t *env, int ac, val_t *av)

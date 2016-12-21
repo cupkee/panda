@@ -38,10 +38,20 @@ typedef struct type_buffer_t {
     uint8_t  buf[0];
 } type_buffer_t;
 
+static inline
+int buffer_mem_space(type_buffer_t *buf) {
+    return SIZE_ALIGN(sizeof(type_buffer_t) + buf->len);
+}
+
 type_buffer_t *buffer_create(env_t *env, int size);
 type_buffer_t *buffer_slice(env_t *env, type_buffer_t *b, int start, int size);
 int buffer_read_int(type_buffer_t *b, int off, int size, int be, int *v);
 int buffer_write_int(type_buffer_t *b, int off, int size, int be, int num);
+
+static inline
+int   _buffer_size(type_buffer_t *b) {return b->len;}
+static inline
+void *_buffer_addr(type_buffer_t *b) {return b->buf;}
 
 val_t buffer_native_create(env_t *env, int ac, val_t *av);
 val_t buffer_native_write_int(env_t *env, int ac, val_t *av);
@@ -49,24 +59,18 @@ val_t buffer_native_write_uint(env_t *env, int ac, val_t *av);
 val_t buffer_native_read_int(env_t *env, int ac, val_t *av);
 val_t buffer_native_read_uint(env_t *env, int ac, val_t *av);
 val_t buffer_native_slice(env_t *env, int ac, val_t *av);
+val_t buffer_native_to_string(env_t *env, int ac, val_t *av);
 
 void buffer_elem_get(val_t *self, int index, val_t *elem);
 
 static inline
-int buffer_mem_space(type_buffer_t *buf) {
-    return SIZE_ALIGN(sizeof(type_buffer_t) + buf->len);
+void *_val_buffer_addr(val_t *v) {
+    return _buffer_addr((type_buffer_t *) val_2_intptr(v));
 }
 
 static inline
-void *buffer_addr(val_t *v) {
-    type_buffer_t *buf = (type_buffer_t *) val_2_intptr(v);
-    return buf->buf;
-}
-
-static inline
-int buffer_size(val_t *v) {
-    type_buffer_t *buf = (type_buffer_t *) val_2_intptr(v);
-    return buf->len;
+int _val_buffer_size(val_t *v) {
+    return _buffer_size((type_buffer_t *) val_2_intptr(v));
 }
 
 #endif /* __LANG_TYPE_BUFFER_INC__ */

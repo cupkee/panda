@@ -464,7 +464,7 @@ static const prop_desc_t buf_prop_descs [] = {
     },
     {
         .name = "toString",
-        .entry = def_to_string
+        .entry = buffer_native_to_string
     },
     {
         .name = "length",
