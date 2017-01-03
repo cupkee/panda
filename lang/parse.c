@@ -102,7 +102,7 @@ static inline expr_t *parse_expr_alloc_num(parser_t *psr, const char *text) {
     expr_t *e = (expr_t *) parse_expr_alloc_type(psr, EXPR_NUM);
 
     if (e) {
-        e->body.data.num = atoi(text);
+        e->body.data.num = atof(text);
     }
     return e;
 }

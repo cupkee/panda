@@ -96,9 +96,13 @@ static void test_exec_calculate(void)
     CU_ASSERT(0 < interp_execute_string(&env, "3 % 2", &res) && val_is_number(res) && 1 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "6 % 0", &res) && val_is_nan(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "1 + 2 * 3", &res) && val_is_number(res) && 7 == val_2_integer(res));
-    //printf("---------------------------------------------------\n");
+    CU_ASSERT(0 < interp_execute_string(&env, "-1.5", &res) && val_is_number(res) && -1.5 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "15e-1", &res) && val_is_number(res) && 1.5 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1.5e1", &res) && val_is_number(res) && 15 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1.5e+1", &res) && val_is_number(res) && 15 == val_2_double(res));
 
+    //printf("---------------------------------------------------\n");
+    CU_ASSERT(0 < interp_execute_string(&env, "1 + 2 * 3", &res) && val_is_number(res) && 7 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "2 + 4 / 2", &res) && val_is_number(res) && 4 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "9 - 4 % 2", &res) && val_is_number(res) && 9 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "(1 + 2) * 3", &res) && val_is_number(res) && 9 == val_2_integer(res));

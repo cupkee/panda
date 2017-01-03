@@ -27,6 +27,7 @@ SOFTWARE.
 #define CURR_CH     (lex->curr_ch)
 #define NEXT_CH     (lex->next_ch)
 
+/*
 static int to_number(const char *s, int len)
 {
     int ret = 0;
@@ -38,6 +39,7 @@ static int to_number(const char *s, int len)
 
     return ret;
 }
+*/
 
 static void lex_get_next_ch(lexer_t *lex)
 {
@@ -178,16 +180,44 @@ static void lex_get_str_token(lexer_t *lex)
     lex->curr_tok = TOK_STR;
 }
 
-static void lex_get_num_token(lexer_t *lex)
+static int lex_get_num_digit(lexer_t *lex, int len)
 {
-    int len  = 0;
-
-    do {
+    while (isdigit(CURR_CH)) {
         if (len + 1 < lex->token_buf_size) {
             lex->token_buf[len++] = CURR_CH;
+        } else {
+            break;
         }
         lex_get_next_ch(lex);
-    } while (isdigit(CURR_CH));
+    }
+
+    return len;
+}
+
+static void lex_get_num_token(lexer_t *lex)
+{
+    int len = 0;
+
+    len = lex_get_num_digit(lex, len);
+
+    if (CURR_CH == '.' && isdigit(NEXT_CH)) {
+        lex->token_buf[len++] = '.';
+        lex_get_next_ch(lex);
+        len = lex_get_num_digit(lex, len);
+    }
+
+    if (CURR_CH == 'E' || CURR_CH == 'e') {
+        lex->token_buf[len++] = 'E';
+        lex_get_next_ch(lex);
+        if (CURR_CH == '-') {
+            lex_get_next_ch(lex);
+            lex->token_buf[len++] = '-';
+        }
+        if (CURR_CH == '+') {
+            lex_get_next_ch(lex);
+        }
+        len = lex_get_num_digit(lex, len);
+    }
 
     lex->token_buf[len] = 0;
     lex->token_len = len;
@@ -325,9 +355,9 @@ int lex_token(lexer_t *lex, token_t *tok)
 
         if (tok->type == TOK_ID || tok->type == TOK_STR) {
             tok->value = lex->token_len;
-        } else
-        if (tok->type == TOK_NUM) {
-            tok->value = to_number(lex->token_buf, lex->token_len);
+        //} else
+        //if (tok->type == TOK_NUM) {
+        //    tok->value = to_number(lex->token_buf, lex->token_len);
         }
     }
 

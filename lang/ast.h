@@ -138,7 +138,7 @@ typedef struct expr_t {
     union {
         union {
             char   *str;
-            int     num;
+            double  num;
             stmt_t *proc;
         } data;
         struct {
@@ -153,7 +153,7 @@ static inline const char * ast_expr_text(expr_t *e) {
     return e->body.data.str;
 }
 
-static inline int ast_expr_num(expr_t *e) {
+static inline double ast_expr_num(expr_t *e) {
     return e->body.data.num;
 }
 

@@ -87,9 +87,9 @@ static void test_common(void)
     CU_ASSERT(TOK_STR == lex_token(&lex, &tok) && 0 == strcmp(tok.text, " abcd' &$|!"));
     CU_ASSERT(lex_match(&lex, TOK_STR));
 
-    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "12345") && tok.value == 12345);
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "12345"));
     CU_ASSERT(lex_match(&lex, TOK_NUM));
-    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "09876") && tok.value == 9876);
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "09876"));
     CU_ASSERT(lex_match(&lex, TOK_NUM));
 
     CU_ASSERT(TOK_ID == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "abc"));
@@ -153,13 +153,33 @@ static void test_mch_tok(void)
     CU_ASSERT(lex_match(&lex, TOK_LOGICOR));
 }
 
+static void test_floating_number(void)
+{
+    lexer_t lex;
+    token_t tok;
+
+    CU_ASSERT(0 == lex_init(&lex, "1.5 1e-3 123E+12 0.1e2", NULL));
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "1.5"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "1E-3"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "123E12"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "0.1E2"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+}
+
 CU_pSuite test_lang_lex_entry()
 {
     CU_pSuite suite = CU_add_suite("lang lex", test_setup, test_clean);
 
     if (suite) {
-        CU_add_test(suite, "common", test_common);
-        CU_add_test(suite, "multiCh token", test_mch_tok);
+        CU_add_test(suite, "common",            test_common);
+        CU_add_test(suite, "multiCh token",     test_mch_tok);
+        CU_add_test(suite, "floating number",   test_floating_number);
     }
 
     return suite;
