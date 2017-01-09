@@ -68,7 +68,7 @@ int file_release(void *addr, int size)
 
 int file_store(const char *name, void *buf, int sz)
 {
-    int fd = open(name, O_RDWR | O_CREAT | O_TRUNC);
+    int fd = open(name, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
     int off, n;
 
     if (fd < 0) {
