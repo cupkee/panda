@@ -33,12 +33,12 @@ lang_SRCS = heap.c \
 			compile.c\
 			executable.c \
 			interp.c \
-			number.c \
-			string.c \
-			function.c \
-			array.c \
-			type_buffer.c\
-			object.c \
+			type_number.c \
+			type_function.c \
+			type_array.c \
+			type_string.c \
+			type_buffer.c \
+			type_object.c \
 
 lang_CPPFLAGS = -I.. -Wall -Wundef
 lang_CFLAGS   = -g -Werror

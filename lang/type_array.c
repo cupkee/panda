@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "number.h"
-#include "string.h"
-#include "array.h"
 #include "interp.h"
+
+#include "type_number.h"
+#include "type_string.h"
+#include "type_array.h"
 
 static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
 {

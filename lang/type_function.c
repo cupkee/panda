@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "function.h"
+#include "type_function.h"
 
 intptr_t function_create(env_t *env, uint8_t *entry)
 {

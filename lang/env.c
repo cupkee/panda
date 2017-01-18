@@ -23,11 +23,11 @@ SOFTWARE.
 */
 
 #include "env.h"
-#include "object.h"
-#include "string.h"
-#include "array.h"
-#include "function.h"
 #include "gc.h"
+#include "type_object.h"
+#include "type_string.h"
+#include "type_array.h"
+#include "type_function.h"
 
 #define VACATED     (-1)
 #define FRAME_SIZE  (sizeof(frame_t) / sizeof(val_t))

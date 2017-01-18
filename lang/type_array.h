@@ -29,7 +29,6 @@ SOFTWARE.
 #include "config.h"
 #include "val.h"
 #include "env.h"
-#include "object.h"
 
 #define MAGIC_ARRAY         (MAGIC_BASE + 11)
 

@@ -23,10 +23,10 @@ SOFTWARE.
 */
 
 #include "interp.h"
-#include "number.h"
-#include "string.h"
-#include "array.h"
-#include "object.h"
+#include "type_number.h"
+#include "type_string.h"
+#include "type_array.h"
+#include "type_object.h"
 
 static object_t object_proto;
 

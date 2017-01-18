@@ -31,7 +31,6 @@ SOFTWARE.
 #include "ast.h"
 #include "env.h"
 #include "interp.h"
-#include "function.h"
 
 typedef struct compile_func_t {
     int16_t owner;

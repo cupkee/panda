@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "err.h"
 #include "executable.h"
-#include "function.h"
+#include "type_function.h"
 
 int executable_init(executable_t *exe, void *mem_ptr, int mem_size,
                     int number_max, int string_max, int func_max, int code_max)

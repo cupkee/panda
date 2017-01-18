@@ -33,9 +33,9 @@ SOFTWARE.
 #include "../lang/compile.h"
 #include "../lang/interp.h"
 #include "../lang/executable.h"
-#include "../lang/string.h"
-#include "../lang/array.h"
-#include "../lang/object.h"
+#include "../lang/type_string.h"
+#include "../lang/type_array.h"
+#include "../lang/type_object.h"
 #include "../lang/type_buffer.h"
 
 #endif /* __PANDA_INC__ */

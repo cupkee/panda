@@ -23,14 +23,13 @@ SOFTWARE.
 */
 
 #include "val.h"
-#include "string.h"
-#include "function.h"
-#include "array.h"
-#include "object.h"
 #include "heap.h"
-#include "scope.h"
-#include "type_buffer.h"
 #include "gc.h"
+#include "type_string.h"
+#include "type_function.h"
+#include "type_array.h"
+#include "type_object.h"
+#include "type_buffer.h"
 
 #define MAGIC_BYTE(x) (*((uint8_t *)(x)))
 #define ADDR_VALUE(x) (*((void **)(x)))

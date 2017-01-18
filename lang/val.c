@@ -24,11 +24,11 @@ SOFTWARE.
 
 #include "val.h"
 #include "env.h"
-#include "number.h"
-#include "string.h"
-#include "array.h"
-#include "object.h"
-#include "function.h"
+#include "type_number.h"
+#include "type_string.h"
+#include "type_array.h"
+#include "type_object.h"
+#include "type_function.h"
 #include "type_buffer.h"
 
 const val_t _Infinity  = TAG_INFINITE;

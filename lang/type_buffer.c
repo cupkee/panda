@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "err.h"
-#include "string.h"
+#include "type_string.h"
 #include "type_buffer.h"
 
 static inline type_buffer_t *buffer_alloc(env_t *env, int size)

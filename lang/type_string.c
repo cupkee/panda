@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 #include "err.h"
-#include "string.h"
+#include "type_string.h"
 
 int string_compare(val_t *a, val_t *b)
 {

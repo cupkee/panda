@@ -29,11 +29,11 @@ SOFTWARE.
 #include "compile.h"
 #include "interp.h"
 
-#include "number.h"
-#include "string.h"
-#include "function.h"
-#include "array.h"
-#include "object.h"
+#include "type_number.h"
+#include "type_string.h"
+#include "type_function.h"
+#include "type_array.h"
+#include "type_object.h"
 
 static val_t undefined = TAG_UNDEFINED;
 

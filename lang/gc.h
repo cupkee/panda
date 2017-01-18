@@ -25,6 +25,8 @@ SOFTWARE.
 #ifndef __LANG_GC_INC__
 #define __LANG_GC_INC__
 
+#include "scope.h"
+
 scope_t *gc_copy_scope(heap_t *heap, scope_t *scope);
 void gc_copy_vals(heap_t *heap, int vc, val_t *vp);
 void gc_scan(heap_t *heap);

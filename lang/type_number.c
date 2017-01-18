@@ -23,8 +23,8 @@ SOFTWARE.
 */
 
 #include "val.h"
-#include "string.h"
-#include "number.h"
+#include "type_string.h"
+#include "type_number.h"
 
 val_t number_to_string(env_t *env, int ac, val_t *av)
 {

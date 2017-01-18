@@ -30,7 +30,7 @@ SOFTWARE.
 #include "cunit/CUnit.h"
 #include "cunit/CUnit_Basic.h"
 
-#include "lang/function.h"
+#include "lang/type_function.h"
 #include "lang/interp.h"
 
 
