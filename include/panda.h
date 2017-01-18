@@ -37,6 +37,7 @@ SOFTWARE.
 #include "../lang/type_array.h"
 #include "../lang/type_object.h"
 #include "../lang/type_buffer.h"
+#include "../lang/type_function.h"
 
 #endif /* __PANDA_INC__ */
 
