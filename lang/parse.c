@@ -102,7 +102,12 @@ static inline expr_t *parse_expr_alloc_num(parser_t *psr, const char *text) {
     expr_t *e = (expr_t *) parse_expr_alloc_type(psr, EXPR_NUM);
 
     if (e) {
-        e->body.data.num = atof(text);
+        if (text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) {
+            char *p = NULL;
+            e->body.data.num = strtoll(text, &p, 16);
+        } else {
+            e->body.data.num = atof(text);
+        }
     }
     return e;
 }

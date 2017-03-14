@@ -200,6 +200,13 @@ static void lex_get_num_token(lexer_t *lex)
 
     len = lex_get_num_digit(lex, len);
 
+    if (len == 1 && lex->token_buf[0] == '0'
+        && (CURR_CH == 'x' || CURR_CH == 'X')
+        && isdigit(NEXT_CH)) {
+        lex->token_buf[len++] = 'x';
+        lex_get_next_ch(lex);
+        len = lex_get_num_digit(lex, len);
+    } else
     if (CURR_CH == '.' && isdigit(NEXT_CH)) {
         lex->token_buf[len++] = '.';
         lex_get_next_ch(lex);

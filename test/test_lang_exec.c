@@ -65,6 +65,9 @@ static void test_exec_simple(void)
     CU_ASSERT(0 < interp_execute_string(&env, "0", &res) && val_is_number(res) && val_2_integer(res) == 0);
     CU_ASSERT(0 < interp_execute_string(&env, "1", &res) && val_is_number(res) && val_2_integer(res) == 1);
 
+    CU_ASSERT(0 < interp_execute_string(&env, "0x10", &res) && val_is_number(res) && val_2_integer(res) == 16);
+    CU_ASSERT(0 < interp_execute_string(&env, "0X10", &res) && val_is_number(res) && val_2_integer(res) == 16);
+
     // float token is not supported by lex
     //CU_ASSERT(0 < interp_execute_string((envenv, "1.0001", &res) && val_is_number(*res) && val_2_double(*res) == 1.0001);
 
