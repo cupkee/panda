@@ -172,6 +172,25 @@ static void test_floating_number(void)
     CU_ASSERT(lex_match(&lex, TOK_NUM));
 }
 
+static void test_hex_number(void)
+{
+    lexer_t lex;
+    token_t tok;
+
+    CU_ASSERT(0 == lex_init(&lex, "0x10 0xFF 0Xff 0X01", NULL));
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "0x10"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "0xFF"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "0xff"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+
+    CU_ASSERT(TOK_NUM == lex_token(&lex, &tok) && 0 == strcmp(tok.text, "0x01"));
+    CU_ASSERT(lex_match(&lex, TOK_NUM));
+}
+
 CU_pSuite test_lang_lex_entry()
 {
     CU_pSuite suite = CU_add_suite("lang lex", test_setup, test_clean);
@@ -180,6 +199,7 @@ CU_pSuite test_lang_lex_entry()
         CU_add_test(suite, "common",            test_common);
         CU_add_test(suite, "multiCh token",     test_mch_tok);
         CU_add_test(suite, "floating number",   test_floating_number);
+        CU_add_test(suite, "hex number",   test_floating_number);
     }
 
     return suite;

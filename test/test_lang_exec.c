@@ -85,6 +85,8 @@ static void test_exec_calculate(void)
     CU_ASSERT(0 < interp_execute_string(&env, "~0", &res) && val_is_number(res) && -1 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "!1", &res) && val_is_boolean(res) && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "!0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0xf", &res) && val_is_number(res) && 15 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "!0xf", &res) && val_is_boolean(res) && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 + 1", &res) && val_is_number(res) && 2 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 + -1", &res) && val_is_number(res) && 0 == val_2_integer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 - 1", &res) && val_is_number(res) && 0 == val_2_integer(res));

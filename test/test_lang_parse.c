@@ -81,7 +81,7 @@ static void test_expr_factor(void)
     CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NAN);
 
-    parse_init(&psr, " 'null' hello 12345\n", NULL, heap_buf, PSR_BUF_SIZE);
+    parse_init(&psr, " 'null' hello 12345 0x1f\n", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_STRING && !strcmp("null", TEXT(expr)));
 
@@ -90,6 +90,9 @@ static void test_expr_factor(void)
 
     CU_ASSERT(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_NUM && NUMBER(expr) == 12345);
+
+    CU_ASSERT(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_NUM && NUMBER(expr) == 31);
 
     parse_init(&psr, " (a + b) \n", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
