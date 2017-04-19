@@ -100,12 +100,7 @@ static int lex_chk_token_type(const char *str, int len)
 
 static void lex_eat_comments(lexer_t *lex)
 {
-    if ('#' == CURR_CH) {
-        do {
-            lex_get_next_ch(lex);
-        } while (CURR_CH && '\n' != CURR_CH && '\r' != CURR_CH);
-    } else
-    if ('/' == NEXT_CH) {
+    if ('#' == CURR_CH || '/' == NEXT_CH) {
         do {
             lex_get_next_ch(lex);
         } while (CURR_CH && '\n' != CURR_CH && '\r' != CURR_CH);
@@ -194,6 +189,29 @@ static int lex_get_num_digit(lexer_t *lex, int len)
     return len;
 }
 
+static void lex_get_hex_token(lexer_t *lex)
+{
+    int len = 2;
+
+    lex->token_buf[0] = '0';
+    lex->token_buf[1] = 'x';
+    lex_get_next_ch(lex);
+    lex_get_next_ch(lex);
+
+    while (isxdigit(CURR_CH)) {
+        if (len + 1 < lex->token_buf_size) {
+            lex->token_buf[len++] = CURR_CH;
+        } else {
+            break;
+        }
+        lex_get_next_ch(lex);
+    }
+    lex->token_buf[len] = 0;
+    lex->token_len = len;
+    lex->curr_tok = TOK_NUM;
+}
+
+
 static void lex_get_num_token(lexer_t *lex)
 {
     int len = 0;
@@ -248,7 +266,11 @@ TOKEN_LOCATE:
         lex_get_str_token(lex);
     } else
     if (isdigit(tok)) {
-        lex_get_num_token(lex);
+        if (tok == '0' && (NEXT_CH == 'x' || NEXT_CH == 'X')) {
+            lex_get_hex_token(lex);
+        } else {
+            lex_get_num_token(lex);
+        }
     } else {
         if (tok) {
             lex_get_next_ch(lex);
