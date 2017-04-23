@@ -61,7 +61,7 @@ static void test_create(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, memory, MEMORY_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a, b;", &res)   && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a, b;", &res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a = Buffer(10);", &res) && val_is_buffer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 10;", &res) && val_is_true(res));
@@ -89,7 +89,7 @@ static void test_write(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, memory, MEMORY_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var b;", &res)   && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b;", &res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "b = Buffer(10);", &res) && val_is_buffer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b.length() == 10;", &res) && val_is_true(res));
@@ -114,7 +114,7 @@ static void test_read(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, memory, MEMORY_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a, b;", &res)   && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a, b;", &res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a = Buffer(10);", &res) && val_is_buffer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 10;", &res) && val_is_true(res));
@@ -161,7 +161,7 @@ static void test_slice(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, memory, MEMORY_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var b, d;", &res)   && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b, d;", &res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "b = Buffer('hello');", &res) && val_is_buffer(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b.length() == 5", &res) && val_is_true(res));

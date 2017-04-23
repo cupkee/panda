@@ -110,7 +110,7 @@ static void test_async_common(void)
     CU_ASSERT(0 == env_callback_set(&env, gc_callback));
 
     CU_ASSERT(0 < interp_execute_string(&env, "register", &res) && val_is_function(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def fn() {n += 1}", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "register(fn)", &res) && val_is_number(res) && 0 == val_2_double(res));
 

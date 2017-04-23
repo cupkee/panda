@@ -223,7 +223,7 @@ static void test_exec_symbal(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 5, b = 2", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 5, b = 2", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_number(res) &&  5 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_number(res) &&  2 == val_2_double(res));
 
@@ -276,21 +276,21 @@ static void test_exec_var(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_undefined(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var b = 2;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = 2;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b;", &res) && 2 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 2", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var c = d = 3, e = b + c + d, f;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = d = 3, e = b + c + d, f;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "e == 8", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f;", &res) && val_is_undefined(res));
 
     // redefine f
-    CU_ASSERT(0 < interp_execute_string(&env, "var f, g, h, k = 0, j, s, m;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var f, g, h, k = 0, j, s, m;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "f;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "g;", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "h;", &res) && val_is_undefined(res));
@@ -309,7 +309,7 @@ static void test_exec_assign(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -322,7 +322,7 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 3;", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var b = [1];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = [1];", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -335,7 +335,7 @@ static void test_exec_assign(void)
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] >>= 1;", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b[0] == 3;", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a += 1;", &res) && val_is_number(res) && 2 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a -= 1;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a *= 2;", &res) && val_is_number(res) && 2 == val_2_double(res));
@@ -358,7 +358,7 @@ static void test_exec_selfop(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a++;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 2;", &res) && val_is_true(res));
@@ -381,7 +381,7 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "--a;", &res) && val_is_nan(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a;", &res) && val_is_boolean(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = {a: 1};", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a++;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a == 2;", &res) && val_is_true(res));
@@ -396,7 +396,7 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c.a;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.y--;", &res) && val_is_nan(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var c = [1];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = [1];", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 1;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[0]++;", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 2;", &res) && val_is_true(res));
@@ -421,47 +421,47 @@ static void test_exec_if(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 1, d = 0;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 1, d = 0;", &res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) d = 3", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) d = 3", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 3", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a) b = 2 else c = 9", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a) b = 2 else c = 9", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) b = 9 else c = 2", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) b = 9 else c = 2", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
     // nest
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a) d = 9 else if (b == c) d = 9 else a = 9", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a) d = 9 else if (b == c) d = 9 else a = 9", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) if (b != c) d = 9 else a = 9", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 0) if (b != c) d = 9 else a = 9", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
     // empty
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a) {} else {}", &res));// && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a) {} else {}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
     // block
-    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 9) { b = 1; c = 1;} else {d = 2}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (a == 9) { b = 1; c = 1;} else {d = 2}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d == 9", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "if (!a) { b = 2;} else { c = 3; d = 3}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "if (!a) { b = 2;} else { c = 3; d = 3}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 9", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 3", &res) && val_is_boolean(res) && val_is_true(res));
@@ -479,34 +479,34 @@ static void test_exec_while(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 9;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 9;", &res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "while(a) {a = 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while(a) {a = 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 0", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "while (b) b = b - 1", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (b) b = b - 1", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 0", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "while (b < 10) {b = b + 1 a = a + 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (b < 10) {b = b + 1 a = a + 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 10 && b == 10", &res) && val_is_boolean(res) && val_is_true(res));
 
-    // nest
+    // nest, multi stmt
     CU_ASSERT(0 < interp_execute_string(&env, "var c = 0; a = 9;", &res) && val_is_number(res) && 9 == val_2_integer(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {a=a-1; b=9; while(b){b=b-1;c=c+1;}}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {a=a-1; b=9; while(b){b=b-1;c=c+1;}}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 81", &res) && val_is_boolean(res) && val_is_true(res));
 
     // continue
     CU_ASSERT(0 < interp_execute_string(&env, "a = 0, b = 0;", &res) && val_is_number(res) && 0 == val_2_integer(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "while (b < 10) {b = b + 1; if (b == 5) continue; a = a + 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (b < 10) {b = b + 1; if (b == 5) continue; a = a + 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 9 && b == 10", &res) && val_is_boolean(res) && val_is_true(res));
 
     // break;
-    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {a = a - 1; if (a == 5) break; }", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {a = a - 1; if (a == 5) break; }", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 5", &res) && val_is_boolean(res) && val_is_true(res));
 
     // compose
     CU_ASSERT(0 < interp_execute_string(&env, "a = 9, b = 9, c = 0;", &res) && val_is_number(res) && 0 == val_2_integer(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {b=a; while(b){b=b-1;if(2*b==a){ c=c+1; break;}}; if(a+b==6)break; a=a-1;}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (a) {b=a; while(b){b=b-1;if(2*b==a){ c=c+1; break;}}; if(a+b==6)break; a=a-1;}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 4", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 2", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c == 3", &res) && val_is_boolean(res) && val_is_true(res));
@@ -541,7 +541,7 @@ static void test_exec_function(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1, b = 0;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 1, b = 0;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def zero() return 0", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b = a + zero() + 2", &res) && val_is_number(res) && 3 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b == 3", &res) && val_is_boolean(res) && val_is_true(res));
@@ -668,7 +668,7 @@ static void test_exec_native_call_script(void)
 
     CU_ASSERT(0 == env_native_set(&env, native_entry, 2));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def zero() return 0;", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = call(zero)", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a == 0", &res) && val_is_boolean(res) && val_is_true(res));
@@ -697,7 +697,7 @@ static void test_exec_string(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a, b = 'world', c;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a, b = 'world', c;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "\"hello\"", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = \"hello\"", &res) && val_is_string(res));
 
@@ -735,7 +735,7 @@ static void test_exec_object(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = {a: 1, b: 'hello', c: 2 * 2 - 1};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = {a: 1, b: 'hello', c: 2 * 2 - 1};", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.a == 1", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.b == \"hello\"", &res) && val_is_boolean(res) && val_is_true(res));
@@ -745,11 +745,11 @@ static void test_exec_object(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a.a == 'world'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.a + a.b == 'worldhello'", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var b = {a: 1, b: def(self) return self.a};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = {a: 1, b: def(self) return self.a};", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b.b() == 1", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var c = {}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var c = {}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_object(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "(c.a = 1) == 1", &res) && val_is_boolean(res) && val_is_true(res));
@@ -758,7 +758,7 @@ static void test_exec_object(void)
     CU_ASSERT(0 < interp_execute_string(&env, "(c.d = false) == false", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.e = def() return 0", &res) && val_is_function(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var o = {'a': a, 'b': b, 'c': c}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = {'a': a, 'b': b, 'c': c}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.a == a", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.b == b", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.c == c", &res) && val_is_boolean(res) && val_is_true(res));
@@ -767,7 +767,7 @@ static void test_exec_object(void)
     CU_ASSERT(0 < interp_execute_string(&env, "o.c.e() == 0", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "o = {'a': 'hello', 'b': ' ', 'c': 'world'}", &res) && val_is_object(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var ks = '', vs = ''", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var ks = '', vs = ''", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.foreach(def(v, k) {ks = ks + k; vs = vs + v })", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "ks == 'abc'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "vs == 'hello world'", &res) && val_is_boolean(res) && val_is_true(res));
@@ -785,7 +785,7 @@ static void test_exec_array(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}], b = [], c = [1], d = [1, 2];", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = [0, 'hello', [1, 2], {a: 0}], b = [], c = [1], d = [1, 2];", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "b", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_array(res));
@@ -811,7 +811,7 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a[2].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[2] == a[3]", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var o = a.pop();", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = a.pop();", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o == a[2]", &res) && val_is_boolean(res) && val_is_true(res));
 
@@ -820,7 +820,7 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a.push(1) == 5", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 == a[4]", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var s = a.shift();", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var s = a.shift();", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "'hello' == s", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.shift()[1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
@@ -833,7 +833,7 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "s == a[0]", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var sum = 0;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var sum = 0;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "a = [1, 2, 3, 4, 5]", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.foreach(def(v) sum = sum + v)", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "sum == 15", &res) && val_is_boolean(res) && val_is_true(res));
@@ -848,7 +848,7 @@ static void test_exec_closure(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def f() {return a};", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f()", &res) && val_is_number(res) && 0 == val_2_double(res));
 
@@ -858,7 +858,7 @@ static void test_exec_closure(void)
 
 
     CU_ASSERT(0 < interp_execute_string(&env, "def adder(x){return def(b){return a + x + b}}", &res) && val_is_function(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var b = adder(10)", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = adder(10)", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "b(100) == 111", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "def fact(x){ if(x > 1) return x * fact(x - 1) else return 1}", &res) && val_is_function(res));
@@ -880,7 +880,7 @@ static void test_exec_stack_check(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2, d = 3;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = 0, b = 1, c = 2, d = 3;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def deep() { return a + b + c + deep()}", &res) && val_is_function(res));
     CU_ASSERT(-ERR_StackOverflow == interp_execute_string(&env, "deep()", &res));
 
@@ -908,11 +908,11 @@ static void test_exec_gc(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0;", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var b = 'world', c = 'hello';", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var d = c + ' ', e = b + '.', f;", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var a = [b, c, 0];", &res) && val_is_undefined(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "var o = {a: b, b: c};", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0;", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var b = 'world', c = 'hello';", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var d = c + ' ', e = b + '.', f;", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var a = [b, c, 0];", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var o = {a: b, b: c};", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def add(a, b) {var n = 10; while(n) {n = n-1; a+b} return a + b}", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def join(){return e + c}", &res) && val_is_function(res));
 
@@ -921,7 +921,7 @@ static void test_exec_gc(void)
     CU_ASSERT(0 < interp_execute_string(&env, "o.a == b", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o.b == c", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "while (n < 100) { f = add(d, e); n = n + 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while (n < 100) { f = add(d, e); n = n + 1}", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "n == 100", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d", &res) && val_is_string(res));
     CU_ASSERT(0 < interp_execute_string(&env, "e", &res) && val_is_string(res));
@@ -992,7 +992,7 @@ static void test_exec_gc_reference(void)
     CU_ASSERT(0 == env_reference_set(&env, ref, 4));
     CU_ASSERT(0 == env_callback_set(&env, gc_callback));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "def fn(rs, ra, ro) {return rs == s && ra == a && ro == o}", &res) && val_is_function(res));
     ref[0] = *res;
     CU_ASSERT(0 < interp_execute_string(&env, "s = 'hello' + '.' + 'world'", &res) && val_is_string(res));
@@ -1004,7 +1004,7 @@ static void test_exec_gc_reference(void)
 
     // trigger gc
     gc_count = 0;
-    CU_ASSERT(0 < interp_execute_string(&env, "while(n < 1000) {'aaaaaa' + 'bbbbbb'; n += 1}", &res) && val_is_undefined(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "while(n < 1000) {'aaaaaa' + 'bbbbbb'; n += 1}", &res));
     CU_ASSERT(0 < gc_count);
 
     CU_ASSERT(0 < interp_execute_string(&env, "n == 1000", &res) && val_is_true(res));

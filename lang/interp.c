@@ -35,8 +35,6 @@ SOFTWARE.
 #include "type_array.h"
 #include "type_object.h"
 
-static val_t undefined = TAG_UNDEFINED;
-
 static val_t *interp_var_ref(env_t *env, val_t *ref)
 {
     if (val_is_reference(ref)) {
@@ -692,7 +690,7 @@ int interp_execute_image(env_t *env, val_t **v)
     if (env->fp > env->sp) {
         *v = env_stack_pop(env);
     } else {
-        *v = &undefined;
+        *v = NULL;
     }
 
     return 0;
@@ -732,7 +730,7 @@ int interp_execute_string(env_t *env, const char *input, val_t **v)
     if (env->fp > env->sp) {
         *v = env_stack_pop(env);
     } else {
-        *v = &undefined;
+        *v = NULL;
     }
 
     return 1;
@@ -769,7 +767,7 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     if (env->fp > env->sp) {
         *v = env_stack_pop(env);
     } else {
-        *v = &undefined;
+        *v = NULL;
     }
 
     return 1;
