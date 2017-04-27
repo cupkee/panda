@@ -275,9 +275,10 @@ static inline void interp_prop_set(env_t *env) {
     val_t *ref = val_prop_ref(env, obj, key);
 
     if (ref) {
-        *ref = *val;
+        val_op_set(env, ref, val, res);
+    } else {
+        *res = *val;
     }
-    *res = *val;
     env_stack_release(env, 2);
 }
 
@@ -289,9 +290,10 @@ static inline void interp_elem_set(env_t *env) {
     val_t *ref = val_elem_ref(env, obj, key);
 
     if (ref) {
-        *ref = *val;
+        val_op_set(env, ref, val, res);
+    } else {
+        *res = *val;
     }
-    *res = *val;
     env_stack_release(env, 2);
 }
 
