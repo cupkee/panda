@@ -67,7 +67,7 @@ SOFTWARE.
 
 // lang profile
 #define MAGIC_BASE                  (0xE0)
-#define TOKEN_MAX_SIZE              (32)
+#define TOKEN_MAX_SIZE              (128)
 
 # define INTERACTIVE_VAR_MAX        (32)
 
