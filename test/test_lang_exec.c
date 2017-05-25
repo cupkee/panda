@@ -1620,6 +1620,19 @@ static void test_exec_op_lt(void)
     return;
 }
 
+static void test_exec_stmts(void)
+{
+    env_t env;
+    val_t *res;
+
+    CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
+
+    CU_ASSERT(0 < interp_execute_stmts(&env, "var a = 1; a + 2 == 3", &res) && val_is_true(res));
+
+    env_deinit(&env);
+    return;
+}
+
 CU_pSuite test_lang_interp_entry()
 {
     CU_pSuite suite = CU_add_suite("lang execute", test_setup, test_clean);
@@ -1670,6 +1683,7 @@ CU_pSuite test_lang_interp_entry()
 
         if (0) {
         }
+        CU_add_test(suite, "exec sbys",        test_exec_stmts);
     }
 
     return suite;

@@ -41,5 +41,8 @@ int interp_execute_image(env_t *env, val_t **result);
 
 val_t interp_execute_call(env_t *env, int ac);
 
+
+int interp_execute_stmts(env_t *env, const char *input, val_t **v);
+
 #endif /* __LANG_INTERP_INC__ */
 

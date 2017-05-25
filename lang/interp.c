@@ -602,7 +602,7 @@ int interp_env_init_interpreter(env_t *env, void *mem_ptr, int mem_size, void *h
     }
 
     if (!stack_ptr) {
-        exe_mem_size -= stack_size;
+        exe_mem_size -= stack_size * sizeof(val_t);
     }
 
     if (env_exe_memery_distribute(exe_mem_size, &exe_num_max, &exe_str_max, &exe_fn_max, &exe_code_max)) {
@@ -770,6 +770,54 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
         *v = env_stack_pop(env);
     } else {
         *v = NULL;
+    }
+
+    return 1;
+}
+
+static inline void interp_reset_parser_heap(env_t *env, parser_t *psr)
+{
+    heap_t *heap = env_heap_get_free((env_t*)env);
+
+    heap_init(&psr->heap, heap->base, heap->size);
+}
+
+int interp_execute_stmts(env_t *env, const char *input, val_t **v)
+{
+    stmt_t *stmt;
+    parser_t psr;
+    compile_t cpl;
+    heap_t *heap = env_heap_get_free((env_t*)env);
+
+    if (!env || !input || !v) {
+        return -1;
+    }
+
+    // The free heap can be used for parse and compile process
+    parse_init(&psr, input, NULL, heap->base, heap->size);
+    parse_set_cb(&psr, parse_callback, NULL);
+
+    stmt = parse_stmt(&psr);
+    while (stmt) {
+        compile_init(&cpl, env, heap_free_addr(&psr.heap), heap_free_size(&psr.heap));
+        if (0 == compile_one_stmt(&cpl, stmt) && 0 == compile_update(&cpl)) {
+            if (0 != interp_run(env, env_main_entry_setup(env, 0, NULL))) {
+                return -env->error;
+            }
+        } else {
+            return -cpl.error;
+        }
+
+        if (env->fp > env->sp) {
+            *v = env_stack_pop(env);
+        } else {
+            *v = NULL;
+        }
+
+        interp_reset_parser_heap(env, &psr);
+        stmt = parse_stmt(&psr);
+
+        printf("parse err: %d\n", psr.error);
     }
 
     return 1;
