@@ -816,8 +816,6 @@ int interp_execute_stmts(env_t *env, const char *input, val_t **v)
 
         interp_reset_parser_heap(env, &psr);
         stmt = parse_stmt(&psr);
-
-        printf("parse err: %d\n", psr.error);
     }
 
     return 1;
