@@ -1141,6 +1141,19 @@ void val_op_set(void *env, val_t *a, val_t *b, val_t *r)
     }
 }
 
+int val_elem_set(void *env, val_t *o, val_t *i, val_t *v)
+{
+    if (val_type(o) == TYPE_FOREIGN) {
+        val_foreign_t *f = (val_foreign_t *)val_2_intptr(o);
+
+        if (f && f->op && f->op->elem_set) {
+            f->op->elem_set(env, f->data, i, v);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 val_t *val_prop_ref(void *env, val_t *self, val_t *key)
 {
     int type = val_type(self);

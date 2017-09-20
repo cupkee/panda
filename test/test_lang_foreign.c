@@ -296,8 +296,7 @@ static void test_foreign_simple(void)
     CU_ASSERT(0 < interp_execute_string(&env, "f.a == 13", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "f = 2", &res) && val_is_number(res) && 0 == val_2_double(res));
-
-
+    CU_ASSERT(0 < interp_execute_string(&env, "f[1] = 3", &res) && val_is_number(res) && 3 == val_2_double(res));
 
     //CU_ASSERT(0 < interp_execute_string(&env, "f.is(Foreign)", &res) && val_is_true(res));
 
