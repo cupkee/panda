@@ -143,12 +143,10 @@ typedef struct val_foreign_op_t {
     void (*xor)(void *env, intptr_t self, val_t *av, val_t *result);
     void (*lshift)(void *env, intptr_t self, val_t *av, val_t *result);
     void (*rshift)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*prop)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*elem)(void *env, intptr_t self, val_t *av, val_t *result);
-    void (*set)(void *env, intptr_t self, val_t *av, val_t *result);
-    val_t *(*prop_ref)(void *env, intptr_t self, val_t *av);
-    val_t *(*elem_ref)(void *env, intptr_t self, val_t *av);
 
+    void (*set)(void *env, intptr_t self, val_t *av, val_t *result);
+
+    void (*elem_get)(void *env, intptr_t self, val_t *av, val_t *result);
     void (*elem_set)(void *env, intptr_t self, val_t *key, val_t *val);
 } val_foreign_op_t;
 
@@ -393,7 +391,8 @@ void val_op_prop(void *env, val_t *v, val_t *key, val_t *prop);
 void val_op_elem(void *env, val_t *v, val_t *key, val_t *elem);
 val_t *val_prop_ref(void *env, val_t *v, val_t *name);
 val_t *val_elem_ref(void *env, val_t *v, val_t *id);
-int val_elem_set(void *env, val_t *o, val_t *i, val_t *v);
+
+int val_prop_set(void *env, val_t *o, val_t *k, val_t *v);
 
 void val_op_neg(void *env, val_t *oprand, val_t *res);
 void val_op_not(void *env, val_t *oprand, val_t *res);

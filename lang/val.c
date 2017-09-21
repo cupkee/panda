@@ -267,58 +267,21 @@ static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
     }
 }
 
-static inline void foreign_prop(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
+static inline void foreign_prop_get(void *env, val_t *o, val_t *b, val_t *res) {
+    val_foreign_t *f = (val_foreign_t *)val_2_intptr(o);
 
-    if (f && f->op && f->op->prop) {
-        f->op->prop(env, f->data, b, res);
+    if (f && f->op && f->op->elem_get) {
+        f->op->elem_get(env, f->data, b, res);
     } else {
         val_set_undefined(res);
     }
 }
 
-static inline void foreign_elem(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->elem) {
-        f->op->elem(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline val_t *foreign_prop_ref(void *env, val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->prop_ref) {
-        return f->op->prop_ref(env, f->data, b);
-    } else {
-        return NULL;
-    }
-}
-
-static inline val_t *foreign_elem_ref(void *env, val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->elem_ref) {
-        return f->op->elem_ref(env, f->data, b);
-    } else {
-        return NULL;
-    }
-}
-
-static void def_elem_get(val_t *self, int index, val_t *elem)
+static void def_elem_get(val_t *self, int i, val_t *elem)
 {
     (void) self;
-    (void) index;
+    (void) i;
     val_set_undefined(elem);
-}
-
-static val_t *def_elem_ref(val_t *self, int index)
-{
-    (void) self;
-    (void) index;
-    return NULL;
 }
 
 static val_t def_to_string(env_t *env, int ac, val_t *obj)
@@ -375,7 +338,6 @@ typedef struct prop_desc_t {
 
 typedef struct type_desc_t {
     void               (*elem_get)(val_t *, int, val_t*);
-    val_t             *(*elem_ref)(val_t *, int index);
     int                prop_num;
     const prop_desc_t *prop_descs;
 } type_desc_t;
@@ -480,72 +442,56 @@ static const prop_desc_t date_prop_descs [] = {
 
 static const type_desc_t type_desc_num = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(number_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = number_prop_descs,
 };
 static const type_desc_t type_desc_str = {
     .elem_get = string_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(string_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = string_prop_descs,
 };
 static const type_desc_t type_desc_bool = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(boolean_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = boolean_prop_descs,
 };
 static const type_desc_t type_desc_func = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(function_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = function_prop_descs,
 };
 static const type_desc_t type_desc_array = {
     .elem_get = array_elem_val,
-    .elem_ref = array_elem_ref,
     .prop_num = sizeof(array_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = array_prop_descs,
 };
 static const type_desc_t type_desc_und = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(und_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = und_prop_descs,
 };
 static const type_desc_t type_desc_nan = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(nan_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = nan_prop_descs,
 };
 static const type_desc_t type_desc_err = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(err_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = err_prop_descs,
 };
 static const type_desc_t type_desc_buf = {
     .elem_get = buffer_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(buf_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = buf_prop_descs,
 };
 static const type_desc_t type_desc_date = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = sizeof(date_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = date_prop_descs,
 };
 static const type_desc_t type_desc_obj = {
     .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
-    .prop_num = 0,
-};
-static const type_desc_t type_desc_foreign = {
-    .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
     .prop_num = 0,
 };
 
@@ -564,7 +510,6 @@ static const type_desc_t *const type_descs[] = {
     [TYPE_ERR]    = &type_desc_err,
     [TYPE_DATE]   = &type_desc_date,
     [TYPE_OBJ]    = &type_desc_obj,
-    [TYPE_FOREIGN]  = &type_desc_foreign,
 };
 
 static const prop_desc_t *prop_desc_get(const prop_desc_t *descs, int max, val_t *key)
@@ -597,11 +542,6 @@ static void type_prop_val(int type, val_t *key, val_t *prop)
 static inline void type_elem_val(int type, val_t *self, int index, val_t *elem)
 {
     type_descs[type]->elem_get(self, index, elem);
-}
-
-static inline val_t *type_elem_ref(int type, val_t *self, int index)
-{
-    return type_descs[type]->elem_ref(self, index);
 }
 
 int val_is_true(val_t *v)
@@ -1108,7 +1048,7 @@ void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)
         object_prop_val(env, self, key, prop);
     } else
     if (type == TYPE_FOREIGN) {
-        foreign_prop(env, self, key, prop);
+        foreign_prop_get(env, self, key, prop);
     } else {
         type_prop_val(type, key, prop);
     }
@@ -1122,7 +1062,7 @@ void val_op_elem(void *env, val_t *self, val_t *key, val_t *prop)
         object_prop_val(env, self, key, prop);
     } else
     if (type == TYPE_FOREIGN) {
-        foreign_elem(env, self, key, prop);
+        foreign_prop_get(env, self, key, prop);
     } else {
         if (val_is_number(key)) {
             type_elem_val(type, self, val_2_integer(key), prop);
@@ -1141,13 +1081,13 @@ void val_op_set(void *env, val_t *a, val_t *b, val_t *r)
     }
 }
 
-int val_elem_set(void *env, val_t *o, val_t *i, val_t *v)
+int val_prop_set(void *env, val_t *o, val_t *k, val_t *v)
 {
     if (val_type(o) == TYPE_FOREIGN) {
         val_foreign_t *f = (val_foreign_t *)val_2_intptr(o);
 
         if (f && f->op && f->op->elem_set) {
-            f->op->elem_set(env, f->data, i, v);
+            f->op->elem_set(env, f->data, k, v);
             return 1;
         }
     }
@@ -1160,14 +1100,10 @@ val_t *val_prop_ref(void *env, val_t *self, val_t *key)
 
     if (type == TYPE_OBJ) {
         return object_prop_ref(env, self, key);
-    } else
-    if (type == TYPE_FOREIGN) {
-        return foreign_prop_ref(env, self, key);
     } else {
         return NULL;
     }
 }
-
 
 val_t *val_elem_ref(void *env, val_t *self, val_t *id)
 {
@@ -1176,14 +1112,10 @@ val_t *val_elem_ref(void *env, val_t *self, val_t *id)
     if (type == TYPE_OBJ) {
         return object_prop_ref(env, self, id);
     } else
-    if (type == TYPE_FOREIGN) {
-        return foreign_elem_ref(env, self, id);
+    if (type == TYPE_ARRAY && val_is_number(id)) {
+        return array_elem_ref(self, val_2_integer(id));
     } else {
-        if (val_is_number(id)) {
-            return type_elem_ref(type, self, val_2_integer(id));
-        } else {
-            return NULL;
-        }
+        return NULL;
     }
 }
 

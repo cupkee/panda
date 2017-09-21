@@ -41,6 +41,8 @@ SOFTWARE.
 
 uint8_t env_buf[ENV_BUF_SIZE];
 
+static val_t cache;
+
 static int test_setup()
 {
     return 0;
@@ -193,17 +195,17 @@ static void op_prop(void *env, intptr_t data, val_t *av, val_t *result)
 
 static void op_set(void *env, intptr_t data, val_t *av, val_t *result)
 {
-    val_set_number(result, 0);
+    *result = *av;
 }
 
-static val_t *prop_ref(void *env, intptr_t data, val_t *av)
+static void elem_get(void *env, intptr_t data, val_t *key, val_t *prop)
 {
-    return NULL;
+    *prop = cache;
 }
 
-static val_t *elem_ref(void *env, intptr_t data, val_t *av)
+static void elem_set(void *env, intptr_t data, val_t *key, val_t *val)
 {
-    return NULL;
+    cache = *val;
 }
 
 static const val_foreign_op_t test_op = {
@@ -229,11 +231,11 @@ static const val_foreign_op_t test_op = {
     .xor = op_xor,
     .rshift = op_rshift,
     .lshift = op_lshift,
-    .prop = op_prop,
-    .elem = op_elem,
+
     .set = op_set,
-    .prop_ref = prop_ref,
-    .elem_ref = elem_ref,
+
+    .elem_get = elem_get,
+    .elem_set = elem_set,
 };
 
 val_t test_native_foreign(env_t *env, int ac, val_t *av)
@@ -292,11 +294,12 @@ static void test_foreign_simple(void)
 
     CU_ASSERT(0 < interp_execute_string(&env, "f >> 1 == 10", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f << 1 == 11", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] = 12", &res) && val_is_number(res) && 12 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f[0] == 12", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 13", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a = 3", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 3", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f = 2", &res) && val_is_number(res) && 0 == val_2_double(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f[1] = 3", &res) && val_is_number(res) && 3 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f = 2", &res) && val_is_number(res) && 2 == val_2_double(res));
 
     //CU_ASSERT(0 < interp_execute_string(&env, "f.is(Foreign)", &res) && val_is_true(res));
 
