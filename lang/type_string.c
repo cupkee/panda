@@ -63,6 +63,19 @@ static inline string_t *string_alloc(env_t *env, int size)
     return s;
 }
 
+val_t string_create_heap(env_t *env, const char *cstr)
+{
+    string_t *s;
+    size_t len = strlen(cstr) + 1;
+
+    s = string_alloc(env, len);
+    if (s) {
+        memcpy(s->str, cstr, len);
+        return val_mk_heap_string((intptr_t)s);
+    }
+    return VAL_UNDEFINED;
+}
+
 val_t string_create_heap_val(env_t *env, int size)
 {
     string_t *s;

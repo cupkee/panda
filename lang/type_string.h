@@ -66,6 +66,7 @@ static inline int string_len(val_t *v) {
 }
 
 val_t string_create_heap_val(env_t *env, int size);
+val_t string_create_heap(env_t *env, const char *cstr);
 
 int string_compare(val_t *a, val_t *b);
 
