@@ -107,6 +107,10 @@ static void print_error(int error)
 
 static void print_value(val_t *v)
 {
+    if (!v) {
+        return;
+    }
+
     if (val_is_number(v)) {
         char buf[32];
         if (*v & 0xffff) {

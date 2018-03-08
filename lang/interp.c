@@ -563,6 +563,13 @@ DO_END:
     return -env->error;
 }
 
+static inline void interp_reset_parser_heap(env_t *env, parser_t *psr)
+{
+    heap_t *heap = env_heap_get_free((env_t*)env);
+
+    heap_init(&psr->heap, heap->base, heap->size);
+}
+
 static void parse_callback(void *u, parse_event_t *e)
 {
     (void) u;
@@ -773,13 +780,6 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     }
 
     return 1;
-}
-
-static inline void interp_reset_parser_heap(env_t *env, parser_t *psr)
-{
-    heap_t *heap = env_heap_get_free((env_t*)env);
-
-    heap_init(&psr->heap, heap->base, heap->size);
 }
 
 int interp_execute_stmts(env_t *env, const char *input, val_t **v)

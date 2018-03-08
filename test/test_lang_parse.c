@@ -694,6 +694,11 @@ static void test_expr_array(void)
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
     CU_ASSERT(L_(expr) == NULL && R_(expr) == NULL);
 
+    parse_init(&psr, "[[1, 2], [2,3,4,5]]", NULL, heap_buf, PSR_BUF_SIZE);
+    CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
+    CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
+    CU_ASSERT(ast_expr_type(L_(expr)) == EXPR_ARRAY &&
+              ast_expr_type(R_(expr)) == EXPR_ARRAY);
 
     parse_init(&psr, "[a, 'a', [1], {a: 1, b: 2}]", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
