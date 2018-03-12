@@ -52,7 +52,7 @@ void env_heap_setup(env_t *env, void *heap_ptr, int heap_size) {
     env->heap = &env->heap_top;
 }
 
-static void env_heap_gc_init(env_t *env)
+static heap_t *env_heap_gc_init(env_t *env)
 {
     heap_t  *heap = env_heap_get_free(env);
     val_t   *sb;
@@ -82,6 +82,8 @@ static void env_heap_gc_init(env_t *env)
             sp = frame->sp;
         }
     }
+
+    return heap;
 }
 
 static uint32_t hash_pjw(const void *key)
@@ -518,18 +520,17 @@ void *env_heap_alloc(env_t *env, int size)
 
 void env_heap_gc(env_t *env, int flags)
 {
-    heap_t *free_heap = env_heap_get_free(env);
+    heap_t *heap = env_heap_gc_init(env);
 
     (void) flags;
 
-    env_heap_gc_init(env);
-    gc_scan(free_heap);
+    gc_scan(heap);
 
     if (env->gc_callback) {
         env->gc_callback();
     }
 
-    env->heap = free_heap;
+    env->heap = heap;
 }
 
 int env_number_find_add(env_t *env, double n)

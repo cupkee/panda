@@ -147,19 +147,6 @@ static intptr_t heap_dup_function(heap_t *heap, intptr_t func)
     return (intptr_t) dup;
 }
 
-scope_t *gc_copy_scope(heap_t *heap, scope_t *scope)
-{
-    if (!scope || heap_is_owned(heap, scope)) {
-        return scope;
-    }
-
-    if (MAGIC_BYTE(scope) != MAGIC_SCOPE) {
-        return ADDR_VALUE(scope);
-    }
-
-    return heap_dup_scope(heap, scope);
-}
-
 static inline intptr_t gc_copy_string(heap_t *heap, intptr_t str)
 {
     if (!str || heap_is_owned(heap, (void*)str)) {
@@ -236,6 +223,19 @@ static inline intptr_t gc_copy_foreign(heap_t *heap, val_foreign_t *foreign)
     }
 
     return heap_dup_foreign(heap, foreign);
+}
+
+scope_t *gc_copy_scope(heap_t *heap, scope_t *scope)
+{
+    if (!scope || heap_is_owned(heap, scope)) {
+        return scope;
+    }
+
+    if (MAGIC_BYTE(scope) != MAGIC_SCOPE) {
+        return ADDR_VALUE(scope);
+    }
+
+    return heap_dup_scope(heap, scope);
 }
 
 void gc_copy_vals(heap_t *heap, int vc, val_t *vp)

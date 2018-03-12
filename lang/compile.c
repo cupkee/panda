@@ -1363,13 +1363,13 @@ int compile_stmt(compile_t *cpl, stmt_t *stmt)
 
     switch(stmt->type) {
     case STMT_PASS: break;
-    case STMT_EXPR: compile_stmt_expr(cpl, stmt); break;
-    case STMT_VAR:  compile_stmt_var(cpl, stmt); break;
-    case STMT_IF:   compile_stmt_cond(cpl, stmt); break;
+    case STMT_EXPR:     compile_stmt_expr(cpl, stmt); break;
+    case STMT_VAR:      compile_stmt_var(cpl, stmt); break;
+    case STMT_IF:       compile_stmt_cond(cpl, stmt); break;
     case STMT_WHILE:    compile_stmt_while(cpl, stmt); break;
     case STMT_BREAK:    compile_stmt_break(cpl, stmt); break;
     case STMT_CONTINUE: compile_stmt_continue(cpl, stmt); break;
-    case STMT_RET:  compile_stmt_return(cpl, stmt); break;
+    case STMT_RET:      compile_stmt_return(cpl, stmt); break;
     default: cpl->error = ERR_NotImplemented;
     }
 

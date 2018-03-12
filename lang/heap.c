@@ -50,7 +50,7 @@ void *heap_alloc(heap_t *heap, int size) {
         size = SIZE_ALIGN(size);
         free = heap->free + size;
         //printf("Alloc %d, size: %u, free: %u\n", size, heap->size, heap->free);
-        if (free < heap->size) {
+        if (free <= heap->size) {
             void *p = heap->base + heap->free;
             heap->free = free;
             return p;

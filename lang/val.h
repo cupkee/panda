@@ -67,8 +67,11 @@ extern const val_t _Infinity;
  * On 64-bit platforms, pointers are really 48 bit only, so they can fit,
  * provided they are sign extended
  */
-#define MAKE_TAG(s, t) \
+#define MAKE_TAG(s, t)  \
   ((val_t)(s) << 63 | (val_t) 0x7ff0 <<48 | (val_t)(t) <<48)
+
+#define TAG_UINT16(t)   \
+  ((uint16_t) (0xfff0 | t))
 
 #define TYPE_NUM            0       // number or infinity
 #define TYPE_STR_I          1       // string (inner/inline)
@@ -162,7 +165,7 @@ static inline
 int val_type(val_t *v) {
     int type = (*v) >> 48;
     if ((type & 0x7ff0) != 0x7ff0) {
-        return 0;
+        return TYPE_NUM;
     } else {
         return type & 0xf;
     }
@@ -212,7 +215,9 @@ static inline int val_is_foreign_string(val_t *v) {
 }
 
 static inline int val_is_string(val_t *v) {
-    return val_is_heap_string(v) || val_is_foreign_string(v) || val_is_inline_string(v);
+    uint16_t tag = ((*v) >> 48);
+
+    return tag < TAG_UINT16(TYPE_STR_I) ? 0 : tag > TAG_UINT16(TYPE_STR_F) ? 0 : 1;
 }
 
 static inline int val_is_boolean(val_t *v) {
@@ -228,7 +233,8 @@ static inline int val_is_native(val_t *v) {
 }
 
 static inline int val_is_function(val_t *v) {
-    return val_is_script(v) || val_is_native(v);
+    uint16_t tag = ((*v) >> 48);
+    return tag == TAG_UINT16(TYPE_FUNC) || tag == TAG_UINT16(TYPE_FUNC_C);
 }
 
 static inline int val_is_undefined(val_t *v) {
@@ -412,8 +418,8 @@ void val_op_lshift(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_rshift(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_set(void *env, val_t *a, val_t *b, val_t *r);
 
-val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data);
-int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t data, val_t *foreign);
+val_t val_create(void *env, const val_foreign_op_t *op, intptr_t entry);
+int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t entry, val_t *foreign);
 
 static inline
 int foreign_mem_space(val_foreign_t *foreign) {
