@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+/*
 #include "err.h"
 #include "type_string.h"
 #include "type_buffer.h"
@@ -288,3 +289,4 @@ void buffer_elem_get(val_t *self, int index, val_t *elem)
     }
 }
 
+*/

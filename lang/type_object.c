@@ -273,3 +273,7 @@ int object_iter_next(object_iter_t *it, const char **name, val_t **v)
     }
 }
 
+const val_metadata_t metadata_object = {
+    .is_true = object_is_true,
+};
+

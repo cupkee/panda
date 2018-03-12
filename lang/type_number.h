@@ -26,10 +26,12 @@ SOFTWARE.
 #ifndef __LANG_NUMBER_INC__
 #define __LANG_NUMBER_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "env.h"
+
+extern const val_metadata_t metadata_num;
 
 static inline void number_incp(val_t *a, val_t *res) {
     val_set_number(a, val_2_double(a) + 1);

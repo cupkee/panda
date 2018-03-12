@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_ARRAY_INC__
 #define __LANG_ARRAY_INC__
 
-#include "config.h"
+#include "def.h"
 #include "val.h"
 #include "env.h"
 
@@ -81,6 +81,8 @@ val_t array_foreach(env_t *env, int ac, val_t *av);
 
 void array_elem_val(val_t *self, int i, val_t *elem);
 val_t *array_elem_ref(val_t *self, int i);
+
+extern const val_metadata_t metadata_array;
 
 #endif /* __LANG_ARRAY_INC__ */
 

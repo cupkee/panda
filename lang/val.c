@@ -24,12 +24,12 @@ SOFTWARE.
 
 #include "val.h"
 #include "env.h"
+#include "type_boolean.h"
 #include "type_number.h"
 #include "type_string.h"
 #include "type_array.h"
 #include "type_object.h"
 #include "type_function.h"
-#include "type_buffer.h"
 
 const val_t _Infinity  = TAG_INFINITE;
 const val_t _Undefined = TAG_UNDEFINED;
@@ -353,21 +353,6 @@ static val_t def_to_string(env_t *env, int ac, val_t *obj)
     }
 }
 
-static val_t def_length(env_t *env, int ac, val_t *obj)
-{
-    (void) env;
-    if (ac < 1) {
-        return val_mk_number(0);
-    }
-
-    if (val_is_buffer(obj)) {
-        type_buffer_t *b = (type_buffer_t *)val_2_intptr(obj);
-        return val_mk_number(b->len);
-    } else {
-        return val_mk_number(0);
-    }
-}
-
 typedef struct prop_desc_t {
     const char *name;
     const function_native_t entry;
@@ -443,34 +428,7 @@ static const prop_desc_t array_prop_descs [] = {
         .entry = array_foreach
     }
 };
-static const prop_desc_t err_prop_descs [] = {
-    {
-        .name = "toString",
-        .entry = def_to_string
-    }
-};
-static const prop_desc_t buf_prop_descs [] = {
-    {
-        .name = "readInt",
-        .entry = buffer_native_read_int
-    },
-    {
-        .name = "writeInt",
-        .entry = buffer_native_write_int
-    },
-    {
-        .name = "slice",
-        .entry = buffer_native_slice
-    },
-    {
-        .name = "toString",
-        .entry = buffer_native_to_string
-    },
-    {
-        .name = "length",
-        .entry = def_length
-    },
-};
+
 static const prop_desc_t date_prop_descs [] = {
     {
         .name = "toString",
@@ -520,18 +478,6 @@ static const type_desc_t type_desc_nan = {
     .prop_num = sizeof(nan_prop_descs) / sizeof(prop_desc_t),
     .prop_descs = nan_prop_descs,
 };
-static const type_desc_t type_desc_err = {
-    .elem_get = def_elem_get,
-    .elem_ref = def_elem_ref,
-    .prop_num = sizeof(err_prop_descs) / sizeof(prop_desc_t),
-    .prop_descs = err_prop_descs,
-};
-static const type_desc_t type_desc_buf = {
-    .elem_get = buffer_elem_get,
-    .elem_ref = def_elem_ref,
-    .prop_num = sizeof(buf_prop_descs) / sizeof(prop_desc_t),
-    .prop_descs = buf_prop_descs,
-};
 static const type_desc_t type_desc_date = {
     .elem_get = def_elem_get,
     .elem_ref = def_elem_ref,
@@ -560,8 +506,6 @@ static const type_desc_t *const type_descs[] = {
     [TYPE_UND]    = &type_desc_und,
     [TYPE_NAN]    = &type_desc_nan,
     [TYPE_ARRAY]  = &type_desc_array,
-    [TYPE_BUF]    = &type_desc_buf,
-    [TYPE_ERR]    = &type_desc_err,
     [TYPE_DATE]   = &type_desc_date,
     [TYPE_OBJ]    = &type_desc_obj,
     [TYPE_FOREIGN]  = &type_desc_foreign,
@@ -604,26 +548,71 @@ static inline val_t *type_elem_ref(int type, val_t *self, int index)
     return type_descs[type]->elem_ref(self, index);
 }
 
+int val_always_true(val_t *self)
+{
+    (void) self;
+    return 1;
+}
+
+int val_always_false(val_t *self)
+{
+    (void) self;
+    return 0;
+}
+
+const val_metadata_t metadata_undefined = {
+    .is_true = val_always_false,
+};
+
+const val_metadata_t metadata_nan = {
+    .is_true = val_always_false,
+};
+
+const val_metadata_t metadata_date = {
+    .is_true = val_always_true,
+};
+
+const val_metadata_t metadata_array_buffer = {
+    .is_true = val_always_false,
+};
+
+const val_metadata_t metadata_data_view = {
+    .is_true = val_always_false,
+};
+
+const val_metadata_t metadata_object_foreign = {
+    .is_true = foreign_is_true,
+};
+
+const val_metadata_t metadata_none = {
+    .is_true = val_always_false,
+};
+
+
+static const val_metadata_t *base_metadata[] = {
+    &metadata_num,            // 0
+    &metadata_str_inline,     // 1
+    &metadata_str_heap,       // 2
+    &metadata_str_foreign,    // 3
+    &metadata_boolean,           // 4
+    &metadata_function,          // 5
+    &metadata_function_native,   // 6
+    &metadata_undefined,         // 7
+    &metadata_nan,               // 8
+    &metadata_date,              // 9
+    &metadata_array_buffer,      // 10
+    &metadata_data_view,         // 11
+    &metadata_array,             // 12
+    &metadata_object,            // 13
+    &metadata_object_foreign,    // 14
+    &metadata_none,              // 15
+};
+
 int val_is_true(val_t *v)
 {
-    switch(val_type(v)) {
-    case TYPE_NUM:      return val_2_double(v) != 0;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:    return *val_2_cstring(v);
-    case TYPE_BOOL:     return val_2_intptr(v);
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:   return 1;
-    case TYPE_UND:
-    case TYPE_NAN:      return 0;
-    case TYPE_ARRAY:    return array_is_true(v);
-    case TYPE_BUF:
-    case TYPE_ERR:
-    case TYPE_DATE:     return 0;
-    case TYPE_OBJ:      return object_is_true(v);
-    case TYPE_FOREIGN:  return foreign_is_true(v);
-    default: return 0;
-    }
+    const val_metadata_t *meta = base_metadata[val_type(v)];
+
+    return meta->is_true(v);
 }
 
 int val_is_equal(val_t *a, val_t *b)
@@ -655,8 +644,6 @@ int val_is_ge(val_t *op1, val_t *op2)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      return 0;
     case TYPE_FOREIGN:  return foreign_is_ge(op1, op2);
@@ -677,8 +664,6 @@ int val_is_gt(val_t *op1, val_t *op2)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      return 0;
     case TYPE_FOREIGN:  return foreign_is_gt(op1, op2);
@@ -699,8 +684,6 @@ int val_is_le(val_t *op1, val_t *op2)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      return 0;
     case TYPE_FOREIGN:  return foreign_is_le(op1, op2);
@@ -721,8 +704,6 @@ int val_is_lt(val_t *op1, val_t *op2)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      return 0;
     case TYPE_FOREIGN:  return foreign_is_lt(op1, op2);
@@ -744,8 +725,6 @@ void val_op_neg(void *env, val_t *oprand, val_t *result)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(result); break;
     case TYPE_FOREIGN:
@@ -768,8 +747,6 @@ void val_op_not(void *env, val_t *oprand, val_t *result)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(result); break;
     case TYPE_FOREIGN:
@@ -792,8 +769,6 @@ void val_op_inc(void *env, val_t *op1, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -815,8 +790,6 @@ void val_op_incp(void *env, val_t *op1, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -838,8 +811,6 @@ void val_op_dec(void *env, val_t *op1, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -861,8 +832,6 @@ void val_op_decp(void *env, val_t *op1, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -884,8 +853,6 @@ void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -907,8 +874,6 @@ void val_op_div(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -930,8 +895,6 @@ void val_op_mod(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -952,8 +915,6 @@ void val_op_add(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -975,8 +936,6 @@ void val_op_sub(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -998,8 +957,6 @@ void val_op_and(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -1021,8 +978,6 @@ void val_op_or(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -1044,8 +999,6 @@ void val_op_xor(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -1068,8 +1021,6 @@ void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:
@@ -1091,8 +1042,6 @@ void val_op_rshift(void *env, val_t *op1, val_t *op2, val_t *res)
     case TYPE_UND:
     case TYPE_NAN:
     case TYPE_ARRAY:
-    case TYPE_BUF:
-    case TYPE_ERR:
     case TYPE_DATE:
     case TYPE_OBJ:      val_set_nan(res); break;
     case TYPE_FOREIGN:

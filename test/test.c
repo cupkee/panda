@@ -35,7 +35,6 @@ CU_pSuite test_lang_interp_entry();
 CU_pSuite test_lang_image_entry();
 CU_pSuite test_lang_async_entry();
 
-CU_pSuite test_lang_type_buffer();
 CU_pSuite test_lang_type_foreign();
 
 int main(int argc, const char *argv[])
@@ -54,7 +53,6 @@ int main(int argc, const char *argv[])
     test_lang_image_entry();
     test_lang_async_entry();
 
-    test_lang_type_buffer();
     test_lang_type_foreign();
 
     CU_basic_set_mode(CU_BRM_VERBOSE);

@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_ENV_INC__
 #define __LANG_ENV_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "err.h"

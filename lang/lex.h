@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __LANG_LEX_INC__
 #define __LANG_LEX_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "heap.h"
 

@@ -43,8 +43,8 @@ test_SRCS = test.c \
 			test_lang_exec.c \
 			test_lang_image.c \
 			test_lang_async.c \
-			test_lang_foreign.c \
-			test_lang_type_buffer.c
+			test_lang_foreign.c
+
 test_CPPFLAGS = -I${BASE}
 test_CFLAGS   =
 test_LDFLAGS  = -L${BASE}/build/lang -L. -llang -lcunit

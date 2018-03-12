@@ -26,13 +26,14 @@ SOFTWARE.
 #ifndef __PANDA_INC__
 #define __PANDA_INC__
 
-#include "../lang/config.h"
+#include "../lang/def.h"
 #include "../lang/err.h"
 #include "../lang/val.h"
 #include "../lang/env.h"
 #include "../lang/compile.h"
 #include "../lang/interp.h"
 #include "../lang/executable.h"
+#include "../lang/type_boolean.h"
 #include "../lang/type_number.h"
 #include "../lang/type_string.h"
 #include "../lang/type_array.h"

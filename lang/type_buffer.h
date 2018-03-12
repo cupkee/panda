@@ -25,7 +25,8 @@ SOFTWARE.
 #ifndef __LANG_TYPE_BUFFER_INC__
 #define __LANG_TYPE_BUFFER_INC__
 
-#include "config.h"
+/*
+#include "def.h"
 
 #include "val.h"
 #include "env.h"
@@ -72,6 +73,7 @@ static inline
 int _val_buffer_size(val_t *v) {
     return _buffer_size((type_buffer_t *) val_2_intptr(v));
 }
+*/
 
 #endif /* __LANG_TYPE_BUFFER_INC__ */
 

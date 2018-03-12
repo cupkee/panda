@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_FUNCTION_INC__
 #define __LANG_FUNCTION_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "env.h"
@@ -82,6 +82,11 @@ static inline
 uint8_t *function_code(function_t *fn) {
     return fn->entry + FUNC_HEAD_SIZE;
 }
+
+//extern const val_metadata_t metadata_boolean;
+
+extern const val_metadata_t metadata_function;
+extern const val_metadata_t metadata_function_native;
 
 #endif /* __LANG_FUNCTION_INC__ */
 

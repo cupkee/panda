@@ -257,3 +257,7 @@ val_t array_length(env_t *env, int ac, val_t *av)
     return val_mk_number(len);
 }
 
+const val_metadata_t metadata_array = {
+    .is_true = array_is_true,
+};
+

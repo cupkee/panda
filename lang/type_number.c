@@ -35,3 +35,11 @@ val_t number_to_string(env_t *env, int ac, val_t *av)
     return val_mk_foreign_string((intptr_t)"<number>");
 }
 
+static int number_is_true(val_t *self) {
+    return val_2_double(self) != 0;
+}
+
+const val_metadata_t metadata_num = {
+    .is_true = number_is_true,
+};
+

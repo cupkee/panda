@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_COMPILE_INC__
 #define __LANG_COMPILE_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "ast.h"
 #include "env.h"

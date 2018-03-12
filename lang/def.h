@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef __CUPKEE_CONFIG__
-#define __CUPKEE_CONFIG__
+#ifndef __PANDA_DEF__
+#define __PANDA_DEF__
 
 #include <ctype.h>
 #include <limits.h>
@@ -85,5 +85,5 @@ SOFTWARE.
 
 // lang compile resource default and limit
 
-#endif /* __CUPKEE_CONFIG__ */
+#endif /* __PANDA_DEF__ */
 

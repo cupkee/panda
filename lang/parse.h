@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_PARSE_INC__
 #define __LANG_PARSE_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "lex.h"
 #include "ast.h"

@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_OBJECT_INC__
 #define __LANG_OBJECT_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "env.h"
@@ -80,6 +80,8 @@ static inline int object_iter_init(object_iter_t *it, val_t *obj)
 }
 
 int object_iter_next(object_iter_t *it, const char **k, val_t **v);
+
+extern const val_metadata_t metadata_object;
 
 #endif /* __LANG_OBJECT_INC__ */
 

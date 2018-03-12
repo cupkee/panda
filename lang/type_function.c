@@ -43,3 +43,11 @@ int function_destroy(intptr_t fn)
     return 0;
 }
 
+const val_metadata_t metadata_function = {
+    .is_true = val_always_true,
+};
+
+const val_metadata_t metadata_function_native = {
+    .is_true = val_always_true,
+};
+

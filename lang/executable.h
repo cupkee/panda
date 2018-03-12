@@ -27,8 +27,7 @@ SOFTWARE.
 #ifndef __LANG_EXECUTABLE_INC__
 #define __LANG_EXECUTABLE_INC__
 
-#include "config.h"
-
+#include "def.h"
 #include "val.h"
 
 #define FUNC_HEAD_SIZE 8

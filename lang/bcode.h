@@ -26,7 +26,7 @@ SOFTWARE.
 #ifndef __LANG_BCODE_INC__
 #define __LANG_BCODE_INC__
 
-#include "config.h"
+#include "def.h"
 
 typedef enum bcode_t {
     BC_STOP = 0,

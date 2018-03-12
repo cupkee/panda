@@ -25,7 +25,7 @@ SOFTWARE.
 #ifndef __LANG_VAL_INC__
 #define __LANG_VAL_INC__
 
-#include "config.h"
+#include "def.h"
 
 typedef uint64_t val_t;
 
@@ -82,10 +82,10 @@ extern const val_t _Infinity;
 #define TYPE_FUNC_C         6       // function c
 #define TYPE_UND            7       // undefined
 #define TYPE_NAN            8       // not a number
-#define TYPE_ARRAY          9       // array
-#define TYPE_BUF            10      // buffer
-#define TYPE_ERR            11      // error
-#define TYPE_DATE           12      // date
+#define TYPE_DATE           9       // date
+#define TYPE_ARRAY_BUF      10      // array buffer
+#define TYPE_DATA_VIEW      11      // view of data
+#define TYPE_ARRAY          12      // array
 #define TYPE_OBJ            13      // object
 #define TYPE_FOREIGN        14      // object (foreign)
 #define TYPE_REF            15      // reference to variable
@@ -101,11 +101,11 @@ extern const val_t _Infinity;
 
 #define TAG_UNDEFINED       MAKE_TAG(1, TYPE_UND)
 #define TAG_NAN             MAKE_TAG(1, TYPE_NAN)
+#define TAG_ARR_BUF         MAKE_TAG(1, TYPE_ARRAY_BUF)
+#define TAG_VIEW            MAKE_TAG(1, TYPE_DATA_VIEW)
+#define TAG_DATE            MAKE_TAG(0, TYPE_DATE)
 
 #define TAG_ARRAY           MAKE_TAG(1, TYPE_ARRAY)
-#define TAG_BUFFER          MAKE_TAG(1, TYPE_BUF)
-#define TAG_ERROR           MAKE_TAG(1, TYPE_ERR)
-#define TAG_DATE            MAKE_TAG(1, TYPE_DATE)
 #define TAG_OBJECT          MAKE_TAG(1, TYPE_OBJ)
 #define TAG_FOREIGN         MAKE_TAG(1, TYPE_FOREIGN)
 #define TAG_REFERENCE       MAKE_TAG(1, TYPE_REF)
@@ -122,6 +122,10 @@ extern const val_t _Infinity;
 #define VAL_FALSE           (TAG_BOOLEAN)
 
 #define MAGIC_FOREIGN       (MAGIC_BASE + 15)
+
+typedef struct val_metadata_t {
+    int (*is_true)(val_t *self);
+} val_metadata_t;
 
 typedef struct val_foreign_op_t {
     int (*is_true)(intptr_t self);
@@ -249,12 +253,12 @@ static inline int val_is_array(val_t *v) {
     return (*v & TAG_MASK) == TAG_ARRAY;
 }
 
-static inline int val_is_buffer(val_t *v) {
-    return (*v & TAG_MASK) == TAG_BUFFER;
-}
-
 static inline int val_is_object(val_t *v) {
     return (*v & TAG_MASK) == TAG_OBJECT;
+}
+
+static inline int val_is_null(val_t *v) {
+    return *v == TAG_OBJECT;
 }
 
 static inline int val_is_foreign(val_t *v) {
@@ -317,12 +321,12 @@ static inline val_t val_mk_array(void *ptr) {
     return TAG_ARRAY | (intptr_t) ptr;
 }
 
-static inline val_t val_mk_buffer(void *ptr) {
-    return TAG_BUFFER | (intptr_t) ptr;
-}
-
 static inline val_t val_mk_foreign(intptr_t f) {
     return TAG_FOREIGN | f;
+}
+
+static inline val_t val_mk_null(intptr_t f) {
+    return TAG_OBJECT;
 }
 
 static inline void val_set_boolean(val_t *p, int b) {
@@ -366,10 +370,6 @@ static inline void val_set_array(val_t *p, intptr_t a) {
     *((uint64_t *)p) = TAG_ARRAY | a;
 }
 
-static inline void val_set_buffer(val_t *p, void *b) {
-    *((uint64_t *)p) = TAG_BUFFER | (intptr_t)b;
-}
-
 static inline void val_set_object(val_t *p, intptr_t d) {
     *((uint64_t *)p) = TAG_OBJECT | d;
 }
@@ -385,9 +385,37 @@ static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
 typedef void (*val_op_t)(void *env, val_t *oprand1, val_t *oprand2, val_t *result);
 typedef void (*val_op_unary_t)(void *env, val_t *oprand, val_t *result);
 
+/* New interface */
+int val_always_true(val_t *self);
+int val_always_false(val_t *self);
+
+int  val_is_true(val_t *self);
+int  val_is_gt(val_t *self, val_t *other);
+int  val_is_lt(val_t *self, val_t *other);
+
+void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
+void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
+
+void val_neg(void *env, val_t *self, val_t *res);
+void val_not(void *env, val_t *self, val_t *res);
+
+void val_mul(void *env, val_t *self, val_t *b, val_t *r);
+void val_div(void *env, val_t *self, val_t *b, val_t *r);
+void val_mod(void *env, val_t *self, val_t *b, val_t *r);
+void val_add(void *env, val_t *self, val_t *b, val_t *r);
+void val_sub(void *env, val_t *self, val_t *b, val_t *r);
+void val_and(void *env, val_t *self, val_t *b, val_t *r);
+void val_or (void *env, val_t *self, val_t *b, val_t *r);
+void val_xor(void *env, val_t *self, val_t *b, val_t *r);
+void val_lshift(void *env, val_t *self, val_t *b, val_t *r);
+void val_rshift(void *env, val_t *self, val_t *b, val_t *r);
+
+void val_set(void *env, val_t *self, val_t *b, val_t *r);
+
+/* New interface end */
+
 int  val_is_true(val_t *v);
 int  val_is_equal(val_t *a, val_t *b);
-int  val_compare(val_t *a, val_t *b);
 int  val_is_ge(val_t *a, val_t *b);
 int  val_is_gt(val_t *a, val_t *b);
 int  val_is_le(val_t *a, val_t *b);

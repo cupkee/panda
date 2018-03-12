@@ -108,20 +108,6 @@ static intptr_t heap_dup_string(heap_t *heap, intptr_t str)
     return (intptr_t) dup;
 }
 
-static void *heap_dup_buffer(heap_t *heap, type_buffer_t *buf)
-{
-    int size = buffer_mem_space(buf);
-    void *dup = heap_alloc(heap, size);
-
-    //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
-    //printf("[str size: %d, '%s']", size, (char *)str + 3);
-    memcpy(dup, (void*)buf, size);
-    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
-
-    ADDR_VALUE(buf) = dup;
-    return dup;
-}
-
 static intptr_t heap_dup_foreign(heap_t *heap, val_foreign_t *foreign)
 {
     int size = foreign_mem_space(foreign);
@@ -186,19 +172,6 @@ static inline array_t *gc_copy_array(heap_t *heap, array_t *a)
     return heap_dup_array(heap, a);
 }
 
-static inline void *gc_copy_buffer(heap_t *heap, type_buffer_t *buf)
-{
-    if (!buf || heap_is_owned(heap, (void*)buf)) {
-        return buf;
-    }
-
-    if (MAGIC_BYTE(buf) != MAGIC_BUFFER) {
-        return ADDR_VALUE(buf);
-    }
-
-    return heap_dup_buffer(heap, buf);
-}
-
 static inline object_t *gc_copy_object(heap_t *heap, object_t *obj)
 {
     if (!obj || MAGIC_BYTE(obj) == MAGIC_OBJECT_STATIC || heap_is_owned(heap, obj)) {
@@ -257,9 +230,6 @@ void gc_copy_vals(heap_t *heap, int vc, val_t *vp)
         if (val_is_array(v)) {
             val_set_array(v, (intptr_t)gc_copy_array(heap, (array_t *)val_2_intptr(v)));
         } else
-        if (val_is_buffer(v)) {
-            val_set_buffer(v, gc_copy_buffer(heap, (type_buffer_t *)val_2_intptr(v)));
-        } else
         if (val_is_foreign(v)) {
             val_set_foreign(v, (intptr_t)gc_copy_foreign(heap, (val_foreign_t *)val_2_intptr(v)));
         }
@@ -313,9 +283,6 @@ void gc_scan(heap_t *heap)
 
             break;
             }
-        case MAGIC_BUFFER:
-            scan += buffer_mem_space((type_buffer_t *)(base + scan));
-            break;
         case MAGIC_FOREIGN:
             scan += foreign_mem_space((val_foreign_t *) (base + scan));
             break;

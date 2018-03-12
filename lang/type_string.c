@@ -142,3 +142,27 @@ val_t string_index_of(env_t *env, int ac, val_t *av)
     }
 }
 
+static int string_inline_is_true(val_t *self) {
+    return ((const char *)self)[4];
+}
+
+static int string_heap_is_true(val_t *self) {
+    return ((const char *) val_2_intptr(self))[4];
+}
+
+static int string_foreign_is_true(val_t *self) {
+    return ((const char *) val_2_intptr(self))[0];
+}
+
+const val_metadata_t metadata_str_inline = {
+    .is_true = string_inline_is_true,
+};
+
+const val_metadata_t metadata_str_heap = {
+    .is_true = string_heap_is_true,
+};
+
+const val_metadata_t metadata_str_foreign = {
+    .is_true = string_foreign_is_true,
+};
+
