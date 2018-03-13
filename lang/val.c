@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <math.h>
 #include "val.h"
 #include "env.h"
 #include "type_boolean.h"
@@ -31,11 +32,17 @@ SOFTWARE.
 #include "type_object.h"
 #include "type_function.h"
 
+/*
 const val_t _Infinity  = TAG_INFINITE;
 const val_t _Undefined = TAG_UNDEFINED;
 const val_t _True      = TAG_BOOLEAN + 1;
 const val_t _False     = TAG_BOOLEAN;
 const val_t _NaN       = TAG_NAN;
+*/
+
+const valnum_t const_nan = {
+    .v = TAG_NAN
+};
 
 static inline int foreign_is_true(val_t *v) {
     val_foreign_t *vf = (val_foreign_t *)val_2_intptr(v);
@@ -94,166 +101,6 @@ static inline int foreign_is_le(val_t *a, val_t *b) {
         return f->op->is_le(f->data, b);
     } else {
         return 0;
-    }
-}
-
-static inline void foreign_neg(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->neg) {
-        return f->op->neg(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_not(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->not) {
-        return f->op->not(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_inc(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->inc) {
-        return f->op->inc(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_incp(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->incp) {
-        return f->op->incp(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_dec(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->dec) {
-        return f->op->dec(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_decp(void *env, val_t *a, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->decp) {
-        return f->op->decp(env, f->data, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_mul(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->mul) {
-        f->op->mul(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_div(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->div) {
-        f->op->div(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_mod(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->mod) {
-        f->op->mod(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_add(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->add) {
-        f->op->add(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_sub(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->sub) {
-        f->op->sub(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_and(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->and) {
-        f->op->and(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_or(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->or) {
-        f->op->or(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_xor(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->xor) {
-        f->op->xor(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_rshift(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->rshift) {
-        f->op->rshift(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
-static inline void foreign_lshift(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->lshift) {
-        f->op->lshift(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
     }
 }
 
@@ -548,44 +395,131 @@ static inline val_t *type_elem_ref(int type, val_t *self, int index)
     return type_descs[type]->elem_ref(self, index);
 }
 
-int val_always_true(val_t *self)
+int val_as_true(val_t *self)
 {
     (void) self;
     return 1;
 }
 
-int val_always_false(val_t *self)
+int val_as_false(val_t *self)
 {
     (void) self;
     return 0;
 }
 
+double val_as_zero(val_t *self)
+{
+    (void) self;
+    return 0;
+}
+
+double val_as_nan(val_t *self)
+{
+    (void) self;
+    return const_nan.d;
+}
+
+double val_as_integer(val_t *self)
+{
+    (void) self;
+    return val_2_intptr(self);
+}
+
+double val_as_number(val_t *self)
+{
+    (void) self;
+    return val_2_double(self);
+}
+
+int val_op_true(val_t *self, val_t *to)
+{
+    (void) self;
+    (void) to;
+    return 1;
+}
+
+int val_op_false(val_t *self, val_t *to)
+{
+    (void) self;
+    (void) to;
+    return 0;
+}
+
 const val_metadata_t metadata_undefined = {
-    .is_true = val_always_false,
+    .is_true  = val_as_false,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_nan,
 };
 
 const val_metadata_t metadata_nan = {
-    .is_true = val_always_false,
+    .is_true  = val_as_false,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_nan,
 };
 
 const val_metadata_t metadata_date = {
-    .is_true = val_always_true,
+    .is_true  = val_as_true,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_integer,
 };
 
 const val_metadata_t metadata_array_buffer = {
-    .is_true = val_always_false,
+    .is_true  = val_as_false,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_data_view = {
-    .is_true = val_always_false,
+    .is_true  = val_as_false,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_object_foreign = {
-    .is_true = foreign_is_true,
+    .is_true  = foreign_is_true,
+    .is_equal = foreign_is_equal,
+    .is_gt    = foreign_is_gt,
+    .is_ge    = foreign_is_ge,
+    .is_lt    = foreign_is_lt,
+    .is_le    = foreign_is_le,
+
+    .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_none = {
-    .is_true = val_always_false,
+    .is_true  = val_as_false,
+    .is_equal = val_op_false,
+    .is_gt    = val_op_false,
+    .is_ge    = val_op_false,
+    .is_lt    = val_op_false,
+    .is_le    = val_op_false,
+
+    .value_of = val_as_zero,
 };
 
 
@@ -618,435 +552,230 @@ int val_is_true(val_t *v)
 int val_is_equal(val_t *a, val_t *b)
 {
     if (*a == *b) {
-        return !(val_is_nan(a) || val_is_undefined(a));
+        return !val_is_nan(a);
     } else {
-        if (val_is_string(a)) {
-            return string_compare(a, b) == 0;
-        } else
-        if (val_is_foreign(a)) {
-            return foreign_is_equal(a, b);
+        const val_metadata_t *meta = base_metadata[val_type(a)];
+
+        return meta->is_equal(a, b);
+    }
+}
+
+int val_is_gt(val_t *self, val_t *to)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    return meta->is_gt(self, to);
+}
+
+int val_is_ge(val_t *self, val_t *to)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    return meta->is_ge(self, to);
+}
+
+int val_is_le(val_t *self, val_t *to)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    return meta->is_le(self, to);
+}
+
+int val_is_lt(val_t *self, val_t *to)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    return meta->is_lt(self, to);
+}
+
+void val_op_neg(void *env, val_t *self, val_t *result)
+{
+    (void) env;
+
+    if (val_is_not_number(self)) {
+        const val_metadata_t *meta = base_metadata[val_type(self)];
+
+        val_set_number(result, -meta->value_of(self));
+    } else {
+        val_set_number(result, -val_2_double(self));
+    }
+}
+
+void val_op_not(void *env, val_t *self, val_t *result)
+{
+    (void) env;
+
+    if (val_is_number(self)) {
+        val_set_number(result, ~val_2_integer(self));
+    } else {
+        const val_metadata_t *meta = base_metadata[val_type(self)];
+        double v = meta->value_of(self);
+
+        if (isnan(v)) {
+            val_set_nan(result);
         } else {
-            return 0;
+            val_set_number(result, ~lround(v));
         }
     }
 }
 
-int val_is_ge(val_t *op1, val_t *op2)
-{
-    switch(val_type(op1)) {
-    case TYPE_NUM:      return val_is_number(op2) ? val_2_double(op1) >= val_2_double(op2) : 0;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:    return val_is_string(op2) ? string_compare(op1, op2) >= 0: 0;
-    case TYPE_BOOL:     return val_is_boolean(op2) ? val_2_intptr(op1) >= val_2_intptr(op2) : 0;
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      return 0;
-    case TYPE_FOREIGN:  return foreign_is_ge(op1, op2);
-    default: return 0;
-    }
-}
-
-int val_is_gt(val_t *op1, val_t *op2)
-{
-    switch(val_type(op1)) {
-    case TYPE_NUM:      return val_is_number(op2) ? val_2_double(op1) > val_2_double(op2) : 0;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:    return val_is_string(op2) ? string_compare(op1, op2) > 0: 0;
-    case TYPE_BOOL:     return val_is_boolean(op2) ? val_2_intptr(op1) > val_2_intptr(op2) : 0;
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      return 0;
-    case TYPE_FOREIGN:  return foreign_is_gt(op1, op2);
-    default: return 0;
-    }
-}
-
-int val_is_le(val_t *op1, val_t *op2)
-{
-    switch(val_type(op1)) {
-    case TYPE_NUM:      return val_is_number(op2) ? val_2_double(op1) <= val_2_double(op2) : 0;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:    return val_is_string(op2) ? string_compare(op1, op2) <= 0: 0;
-    case TYPE_BOOL:     return val_is_boolean(op2) ? val_2_intptr(op1) <= val_2_intptr(op2) : 0;
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      return 0;
-    case TYPE_FOREIGN:  return foreign_is_le(op1, op2);
-    default: return 0;
-    }
-}
-
-int val_is_lt(val_t *op1, val_t *op2)
-{
-    switch(val_type(op1)) {
-    case TYPE_NUM:      return val_is_number(op2) ? val_2_double(op1) < val_2_double(op2) : 0;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:    return val_is_string(op2) ? string_compare(op1, op2) < 0: 0;
-    case TYPE_BOOL:     return val_is_boolean(op2) ? val_2_intptr(op1) < val_2_intptr(op2) : 0;
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      return 0;
-    case TYPE_FOREIGN:  return foreign_is_lt(op1, op2);
-    default: return 0;
-    }
-}
-
-void val_op_neg(void *env, val_t *oprand, val_t *result)
+void val_op_inc(void *env, val_t *self, val_t *res)
 {
     (void) env;
-    switch(val_type(oprand)) {
-    case TYPE_NUM:      val_set_number(result, -val_2_double(oprand)); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(result); break;
-    case TYPE_FOREIGN:
-    default:
-                        foreign_neg(env, oprand, result);
+    if (val_is_number(self)) {
+        ((valnum_t *)res)->d = ((valnum_t *)self)->d++;
+    } else {
+        val_set_nan(res);
     }
 }
 
-void val_op_not(void *env, val_t *oprand, val_t *result)
+void val_op_incp(void *env, val_t *self, val_t *res)
 {
     (void) env;
-    switch(val_type(oprand)) {
-    case TYPE_NUM:      val_set_number(result, ~val_2_integer(oprand)); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(result); break;
-    case TYPE_FOREIGN:
-    default:
-                        foreign_not(env, oprand, result); break;
+    if (val_is_number(self)) {
+        ((valnum_t *)res)->d = ++((valnum_t *)self)->d;
+    } else {
+        val_set_nan(res);
     }
 }
 
-void val_op_inc(void *env, val_t *op1, val_t *res)
+void val_op_dec(void *env, val_t *self, val_t *res)
 {
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:      number_inc(op1, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_inc(env, op1, res);
+    if (val_is_number(self)) {
+        ((valnum_t *)res)->d = ((valnum_t *)self)->d--;
+    } else {
+        val_set_nan(res);
     }
 }
 
-void val_op_incp(void *env, val_t *op1, val_t *res)
+void val_op_decp(void *env, val_t *self, val_t *res)
 {
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_incp(op1, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_incp(env, op1, res);
+    if (val_is_number(self)) {
+        ((valnum_t *)res)->d = --((valnum_t *)self)->d;
+    } else {
+        val_set_nan(res);
     }
 }
 
-void val_op_dec(void *env, val_t *op1, val_t *res)
+void val_op_mul(void *env, val_t *a, val_t *b, val_t *res)
 {
+    double v = val_2_double(a) * val_2_double(b);
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_dec(op1, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_dec(env, op1, res);
+    if (isnan(v)) {
+        const val_metadata_t *meta_a = base_metadata[val_type(a)];
+        const val_metadata_t *meta_b = base_metadata[val_type(b)];
+
+        ((valnum_t *)res)->d = meta_a->value_of(a) * meta_b->value_of(b);
+    } else {
+        val_set_number(res, v);
     }
 }
 
-void val_op_decp(void *env, val_t *op1, val_t *res)
+void val_op_div(void *env, val_t *a, val_t *b, val_t *res)
 {
+    const val_metadata_t *meta_a = base_metadata[val_type(a)];
+    const val_metadata_t *meta_b = base_metadata[val_type(b)];
+
+    ((valnum_t *)res)->d = meta_a->value_of(a) / meta_b->value_of(b);
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_decp(op1, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_decp(env, op1, res);
-    }
 }
 
-void val_op_mul(void *env, val_t *op1, val_t *op2, val_t *res)
+void val_op_mod(void *env, val_t *a, val_t *b, val_t *res)
 {
+    const val_metadata_t *meta_a = base_metadata[val_type(a)];
+    const val_metadata_t *meta_b = base_metadata[val_type(b)];
+
+    ((valnum_t *)res)->d = fmod(meta_a->value_of(a), meta_b->value_of(b));
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:      number_mul(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_mul(env, op1, op2, res);
-    }
 }
 
-void val_op_div(void *env, val_t *op1, val_t *op2, val_t *res)
+void val_op_add(void *env, val_t *a, val_t *b, val_t *res)
 {
+    double v = val_2_double(a) + val_2_double(b);
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_div(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_div(env, op1, op2, res);
+    if (isnan(v)) {
+        const val_metadata_t *meta_a = base_metadata[val_type(a)];
+
+        if (meta_a->concat) {
+            meta_a->concat(env, a, b, res);
+        } else {
+            const val_metadata_t *meta_b = base_metadata[val_type(b)];
+            ((valnum_t *)res)->d = meta_a->value_of(a) + meta_b->value_of(b);
+        }
+    } else {
+        val_set_number(res, v);
     }
 }
 
-void val_op_mod(void *env, val_t *op1, val_t *op2, val_t *res)
+void val_op_sub(void *env, val_t *a, val_t *b, val_t *res)
 {
+    double v = val_2_double(a) - val_2_double(b);
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_mod(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_mod(env, op1, op2, res);
+    if (isnan(v)) {
+        const val_metadata_t *meta_a = base_metadata[val_type(a)];
+        const val_metadata_t *meta_b = base_metadata[val_type(b)];
+
+        ((valnum_t *)res)->d = meta_a->value_of(a) - meta_b->value_of(b);
+    } else {
+        val_set_number(res, v);
     }
 }
 
-void val_op_add(void *env, val_t *op1, val_t *op2, val_t *res)
+void val_op_and(void *env, val_t *a, val_t *b, val_t *res)
 {
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_add(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F: string_add(env, op1, op2, res); break;
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_add(env, op1, op2, res);
-    }
-}
+    int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
+    int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
 
-void val_op_sub(void *env, val_t *op1, val_t *op2, val_t *res)
-{
-    (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_sub(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_sub(env, op1, op2, res);
-    }
-}
-
-void val_op_and(void *env, val_t *op1, val_t *op2, val_t *res)
-{
-    (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_and(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_and(env, op1, op2, res);
-    }
-}
-
-void val_op_or(void *env, val_t *op1, val_t *op2, val_t *res)
-{
-    (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_or(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_or(env, op1, op2, res);
-    }
-}
-
-void val_op_xor(void *env, val_t *op1, val_t *op2, val_t *res)
-{
-    (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_xor(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_xor(env, op1, op2, res);
-    }
-}
-
-void val_op_lshift(void *env, val_t *op1, val_t *op2, val_t *res)
-{
     (void) env;
 
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_lshift(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_lshift(env, op1, op2, res);
-    }
+    val_set_number(res, ia & ib);
 }
 
-void val_op_rshift(void *env, val_t *op1, val_t *op2, val_t *res)
+void val_op_or(void *env, val_t *a, val_t *b, val_t *res)
 {
+    int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
+    int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
+
     (void) env;
-    switch(val_type(op1)) {
-    case TYPE_NUM:   number_rshift(op1, op2, res); break;
-    case TYPE_STR_I:
-    case TYPE_STR_H:
-    case TYPE_STR_F:
-    case TYPE_BOOL:
-    case TYPE_FUNC:
-    case TYPE_FUNC_C:
-    case TYPE_UND:
-    case TYPE_NAN:
-    case TYPE_ARRAY:
-    case TYPE_DATE:
-    case TYPE_OBJ:      val_set_nan(res); break;
-    case TYPE_FOREIGN:
-    default:            foreign_rshift(env, op1, op2, res);
-    }
+
+    val_set_number(res, ia | ib);
+}
+
+void val_op_xor(void *env, val_t *a, val_t *b, val_t *res)
+{
+    int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
+    int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
+
+    (void) env;
+
+    val_set_number(res, ia ^ ib);
+}
+
+void val_op_lshift(void *env, val_t *a, val_t *b, val_t *res)
+{
+    int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
+    int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
+
+    (void) env;
+
+    val_set_number(res, ia << ib);
+}
+
+void val_op_rshift(void *env, val_t *a, val_t *b, val_t *res)
+{
+    int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
+    int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
+
+    (void) env;
+
+    val_set_number(res, ia >> ib);
 }
 
 void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)

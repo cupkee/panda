@@ -34,11 +34,7 @@ typedef union {
     double  d;
 } valnum_t;
 
-extern const val_t _Undefined;
-extern const val_t _True;
-extern const val_t _False;
-extern const val_t _NaN;
-extern const val_t _Infinity;
+extern const valnum_t const_nan;
 
 /*
  *  Double-precision floating-point number, IEEE 754
@@ -100,7 +96,7 @@ extern const val_t _Infinity;
 #define TAG_FUNC_NATIVE     MAKE_TAG(1, TYPE_FUNC_C)
 
 #define TAG_UNDEFINED       MAKE_TAG(1, TYPE_UND)
-#define TAG_NAN             MAKE_TAG(1, TYPE_NAN)
+#define TAG_NAN             MAKE_TAG(0, TYPE_NAN)
 #define TAG_ARR_BUF         MAKE_TAG(1, TYPE_ARRAY_BUF)
 #define TAG_VIEW            MAKE_TAG(1, TYPE_DATA_VIEW)
 #define TAG_DATE            MAKE_TAG(0, TYPE_DATE)
@@ -124,7 +120,18 @@ extern const val_t _Infinity;
 #define MAGIC_FOREIGN       (MAGIC_BASE + 15)
 
 typedef struct val_metadata_t {
-    int (*is_true)(val_t *self);
+    int (*is_true)  (val_t *self);
+    int (*is_equal) (val_t *self, val_t *to);
+    int (*is_gt) (val_t *self, val_t *to);
+    int (*is_ge) (val_t *self, val_t *to);
+    int (*is_lt) (val_t *self, val_t *to);
+    int (*is_le) (val_t *self, val_t *to);
+
+    double (*value_of)(val_t *self);
+    val_t  (*prop_of)(val_t *self, const char *key);
+    val_t  (*elem_of)(val_t *self, int id);
+
+    int (*concat)(void *env, val_t *self, val_t *other, val_t *to);
 } val_metadata_t;
 
 typedef struct val_foreign_op_t {
@@ -165,14 +172,10 @@ typedef struct val_foreign_t {
     const val_foreign_op_t *op;
 } val_foreign_t;
 
-static inline
-int val_type(val_t *v) {
+static inline int val_type(val_t *v) {
     int type = (*v) >> 48;
-    if ((type & 0x7ff0) != 0x7ff0) {
-        return TYPE_NUM;
-    } else {
-        return type & 0xf;
-    }
+
+    return ((type & 0x7ff0) != 0x7ff0) ? TYPE_NUM : type & 0xf;
 }
 
 static inline double val_2_double(val_t *v) {
@@ -204,6 +207,10 @@ static inline int val_is_infinity(val_t *v) {
 
 static inline int val_is_number(val_t *v) {
     return (*v & TAG_INFINITE) != TAG_INFINITE;
+}
+
+static inline int val_is_not_number(val_t *v) {
+    return (*v & TAG_INFINITE) == TAG_INFINITE;
 }
 
 static inline int val_is_inline_string(val_t *v) {
@@ -246,7 +253,7 @@ static inline int val_is_undefined(val_t *v) {
 }
 
 static inline int val_is_nan(val_t *v) {
-    return (*v & TAG_MASK) == TAG_NAN;
+    return (*v & NUM_MASK) == TAG_NAN;
 }
 
 static inline int val_is_array(val_t *v) {
@@ -386,8 +393,15 @@ typedef void (*val_op_t)(void *env, val_t *oprand1, val_t *oprand2, val_t *resul
 typedef void (*val_op_unary_t)(void *env, val_t *oprand, val_t *result);
 
 /* New interface */
-int val_always_true(val_t *self);
-int val_always_false(val_t *self);
+int val_as_true(val_t *self);
+int val_as_false(val_t *self);
+int val_op_true(val_t *self, val_t *to);
+int val_op_false(val_t *self, val_t *to);
+
+double val_as_zero(val_t *self);
+double val_as_nan(val_t *self);
+double val_as_integer(val_t *self);
+double val_as_number(val_t *self);
 
 int  val_is_true(val_t *self);
 int  val_is_gt(val_t *self, val_t *other);

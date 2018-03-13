@@ -142,27 +142,192 @@ val_t string_index_of(env_t *env, int ac, val_t *av)
     }
 }
 
+
+
 static int string_inline_is_true(val_t *self) {
     return ((const char *)self)[4];
+}
+
+static int string_inline_compare(val_t *self, val_t *to) {
+    const char *a = ((const char *)self) + 4;
+    const char *b = val_2_cstring(to);
+
+    return b ? !strcmp(a, b) : 0;
+}
+
+static int string_inline_is_gt(val_t *self, val_t *to) {
+    const char *a = ((const char *)self) + 4;
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) > 0) : 0;
+}
+
+static int string_inline_is_ge(val_t *self, val_t *to) {
+    const char *a = ((const char *)self) + 4;
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) >= 0) : 0;
+}
+
+static int string_inline_is_lt(val_t *self, val_t *to) {
+    const char *a = ((const char *)self) + 4;
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) < 0) : 0;
+}
+
+static int string_inline_is_le(val_t *self, val_t *to) {
+    const char *a = ((const char *)self) + 4;
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) <= 0) : 0;
 }
 
 static int string_heap_is_true(val_t *self) {
     return ((const char *) val_2_intptr(self))[4];
 }
 
+static int string_heap_compare(val_t *self, val_t *to) {
+    const char *a = (const char *) (val_2_intptr(self) + 4);
+    const char *b = val_2_cstring(to);
+
+    return b ? !strcmp(a, b) : 0;
+}
+
+static int string_heap_is_gt(val_t *self, val_t *to) {
+    const char *a = (const char *) (val_2_intptr(self) + 4);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) > 0) : 0;
+}
+
+static int string_heap_is_ge(val_t *self, val_t *to) {
+    const char *a = (const char *) (val_2_intptr(self) + 4);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) >= 0) : 0;
+}
+
+static int string_heap_is_lt(val_t *self, val_t *to) {
+    const char *a = (const char *) (val_2_intptr(self) + 4);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) < 0) : 0;
+}
+
+static int string_heap_is_le(val_t *self, val_t *to) {
+    const char *a = (const char *) (val_2_intptr(self) + 4);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) <= 0) : 0;
+}
+
 static int string_foreign_is_true(val_t *self) {
     return ((const char *) val_2_intptr(self))[0];
 }
 
+static int string_foreign_compare(val_t *self, val_t *to) {
+    const char *a = (const char *) val_2_intptr(self);
+    const char *b = val_2_cstring(to);
+
+    return b ? !strcmp(a, b) : 0;
+}
+
+static int string_foreign_is_gt(val_t *self, val_t *to) {
+    const char *a = (const char *) val_2_intptr(self);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) > 0) : 0;
+}
+
+static int string_foreign_is_ge(val_t *self, val_t *to) {
+    const char *a = (const char *) val_2_intptr(self);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) >= 0) : 0;
+}
+
+static int string_foreign_is_lt(val_t *self, val_t *to) {
+    const char *a = (const char *) val_2_intptr(self);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) < 0) : 0;
+}
+
+static int string_foreign_is_le(val_t *self, val_t *to) {
+    const char *a = (const char *) val_2_intptr(self);
+    const char *b = val_2_cstring(to);
+
+    return b ? (strcmp(a, b) <= 0) : 0;
+}
+
+static double value_of_string(val_t *self)
+{
+    const char *s = val_2_cstring(self);
+
+    return *s ? const_nan.d : 0;
+}
+
+static int concat_string(void *hnd, val_t *a, val_t *b, val_t *res)
+{
+    env_t *env = hnd;
+
+    if (!val_is_string(b)) {
+        val_set_nan(res);
+        return 0;
+    } else {
+        int size1 = string_len(a);
+        int size2 = string_len(b);
+        int len = size1 + size2;
+        string_t *s = string_alloc(env, len + 1);
+
+        if (s) {
+            // Todo: length overflow should be check! or variable length field.
+            memcpy(s->str + 0, val_2_cstring(a), size1);
+            memcpy(s->str + size1, val_2_cstring(b), size2 + 1);
+            val_set_heap_string(res, (intptr_t) s);
+            return 0;
+        } else {
+            env_set_error(env, ERR_NotEnoughMemory);
+            val_set_undefined(res);
+            return -ERR_NotEnoughMemory;
+        }
+    }
+}
+
 const val_metadata_t metadata_str_inline = {
-    .is_true = string_inline_is_true,
+    .is_true  = string_inline_is_true,
+    .is_equal = string_inline_compare,
+    .is_gt    = string_inline_is_gt,
+    .is_ge    = string_inline_is_ge,
+    .is_lt    = string_inline_is_lt,
+    .is_le    = string_inline_is_le,
+
+    .value_of = value_of_string,
+    .concat   = concat_string,
 };
 
 const val_metadata_t metadata_str_heap = {
-    .is_true = string_heap_is_true,
+    .is_true  = string_heap_is_true,
+    .is_equal = string_heap_compare,
+    .is_gt    = string_heap_is_gt,
+    .is_ge    = string_heap_is_ge,
+    .is_lt    = string_heap_is_lt,
+    .is_le    = string_heap_is_le,
+
+    .value_of = value_of_string,
+    .concat   = concat_string,
 };
 
 const val_metadata_t metadata_str_foreign = {
-    .is_true = string_foreign_is_true,
+    .is_true  = string_foreign_is_true,
+    .is_equal = string_foreign_compare,
+    .is_gt    = string_foreign_is_gt,
+    .is_ge    = string_foreign_is_ge,
+    .is_lt    = string_foreign_is_lt,
+    .is_le    = string_foreign_is_le,
+
+    .value_of = value_of_string,
+    .concat   = concat_string,
 };
 

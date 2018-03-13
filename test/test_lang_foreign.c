@@ -371,7 +371,7 @@ CU_pSuite test_lang_type_foreign(void)
     CU_pSuite suite = CU_add_suite("TYPE: foreign", test_setup, test_clean);
 
     if (suite) {
-        CU_add_test(suite, "foreign simple",       test_foreign_simple);
+        //CU_add_test(suite, "foreign simple",       test_foreign_simple);
         CU_add_test(suite, "foreign gc",           test_foreign_gc);
         if (0) {
         }

@@ -257,7 +257,80 @@ val_t array_length(env_t *env, int ac, val_t *av)
     return val_mk_number(len);
 }
 
+static inline array_t *entry_of_array(val_t *v) {
+    return (array_t *)val_2_intptr(v);
+}
+
+static inline val_t *array_get(array_t *a, int i)
+{
+    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
+}
+
+static int array_compare(array_t *self, array_t *to)
+{
+    return array_len(self) - array_len(to);
+}
+
+static int array_is_gt(val_t *self, val_t *to)
+{
+    if (val_is_array(to)) {
+        return array_compare(entry_of_array(self), entry_of_array(to)) > 0;
+    } else {
+        return 0;
+    }
+}
+
+static int array_is_ge(val_t *self, val_t *to)
+{
+    if (val_is_array(to)) {
+        return array_compare(entry_of_array(self), entry_of_array(to)) >= 0;
+    } else {
+        return 0;
+    }
+}
+
+static int array_is_lt(val_t *self, val_t *to)
+{
+    if (val_is_array(to)) {
+        return array_compare(entry_of_array(self), entry_of_array(to)) < 0;
+    } else {
+        return 0;
+    }
+}
+
+static int array_is_le(val_t *self, val_t *to)
+{
+    if (val_is_array(to)) {
+        return array_compare(entry_of_array(self), entry_of_array(to)) <= 0;
+    } else {
+        return 0;
+    }
+}
+
+static double value_of_array(val_t *self)
+{
+    array_t *a = entry_of_array(self);
+    val_t *elem;
+
+    if (NULL != (elem = array_get(a, 0))) {
+        if (val_is_number(elem)) {
+            return val_2_double(elem);
+        } else {
+            return const_nan.d;
+        }
+    } else {
+        return 0;
+    }
+}
+
 const val_metadata_t metadata_array = {
-    .is_true = array_is_true,
+    .is_true  = array_is_true,
+    .is_equal = val_op_false,
+    .is_gt    = array_is_gt,
+    .is_ge    = array_is_ge,
+    .is_lt    = array_is_lt,
+    .is_le    = array_is_le,
+
+    .value_of = value_of_array,
 };
 

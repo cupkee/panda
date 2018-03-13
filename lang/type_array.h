@@ -84,5 +84,17 @@ val_t *array_elem_ref(val_t *self, int i);
 
 extern const val_metadata_t metadata_array;
 
+/* new api
+void *array_create(env_t *env, int size, val_t *elems);
+
+int array_length(void *entry);
+
+int array_push(void *entry, env_t *env, val_t *elem);
+int array_unshift(void *entry, env_t *env, val_t *elem);
+
+val_t *array_pop(void *entry);
+val_t *array_shift(void *entry);
+*/
+
 #endif /* __LANG_ARRAY_INC__ */
 

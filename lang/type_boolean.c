@@ -29,8 +29,63 @@ static int boolean_is_true(val_t *self)
     return val_2_intptr(self);
 }
 
+int boolean_is_gt(val_t *self, val_t *to)
+{
+    if (val_is_boolean(to)) {
+        return val_2_intptr(self) > val_2_intptr(to);
+    } else
+    if (val_is_number(to)) {
+        return val_2_intptr(self) > val_2_double(to);
+    } else {
+        return 0;
+    }
+}
+
+int boolean_is_ge(val_t *self, val_t *to)
+{
+    if (val_is_boolean(to)) {
+        return val_2_intptr(self) >= val_2_intptr(to);
+    } else
+    if (val_is_number(to)) {
+        return val_2_intptr(self) >= val_2_double(to);
+    } else {
+        return 0;
+    }
+}
+
+int boolean_is_lt(val_t *self, val_t *to)
+{
+    if (val_is_boolean(to)) {
+        return val_2_intptr(self) < val_2_intptr(to);
+    } else
+    if (val_is_number(to)) {
+        return val_2_intptr(self) < val_2_double(to);
+    } else {
+        return 0;
+    }
+}
+
+int boolean_is_le(val_t *self, val_t *to)
+{
+    if (val_is_boolean(to)) {
+        return val_2_intptr(self) <= val_2_intptr(to);
+    } else
+    if (val_is_number(to)) {
+        return val_2_intptr(self) <= val_2_double(to);
+    } else {
+        return 0;
+    }
+}
+
 const val_metadata_t metadata_boolean = {
-    .is_true = boolean_is_true,
+    .is_true  = boolean_is_true,
+    .is_equal = val_op_false,
+    .is_gt    = boolean_is_gt,
+    .is_ge    = boolean_is_ge,
+    .is_lt    = boolean_is_lt,
+    .is_le    = boolean_is_le,
+
+    .value_of = val_as_integer,
 };
 
 
