@@ -88,12 +88,10 @@ int number_is_le(val_t *self, val_t *to)
 }
 
 const val_metadata_t metadata_num = {
+    .name     = "number",
+
     .is_true  = number_is_true,
     .is_equal = val_op_false,
-    .is_gt    = number_is_gt,
-    .is_ge    = number_is_ge,
-    .is_lt    = number_is_lt,
-    .is_le    = number_is_le,
 
     .value_of = val_as_number,
 };

@@ -53,10 +53,6 @@ typedef struct object_iter_t {
 
 int objects_env_init(env_t *env);
 
-static inline int object_is_true(val_t *v) {
-    object_t *o = (object_t *)val_2_intptr(v);
-    return o->prop_num;
-};
 intptr_t object_create(env_t *env, int n, val_t *av);
 void   object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
 val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);

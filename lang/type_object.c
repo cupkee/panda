@@ -273,13 +273,15 @@ int object_iter_next(object_iter_t *it, const char **name, val_t **v)
     }
 }
 
+static inline int object_is_true(val_t *v) {
+    return val_2_intptr(v);
+};
+
 const val_metadata_t metadata_object = {
+    .name     = "object",
+
     .is_true  = object_is_true,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_nan,
 };

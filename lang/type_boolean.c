@@ -78,12 +78,10 @@ int boolean_is_le(val_t *self, val_t *to)
 }
 
 const val_metadata_t metadata_boolean = {
+    .name     = "boolean",
+
     .is_true  = boolean_is_true,
     .is_equal = val_op_false,
-    .is_gt    = boolean_is_gt,
-    .is_ge    = boolean_is_ge,
-    .is_lt    = boolean_is_lt,
-    .is_le    = boolean_is_le,
 
     .value_of = val_as_integer,
 };

@@ -64,46 +64,6 @@ static inline int foreign_is_equal(val_t *a, val_t *b) {
     }
 }
 
-static inline int foreign_is_gt(val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->is_gt) {
-        return f->op->is_gt(f->data, b);
-    } else {
-        return 0;
-    }
-}
-
-static inline int foreign_is_ge(val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->is_ge) {
-        return f->op->is_ge(f->data, b);
-    } else {
-        return 0;
-    }
-}
-
-static inline int foreign_is_lt(val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->is_lt) {
-        return f->op->is_lt(f->data, b);
-    } else {
-        return 0;
-    }
-}
-
-static inline int foreign_is_le(val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->is_le) {
-        return f->op->is_le(f->data, b);
-    } else {
-        return 0;
-    }
-}
-
 static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
     val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
 
@@ -446,78 +406,64 @@ int val_op_false(val_t *self, val_t *to)
 }
 
 const val_metadata_t metadata_undefined = {
+    .name     = "undefined",
+
     .is_true  = val_as_false,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_nan,
 };
 
 const val_metadata_t metadata_nan = {
+    .name     = "number",
+
     .is_true  = val_as_false,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_nan,
 };
 
 const val_metadata_t metadata_date = {
+    .name     = "object",
+
     .is_true  = val_as_true,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_integer,
 };
 
 const val_metadata_t metadata_array_buffer = {
+    .name     = "object",
+
     .is_true  = val_as_false,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_data_view = {
+    .name     = "object",
+
     .is_true  = val_as_false,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_object_foreign = {
+    .name     = "object",
+
     .is_true  = foreign_is_true,
     .is_equal = foreign_is_equal,
-    .is_gt    = foreign_is_gt,
-    .is_ge    = foreign_is_ge,
-    .is_lt    = foreign_is_lt,
-    .is_le    = foreign_is_le,
 
     .value_of = val_as_zero,
 };
 
 const val_metadata_t metadata_none = {
+    .name     = "object",
+
     .is_true  = val_as_false,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_zero,
 };
@@ -562,30 +508,98 @@ int val_is_equal(val_t *a, val_t *b)
 
 int val_is_gt(val_t *self, val_t *to)
 {
-    const val_metadata_t *meta = base_metadata[val_type(self)];
+    if (val_is_number(self)) {
+        if (val_is_number(to)) {
+            return val_2_double(self) > val_2_double(to);
+        } else {
+            const val_metadata_t *meta = base_metadata[val_type(to)];
+            return val_2_double(self) > meta->value_of(to);
+        }
+    } else {
+        const char *s = val_2_cstring(self);
+        if (s) {
+            const char *b = val_2_cstring(to);
 
-    return meta->is_gt(self, to);
+            return b ? strcmp(s, b) > 0 : 0;
+        } else {
+            const val_metadata_t *meta_a = base_metadata[val_type(self)];
+            const val_metadata_t *meta_b = base_metadata[val_type(to)];
+
+            return meta_a->value_of(self) > meta_b->value_of(to);
+        }
+    }
 }
 
 int val_is_ge(val_t *self, val_t *to)
 {
-    const val_metadata_t *meta = base_metadata[val_type(self)];
+    if (val_is_number(self)) {
+        if (val_is_number(to)) {
+            return val_2_double(self) >= val_2_double(to);
+        } else {
+            const val_metadata_t *meta = base_metadata[val_type(to)];
+            return val_2_double(self) >= meta->value_of(to);
+        }
+    } else {
+        const char *s = val_2_cstring(self);
+        if (s) {
+            const char *b = val_2_cstring(to);
 
-    return meta->is_ge(self, to);
+            return b ? strcmp(s, b) >= 0 : 0;
+        } else {
+            const val_metadata_t *meta_a = base_metadata[val_type(self)];
+            const val_metadata_t *meta_b = base_metadata[val_type(to)];
+
+            return meta_a->value_of(self) >= meta_b->value_of(to);
+        }
+    }
 }
 
 int val_is_le(val_t *self, val_t *to)
 {
-    const val_metadata_t *meta = base_metadata[val_type(self)];
+    if (val_is_number(self)) {
+        if (val_is_number(to)) {
+            return val_2_double(self) <= val_2_double(to);
+        } else {
+            const val_metadata_t *meta = base_metadata[val_type(to)];
+            return val_2_double(self) <= meta->value_of(to);
+        }
+    } else {
+        const char *s = val_2_cstring(self);
+        if (s) {
+            const char *b = val_2_cstring(to);
 
-    return meta->is_le(self, to);
+            return b ? strcmp(s, b) <= 0 : 0;
+        } else {
+            const val_metadata_t *meta_a = base_metadata[val_type(self)];
+            const val_metadata_t *meta_b = base_metadata[val_type(to)];
+
+            return meta_a->value_of(self) <= meta_b->value_of(to);
+        }
+    }
 }
 
 int val_is_lt(val_t *self, val_t *to)
 {
-    const val_metadata_t *meta = base_metadata[val_type(self)];
+    if (val_is_number(self)) {
+        if (val_is_number(to)) {
+            return val_2_double(self) < val_2_double(to);
+        } else {
+            const val_metadata_t *meta = base_metadata[val_type(to)];
+            return val_2_double(self) < meta->value_of(to);
+        }
+    } else {
+        const char *s = val_2_cstring(self);
+        if (s) {
+            const char *b = val_2_cstring(to);
 
-    return meta->is_lt(self, to);
+            return b ? strcmp(s, b) < 0 : 0;
+        } else {
+            const val_metadata_t *meta_a = base_metadata[val_type(self)];
+            const val_metadata_t *meta_b = base_metadata[val_type(to)];
+
+            return meta_a->value_of(self) < meta_b->value_of(to);
+        }
+    }
 }
 
 void val_op_neg(void *env, val_t *self, val_t *result)

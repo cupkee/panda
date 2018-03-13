@@ -1479,13 +1479,16 @@ static void test_exec_op_ge(void)
     CU_ASSERT(0 < interp_execute_string(&env, "NaN >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "undefined >= NaN", &res) && val_is_boolean(res) && !val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "1 >= ''", &res)      && !val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "1 >= []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= ''", &res)      && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 >= []", &res)      && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= ''", &res)      && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "0 >= []", &res)      && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 >= {}", &res)      && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 >= def(){}", &res) && !val_is_true(res)); 
     CU_ASSERT(0 < interp_execute_string(&env, "true >= true",  &res)    && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "false >= false", &res)   && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "[] >= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] >= 0", &res)          && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "{} >= 1", &res)          && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def(){} >= 1", &res)     && !val_is_true(res));
 
@@ -1524,12 +1527,14 @@ static void test_exec_op_gt(void)
     CU_ASSERT(0 < interp_execute_string(&env, "NaN > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "undefined > NaN", &res) && val_is_boolean(res) && !val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "1 > ''", &res)      && !val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "1 > []", &res)      && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > ''", &res)      && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "1 > []", &res)      && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 > {}", &res)      && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "1 > def(){}", &res) && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "true > true",  &res)    && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "true > false",  &res)    && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "false > false", &res)   && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "false > true", &res)   && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "[] >= 1", &res)          && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "{} >= 1", &res)          && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def(){} >= 1", &res)     && !val_is_true(res));
@@ -1575,7 +1580,7 @@ static void test_exec_op_le(void)
     CU_ASSERT(0 < interp_execute_string(&env, "true <= true",  &res)    && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "true <= false",  &res)   && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "false <= false", &res)   && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 1", &res)          && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "{} <= 1", &res)          && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def(){} <= 1", &res)     && !val_is_true(res));
 
@@ -1621,7 +1626,7 @@ static void test_exec_op_lt(void)
     CU_ASSERT(0 < interp_execute_string(&env, "true < false",  &res)    && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "true < true",  &res)    && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "false < false", &res)   && !val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 1", &res)          && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "[] <= 0", &res)          && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "{} <= 1", &res)          && !val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "def(){} <= 1", &res)     && !val_is_true(res));
 

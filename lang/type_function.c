@@ -46,21 +46,15 @@ int function_destroy(intptr_t fn)
 const val_metadata_t metadata_function = {
     .is_true  = val_as_true,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_nan,
 };
 
 const val_metadata_t metadata_function_native = {
+    .name     = "function",
+
     .is_true  = val_as_true,
     .is_equal = val_op_false,
-    .is_gt    = val_op_false,
-    .is_ge    = val_op_false,
-    .is_lt    = val_op_false,
-    .is_le    = val_op_false,
 
     .value_of = val_as_nan,
 };

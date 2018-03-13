@@ -120,12 +120,10 @@ extern const valnum_t const_nan;
 #define MAGIC_FOREIGN       (MAGIC_BASE + 15)
 
 typedef struct val_metadata_t {
+    const char *name;   // Type name of value
+
     int (*is_true)  (val_t *self);
     int (*is_equal) (val_t *self, val_t *to);
-    int (*is_gt) (val_t *self, val_t *to);
-    int (*is_ge) (val_t *self, val_t *to);
-    int (*is_lt) (val_t *self, val_t *to);
-    int (*is_le) (val_t *self, val_t *to);
 
     double (*value_of)(val_t *self);
     val_t  (*prop_of)(val_t *self, const char *key);

@@ -155,34 +155,6 @@ static int string_inline_compare(val_t *self, val_t *to) {
     return b ? !strcmp(a, b) : 0;
 }
 
-static int string_inline_is_gt(val_t *self, val_t *to) {
-    const char *a = ((const char *)self) + 4;
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) > 0) : 0;
-}
-
-static int string_inline_is_ge(val_t *self, val_t *to) {
-    const char *a = ((const char *)self) + 4;
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) >= 0) : 0;
-}
-
-static int string_inline_is_lt(val_t *self, val_t *to) {
-    const char *a = ((const char *)self) + 4;
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) < 0) : 0;
-}
-
-static int string_inline_is_le(val_t *self, val_t *to) {
-    const char *a = ((const char *)self) + 4;
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) <= 0) : 0;
-}
-
 static int string_heap_is_true(val_t *self) {
     return ((const char *) val_2_intptr(self))[4];
 }
@@ -194,34 +166,6 @@ static int string_heap_compare(val_t *self, val_t *to) {
     return b ? !strcmp(a, b) : 0;
 }
 
-static int string_heap_is_gt(val_t *self, val_t *to) {
-    const char *a = (const char *) (val_2_intptr(self) + 4);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) > 0) : 0;
-}
-
-static int string_heap_is_ge(val_t *self, val_t *to) {
-    const char *a = (const char *) (val_2_intptr(self) + 4);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) >= 0) : 0;
-}
-
-static int string_heap_is_lt(val_t *self, val_t *to) {
-    const char *a = (const char *) (val_2_intptr(self) + 4);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) < 0) : 0;
-}
-
-static int string_heap_is_le(val_t *self, val_t *to) {
-    const char *a = (const char *) (val_2_intptr(self) + 4);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) <= 0) : 0;
-}
-
 static int string_foreign_is_true(val_t *self) {
     return ((const char *) val_2_intptr(self))[0];
 }
@@ -231,34 +175,6 @@ static int string_foreign_compare(val_t *self, val_t *to) {
     const char *b = val_2_cstring(to);
 
     return b ? !strcmp(a, b) : 0;
-}
-
-static int string_foreign_is_gt(val_t *self, val_t *to) {
-    const char *a = (const char *) val_2_intptr(self);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) > 0) : 0;
-}
-
-static int string_foreign_is_ge(val_t *self, val_t *to) {
-    const char *a = (const char *) val_2_intptr(self);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) >= 0) : 0;
-}
-
-static int string_foreign_is_lt(val_t *self, val_t *to) {
-    const char *a = (const char *) val_2_intptr(self);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) < 0) : 0;
-}
-
-static int string_foreign_is_le(val_t *self, val_t *to) {
-    const char *a = (const char *) val_2_intptr(self);
-    const char *b = val_2_cstring(to);
-
-    return b ? (strcmp(a, b) <= 0) : 0;
 }
 
 static double value_of_string(val_t *self)
@@ -296,36 +212,27 @@ static int concat_string(void *hnd, val_t *a, val_t *b, val_t *res)
 }
 
 const val_metadata_t metadata_str_inline = {
+    .name     = "string",
     .is_true  = string_inline_is_true,
     .is_equal = string_inline_compare,
-    .is_gt    = string_inline_is_gt,
-    .is_ge    = string_inline_is_ge,
-    .is_lt    = string_inline_is_lt,
-    .is_le    = string_inline_is_le,
 
     .value_of = value_of_string,
     .concat   = concat_string,
 };
 
 const val_metadata_t metadata_str_heap = {
+    .name     = "string",
     .is_true  = string_heap_is_true,
     .is_equal = string_heap_compare,
-    .is_gt    = string_heap_is_gt,
-    .is_ge    = string_heap_is_ge,
-    .is_lt    = string_heap_is_lt,
-    .is_le    = string_heap_is_le,
 
     .value_of = value_of_string,
     .concat   = concat_string,
 };
 
 const val_metadata_t metadata_str_foreign = {
+    .name     = "string",
     .is_true  = string_foreign_is_true,
     .is_equal = string_foreign_compare,
-    .is_gt    = string_foreign_is_gt,
-    .is_ge    = string_foreign_is_ge,
-    .is_lt    = string_foreign_is_lt,
-    .is_le    = string_foreign_is_le,
 
     .value_of = value_of_string,
     .concat   = concat_string,

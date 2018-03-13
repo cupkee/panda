@@ -266,47 +266,6 @@ static inline val_t *array_get(array_t *a, int i)
     return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
-static int array_compare(array_t *self, array_t *to)
-{
-    return array_len(self) - array_len(to);
-}
-
-static int array_is_gt(val_t *self, val_t *to)
-{
-    if (val_is_array(to)) {
-        return array_compare(entry_of_array(self), entry_of_array(to)) > 0;
-    } else {
-        return 0;
-    }
-}
-
-static int array_is_ge(val_t *self, val_t *to)
-{
-    if (val_is_array(to)) {
-        return array_compare(entry_of_array(self), entry_of_array(to)) >= 0;
-    } else {
-        return 0;
-    }
-}
-
-static int array_is_lt(val_t *self, val_t *to)
-{
-    if (val_is_array(to)) {
-        return array_compare(entry_of_array(self), entry_of_array(to)) < 0;
-    } else {
-        return 0;
-    }
-}
-
-static int array_is_le(val_t *self, val_t *to)
-{
-    if (val_is_array(to)) {
-        return array_compare(entry_of_array(self), entry_of_array(to)) <= 0;
-    } else {
-        return 0;
-    }
-}
-
 static double value_of_array(val_t *self)
 {
     array_t *a = entry_of_array(self);
@@ -324,12 +283,10 @@ static double value_of_array(val_t *self)
 }
 
 const val_metadata_t metadata_array = {
+    .name     = "object",
+
     .is_true  = array_is_true,
     .is_equal = val_op_false,
-    .is_gt    = array_is_gt,
-    .is_ge    = array_is_ge,
-    .is_lt    = array_is_lt,
-    .is_le    = array_is_le,
 
     .value_of = value_of_array,
 };
