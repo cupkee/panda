@@ -23,9 +23,15 @@
 #include "type_array.h"
 #include "type_object.h"
 
+
 static object_t object_proto;
 
-static intptr_t object_prop_keys[3] = {(intptr_t)"length", (intptr_t)"toString", (intptr_t)"foreach"};
+static intptr_t object_prop_keys[3] = {
+    (intptr_t)"length",
+    (intptr_t)"toString",
+    (intptr_t)"foreach"
+};
+
 static val_t object_prop_vals[3];
 
 static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
@@ -89,14 +95,6 @@ static val_t *object_find_prop_owned(object_t *obj, intptr_t symbal) {
     return NULL;
 }
 
-static inline void object_static_register(env_t *env, object_t *o) {
-    int i;
-
-    for (i = 0; i < o->prop_num; i++) {
-        env_symbal_add_static(env, (const char *)o->keys[i]);
-    }
-}
-
 static val_t object_length(env_t *env, int ac, val_t *av)
 {
     (void) env;
@@ -109,7 +107,7 @@ static val_t object_length(env_t *env, int ac, val_t *av)
     }
 }
 
-static val_t object_to_string(env_t *env, int ac, val_t *obj)
+static val_t native_object_to_string(env_t *env, int ac, val_t *obj)
 {
     (void) env;
     (void) ac;
@@ -117,7 +115,7 @@ static val_t object_to_string(env_t *env, int ac, val_t *obj)
     return val_mk_foreign_string((intptr_t)"Object");
 }
 
-static val_t object_foreach(env_t *env, int ac, val_t *av)
+static val_t native_object_foreach(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_object(av) && val_is_function(av + 1)) {
         object_t *o = (object_t *)val_2_intptr(av);
@@ -159,7 +157,7 @@ intptr_t object_create(env_t *env, int n, val_t *av)
         obj->prop_num = n / 2;
         obj->keys = (intptr_t *)(obj + 1);
         obj->vals = (val_t *)(obj->keys + size);
-        obj->proto = &object_proto;
+        obj->proto = NULL;
         while (i < n) {
             val_t *k = av + i++;
             val_t *val = av + i++;
@@ -193,14 +191,13 @@ int objects_env_init(env_t *env)
     object_t *Object    = &object_proto;
 
     object_prop_vals[0] = val_mk_native((intptr_t) object_length);
-    object_prop_vals[1] = val_mk_native((intptr_t) object_to_string);
-    object_prop_vals[2] = val_mk_native((intptr_t) object_foreach);
+    object_prop_vals[1] = val_mk_native((intptr_t) native_object_to_string);
+    object_prop_vals[2] = val_mk_native((intptr_t) native_object_foreach);
     Object->magic = MAGIC_OBJECT_STATIC;
     Object->proto = NULL;
     Object->prop_num = 3;
     Object->keys = object_prop_keys;
     Object->vals = object_prop_vals;
-    object_static_register(env, &object_proto);
 
     return env->error;
 }
@@ -268,9 +265,67 @@ int object_iter_next(object_iter_t *it, const char **name, val_t **v)
     }
 }
 
+static val_t object_get_length(env_t *env, void *obj)
+{
+    return val_mk_native((intptr_t) object_length);
+}
+
+static val_t object_get_to_str(env_t *env, void *obj)
+{
+    return val_mk_native((intptr_t) native_object_to_string);
+}
+
+static val_t object_get_foreach(env_t *env, void *obj)
+{
+    return val_mk_native((intptr_t) native_object_foreach);
+}
+
+static const object_prop_t proto[] = {
+    {(intptr_t)"length",   object_get_length, NULL},
+    {(intptr_t)"toString", object_get_to_str, NULL},
+    {(intptr_t)"foreach",  object_get_foreach, NULL},
+};
+
 static inline int object_is_true(val_t *v) {
     return val_2_intptr(v);
 };
+
+static val_t object_get_prop(void *env, val_t *self, const char *name)
+{
+    object_t *obj = val_is_object(self) ? (object_t *)val_2_intptr(self) : NULL;
+    intptr_t symbal = (intptr_t)name;
+    unsigned i;
+
+    if (obj) {
+        object_t *cur = obj;
+        while (cur) {
+            intptr_t *keys = cur->keys;
+
+            for (i = 0; i < cur->prop_num; i++) {
+                if (keys[i] == symbal) {
+                    return cur->vals[i];
+                }
+            }
+            cur = cur->proto;
+        }
+
+        for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+            if (proto[i].symbal == symbal) {
+                return proto[i].getter(env, obj);
+            }
+        }
+    }
+
+    return VAL_UNDEFINED;
+}
+
+void object_proto_init(env_t *env)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        env_symbal_add_static(env, (const char *)proto[i].symbal);
+    }
+}
 
 const val_metadata_t metadata_object = {
     .name     = "object",
@@ -279,5 +334,6 @@ const val_metadata_t metadata_object = {
     .is_equal = val_op_false,
 
     .value_of = val_as_nan,
+    .get_prop = object_get_prop,
 };
 

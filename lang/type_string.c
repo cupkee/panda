@@ -18,6 +18,7 @@
  **/
 
 #include "err.h"
+#include "type_object.h"
 #include "type_string.h"
 
 int string_compare(val_t *a, val_t *b)
@@ -117,7 +118,7 @@ val_t string_length(env_t *env, int ac, val_t *av)
     }
 }
 
-val_t string_index_of(env_t *env, int ac, val_t *av)
+val_t native_string_index_of(env_t *env, int ac, val_t *av)
 {
     const char *s, *f;
 
@@ -137,7 +138,28 @@ val_t string_index_of(env_t *env, int ac, val_t *av)
     }
 }
 
+static val_t get_length(env_t *env, void *s)
+{
+    return val_mk_native((intptr_t) string_length);
+}
 
+static val_t get_index_of(env_t *env, void *s)
+{
+    return val_mk_native((intptr_t) native_string_index_of);
+}
+
+static object_prop_t proto[] = {
+    {(intptr_t)"length",   get_length,   NULL},
+    {(intptr_t)"indexOf",  get_index_of, NULL},
+};
+
+void string_proto_init(env_t *env)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        env_symbal_add_static(env, (const char *)proto[i].symbal);
+    }
+}
 
 static int string_inline_is_true(val_t *self) {
     return ((const char *)self)[4];
@@ -206,12 +228,33 @@ static int concat_string(void *hnd, val_t *a, val_t *b, val_t *res)
     }
 }
 
+static val_t string_get_prop(void *env, val_t *self, const char *name)
+{
+    const char *s = val_2_cstring(self);
+    intptr_t symbal = (intptr_t)name;
+
+    if (s) {
+        unsigned i;
+
+        for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+            if (proto[i].symbal == symbal) {
+                return proto[i].getter(env, (void *)s);
+            }
+        }
+    }
+
+    return VAL_UNDEFINED;
+}
+
+
 const val_metadata_t metadata_str_inline = {
     .name     = "string",
     .is_true  = string_inline_is_true,
     .is_equal = string_inline_compare,
 
     .value_of = value_of_string,
+    .get_prop = string_get_prop,
+
     .concat   = concat_string,
 };
 
@@ -221,6 +264,8 @@ const val_metadata_t metadata_str_heap = {
     .is_equal = string_heap_compare,
 
     .value_of = value_of_string,
+    .get_prop = string_get_prop,
+
     .concat   = concat_string,
 };
 
@@ -230,6 +275,8 @@ const val_metadata_t metadata_str_foreign = {
     .is_equal = string_foreign_compare,
 
     .value_of = value_of_string,
+    .get_prop = string_get_prop,
+
     .concat   = concat_string,
 };
 

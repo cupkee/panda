@@ -22,6 +22,7 @@
 #include "type_number.h"
 #include "type_string.h"
 #include "type_array.h"
+#include "type_object.h"
 
 static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
 {
@@ -277,6 +278,63 @@ static double value_of_array(val_t *self)
     }
 }
 
+static val_t get_length(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_length);
+}
+
+static val_t get_push(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_push);
+}
+
+static val_t get_pop(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_pop);
+}
+
+static val_t get_shift(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_shift);
+}
+
+static val_t get_unshift(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_unshift);
+}
+
+static val_t get_foreach(env_t *env, void *entry)
+{
+    return val_mk_native((intptr_t)array_foreach);
+}
+
+static const object_prop_t proto[] = {
+    {(intptr_t)"length",   get_length, NULL},
+    {(intptr_t)"push",     get_push, NULL},
+    {(intptr_t)"pop",      get_pop, NULL},
+    {(intptr_t)"shift",    get_shift, NULL},
+    {(intptr_t)"unshift",  get_unshift, NULL},
+    {(intptr_t)"foreach",  get_foreach, NULL},
+};
+
+static val_t array_get_prop(void *env, val_t *self, const char *name)
+{
+    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+    intptr_t symbal = (intptr_t)name;
+
+    if (a) {
+        unsigned i;
+
+        for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+            if (proto[i].symbal == symbal) {
+                return proto[i].getter(env, a);
+            }
+        }
+    }
+
+    return VAL_UNDEFINED;
+}
+
 const val_metadata_t metadata_array = {
     .name     = "object",
 
@@ -284,5 +342,14 @@ const val_metadata_t metadata_array = {
     .is_equal = val_op_false,
 
     .value_of = value_of_array,
+    .get_prop = array_get_prop,
 };
+
+void array_proto_init(env_t *env)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        env_symbal_add_static(env, (const char *)proto[i].symbal);
+    }
+}
 

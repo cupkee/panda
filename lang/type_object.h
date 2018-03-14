@@ -41,6 +41,12 @@ typedef struct object_t {
     val_t    *vals;
 } object_t;
 
+typedef struct object_prop_t {
+    intptr_t symbal;
+    val_t (*getter) (env_t *env, void *entry);
+    void  (*setter) (env_t *env, void *entry, val_t *data);
+} object_prop_t;
+
 typedef struct object_iter_t {
     object_t *obj;
     int       cur;
@@ -72,6 +78,7 @@ static inline int object_iter_init(object_iter_t *it, val_t *obj)
 
 int object_iter_next(object_iter_t *it, const char **k, val_t **v);
 
+void object_proto_init(env_t *env);
 extern const val_metadata_t metadata_object;
 
 #endif /* __LANG_OBJECT_INC__ */

@@ -22,6 +22,8 @@
 #include "type_object.h"
 #include "type_string.h"
 #include "type_array.h"
+#include "type_boolean.h"
+#include "type_number.h"
 #include "type_function.h"
 
 #define VACATED     (-1)
@@ -340,6 +342,10 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
 
     // Initialise callbacks
     env->gc_callback = NULL;
+
+    object_proto_init(env);
+    string_proto_init(env);
+    array_proto_init(env);
 
     if (0 != objects_env_init(env)) {
         return -1;

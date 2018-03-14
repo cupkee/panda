@@ -78,6 +78,7 @@ void array_elem_val(val_t *self, int i, val_t *elem);
 val_t *array_elem_ref(val_t *self, int i);
 
 extern const val_metadata_t metadata_array;
+void array_proto_init(env_t *env);
 
 /* new api
 void *array_create(env_t *env, int size, val_t *elems);

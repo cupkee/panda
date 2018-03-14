@@ -121,8 +121,8 @@ typedef struct val_metadata_t {
     int (*is_equal) (val_t *self, val_t *to);
 
     double (*value_of)(val_t *self);
-    val_t  (*prop_of)(val_t *self, const char *key);
-    val_t  (*elem_of)(val_t *self, int id);
+    val_t  (*get_prop)(void *env, val_t *self, const char *key);
+    val_t  (*get_elem)(void *env, val_t *self, int id);
 
     int (*concat)(void *env, val_t *self, val_t *other, val_t *to);
 } val_metadata_t;
@@ -382,8 +382,8 @@ static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
     *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
-typedef void (*val_op_t)(void *env, val_t *oprand1, val_t *oprand2, val_t *result);
-typedef void (*val_op_unary_t)(void *env, val_t *oprand, val_t *result);
+typedef void (*val_opx_t)(void *env, val_t *x, val_t *result);
+typedef void (*val_opxx_t)(void *env, val_t *x1, val_t *x2, val_t *result);
 
 /* New interface */
 int val_as_true(val_t *self);
@@ -397,11 +397,11 @@ double val_as_integer(val_t *self);
 double val_as_number(val_t *self);
 
 int  val_is_true(val_t *self);
+int  val_is_equal(val_t *self, val_t *other);
 int  val_is_gt(val_t *self, val_t *other);
+int  val_is_ge(val_t *self, val_t *other);
 int  val_is_lt(val_t *self, val_t *other);
-
-void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
-void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
+int  val_is_le(val_t *self, val_t *other);
 
 void val_neg(void *env, val_t *self, val_t *res);
 void val_not(void *env, val_t *self, val_t *res);
@@ -417,40 +417,24 @@ void val_xor(void *env, val_t *self, val_t *b, val_t *r);
 void val_lshift(void *env, val_t *self, val_t *b, val_t *r);
 void val_rshift(void *env, val_t *self, val_t *b, val_t *r);
 
+void val_inc (void *env, val_t *self, val_t *res);
+void val_incp(void *env, val_t *self, val_t *res);
+void val_dec (void *env, val_t *self, val_t *res);
+void val_decp(void *env, val_t *self, val_t *res);
+
+void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
+void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
+
 void val_set(void *env, val_t *self, val_t *b, val_t *r);
 
 /* New interface end */
 
-int  val_is_true(val_t *v);
-int  val_is_equal(val_t *a, val_t *b);
-int  val_is_ge(val_t *a, val_t *b);
-int  val_is_gt(val_t *a, val_t *b);
-int  val_is_le(val_t *a, val_t *b);
-int  val_is_lt(val_t *a, val_t *b);
-
 void val_op_prop(void *env, val_t *v, val_t *key, val_t *prop);
 void val_op_elem(void *env, val_t *v, val_t *key, val_t *elem);
+
 val_t *val_prop_ref(void *env, val_t *v, val_t *name);
 val_t *val_elem_ref(void *env, val_t *v, val_t *id);
 
-void val_op_neg(void *env, val_t *oprand, val_t *res);
-void val_op_not(void *env, val_t *oprand, val_t *res);
-
-void val_op_inc (void *env, val_t *self, val_t *res);
-void val_op_incp(void *env, val_t *self, val_t *res);
-void val_op_dec (void *env, val_t *self, val_t *res);
-void val_op_decp(void *env, val_t *self, val_t *res);
-
-void val_op_mul(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_div(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_mod(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_add(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_sub(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_and(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_or (void *env, val_t *a, val_t *b, val_t *r);
-void val_op_xor(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_lshift(void *env, val_t *a, val_t *b, val_t *r);
-void val_op_rshift(void *env, val_t *a, val_t *b, val_t *r);
 void val_op_set(void *env, val_t *a, val_t *b, val_t *r);
 
 val_t val_create(void *env, const val_foreign_op_t *op, intptr_t entry);

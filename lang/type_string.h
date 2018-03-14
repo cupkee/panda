@@ -67,9 +67,8 @@ int string_compare(val_t *a, val_t *b);
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res);
 void string_at(env_t *env, val_t *a, val_t *b, val_t *res);
 void string_elem_get(val_t *self, int i, val_t *elem);
-val_t string_length(env_t *env, int ac, val_t *av);
-val_t string_index_of(env_t *env, int ac, val_t *av);
 
+void string_proto_init(env_t *env);
 extern const val_metadata_t metadata_str_inline;
 extern const val_metadata_t metadata_str_heap;
 extern const val_metadata_t metadata_str_foreign;

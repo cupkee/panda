@@ -27,14 +27,6 @@
 #include "type_object.h"
 #include "type_function.h"
 
-/*
-const val_t _Infinity  = TAG_INFINITE;
-const val_t _Undefined = TAG_UNDEFINED;
-const val_t _True      = TAG_BOOLEAN + 1;
-const val_t _False     = TAG_BOOLEAN;
-const val_t _NaN       = TAG_NAN;
-*/
-
 const valnum_t const_nan = {
     .v = TAG_NAN
 };
@@ -66,16 +58,6 @@ static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
         f->op->set(env, f->data, b, res);
     } else {
         *res = *a = *b;
-    }
-}
-
-static inline void foreign_prop(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->prop) {
-        f->op->prop(env, f->data, b, res);
-    } else {
-        val_set_undefined(res);
     }
 }
 
@@ -174,13 +156,6 @@ static const prop_desc_t number_prop_descs [] = {
     }
 };
 static const prop_desc_t string_prop_descs [] = {
-    {
-        .name = "length",
-        .entry = string_length
-    }, {
-        .name = "indexOf",
-        .entry = string_index_of
-    }
 };
 static const prop_desc_t boolean_prop_descs [] = {
     {
@@ -597,7 +572,7 @@ int val_is_lt(val_t *self, val_t *to)
     }
 }
 
-void val_op_neg(void *env, val_t *self, val_t *result)
+void val_neg(void *env, val_t *self, val_t *result)
 {
     (void) env;
 
@@ -610,7 +585,7 @@ void val_op_neg(void *env, val_t *self, val_t *result)
     }
 }
 
-void val_op_not(void *env, val_t *self, val_t *result)
+void val_not(void *env, val_t *self, val_t *result)
 {
     (void) env;
 
@@ -628,7 +603,7 @@ void val_op_not(void *env, val_t *self, val_t *result)
     }
 }
 
-void val_op_inc(void *env, val_t *self, val_t *res)
+void val_inc(void *env, val_t *self, val_t *res)
 {
     (void) env;
     if (val_is_number(self)) {
@@ -638,7 +613,7 @@ void val_op_inc(void *env, val_t *self, val_t *res)
     }
 }
 
-void val_op_incp(void *env, val_t *self, val_t *res)
+void val_incp(void *env, val_t *self, val_t *res)
 {
     (void) env;
     if (val_is_number(self)) {
@@ -648,7 +623,7 @@ void val_op_incp(void *env, val_t *self, val_t *res)
     }
 }
 
-void val_op_dec(void *env, val_t *self, val_t *res)
+void val_dec(void *env, val_t *self, val_t *res)
 {
     (void) env;
     if (val_is_number(self)) {
@@ -658,7 +633,7 @@ void val_op_dec(void *env, val_t *self, val_t *res)
     }
 }
 
-void val_op_decp(void *env, val_t *self, val_t *res)
+void val_decp(void *env, val_t *self, val_t *res)
 {
     (void) env;
     if (val_is_number(self)) {
@@ -668,7 +643,7 @@ void val_op_decp(void *env, val_t *self, val_t *res)
     }
 }
 
-void val_op_mul(void *env, val_t *a, val_t *b, val_t *res)
+void val_mul(void *env, val_t *a, val_t *b, val_t *res)
 {
     double v = val_2_double(a) * val_2_double(b);
 
@@ -683,7 +658,7 @@ void val_op_mul(void *env, val_t *a, val_t *b, val_t *res)
     }
 }
 
-void val_op_div(void *env, val_t *a, val_t *b, val_t *res)
+void val_div(void *env, val_t *a, val_t *b, val_t *res)
 {
     const val_metadata_t *meta_a = base_metadata[val_type(a)];
     const val_metadata_t *meta_b = base_metadata[val_type(b)];
@@ -693,7 +668,7 @@ void val_op_div(void *env, val_t *a, val_t *b, val_t *res)
     (void) env;
 }
 
-void val_op_mod(void *env, val_t *a, val_t *b, val_t *res)
+void val_mod(void *env, val_t *a, val_t *b, val_t *res)
 {
     const val_metadata_t *meta_a = base_metadata[val_type(a)];
     const val_metadata_t *meta_b = base_metadata[val_type(b)];
@@ -703,7 +678,7 @@ void val_op_mod(void *env, val_t *a, val_t *b, val_t *res)
     (void) env;
 }
 
-void val_op_add(void *env, val_t *a, val_t *b, val_t *res)
+void val_add(void *env, val_t *a, val_t *b, val_t *res)
 {
     double v = val_2_double(a) + val_2_double(b);
 
@@ -722,7 +697,7 @@ void val_op_add(void *env, val_t *a, val_t *b, val_t *res)
     }
 }
 
-void val_op_sub(void *env, val_t *a, val_t *b, val_t *res)
+void val_sub(void *env, val_t *a, val_t *b, val_t *res)
 {
     double v = val_2_double(a) - val_2_double(b);
 
@@ -737,7 +712,7 @@ void val_op_sub(void *env, val_t *a, val_t *b, val_t *res)
     }
 }
 
-void val_op_and(void *env, val_t *a, val_t *b, val_t *res)
+void val_and(void *env, val_t *a, val_t *b, val_t *res)
 {
     int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
     int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
@@ -747,7 +722,7 @@ void val_op_and(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia & ib);
 }
 
-void val_op_or(void *env, val_t *a, val_t *b, val_t *res)
+void val_or(void *env, val_t *a, val_t *b, val_t *res)
 {
     int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
     int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
@@ -757,7 +732,7 @@ void val_op_or(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia | ib);
 }
 
-void val_op_xor(void *env, val_t *a, val_t *b, val_t *res)
+void val_xor(void *env, val_t *a, val_t *b, val_t *res)
 {
     int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
     int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
@@ -767,7 +742,7 @@ void val_op_xor(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia ^ ib);
 }
 
-void val_op_lshift(void *env, val_t *a, val_t *b, val_t *res)
+void val_lshift(void *env, val_t *a, val_t *b, val_t *res)
 {
     int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
     int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
@@ -777,7 +752,7 @@ void val_op_lshift(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia << ib);
 }
 
-void val_op_rshift(void *env, val_t *a, val_t *b, val_t *res)
+void val_rshift(void *env, val_t *a, val_t *b, val_t *res)
 {
     int ia = val_is_number(a) ? val_2_integer(a) : val_is_boolean(a) ? val_2_intptr(a) : 0;
     int ib = val_is_number(b) ? val_2_integer(b) : val_is_boolean(b) ? val_2_intptr(b) : 0;
@@ -787,6 +762,28 @@ void val_op_rshift(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia >> ib);
 }
 
+void val_prop_get(void *env, val_t *self, val_t * key, val_t *prop)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    if (val_is_number(key)) {
+        if (meta->get_elem) {
+            *prop = meta->get_elem(env, self, val_2_integer(key));
+        } else {
+            val_set_undefined(prop);
+        }
+    } else {
+        const char *name = val_2_cstring(key);
+
+        if (name && meta->get_prop) {
+            *prop = meta->get_prop(env, self, name);
+        } else {
+            val_set_undefined(prop);
+        }
+    }
+}
+
+/*
 void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)
 {
     int type = val_type(self);
@@ -800,6 +797,7 @@ void val_op_prop(void *env, val_t *self, val_t *key, val_t *prop)
         type_prop_val(type, key, prop);
     }
 }
+*/
 
 void val_op_elem(void *env, val_t *self, val_t *key, val_t *prop)
 {

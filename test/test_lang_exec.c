@@ -715,7 +715,6 @@ static void test_exec_string(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf(a)", &res) && val_is_number(res) && 0 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf(b)", &res) && val_is_number(res) && 6 == val_2_double(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "true.toString().length()", &res) && val_is_number(res) && 4 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 'h'", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0].length()", &res) && val_is_number(res) && 1 == val_2_integer(res));
 
