@@ -123,6 +123,8 @@ typedef struct val_metadata_t {
     double (*value_of)(val_t *self);
     val_t  (*get_prop)(void *env, val_t *self, const char *key);
     val_t  (*get_elem)(void *env, val_t *self, int id);
+    val_t *(*ref_prop)(void *env, val_t *self, const char *key);
+    val_t *(*ref_elem)(void *env, val_t *self, int id);
 
     int (*concat)(void *env, val_t *self, val_t *other, val_t *to);
 } val_metadata_t;
@@ -287,6 +289,14 @@ static inline const char *val_2_cstring(val_t *v) {
 
 static inline val_t val_mk_number(double d) {
     return double_2_val(d);
+}
+
+static inline val_t val_mk_inner_string(unsigned c) {
+#if SYS_BYTE_ORDER == LE
+    return TAG_STRING_I | (c * 0x100000000);
+#else
+    return TAG_STRING_I | (c * 0x1000000);
+#endif
 }
 
 static inline val_t val_mk_foreign_string(intptr_t s) {

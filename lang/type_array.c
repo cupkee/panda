@@ -335,6 +335,30 @@ static val_t array_get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
+static val_t array_get_elem(void *env, val_t *self, int id)
+{
+    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+
+    if (a) {
+        if (id >= 0 && id < array_len(a)) {
+            return a->elems[a->elem_bgn + id];
+        }
+    }
+    return VAL_UNDEFINED;
+}
+
+static val_t *array_ref_elem(void *env, val_t *self, int id)
+{
+    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+
+    if (a) {
+        if (id >= 0 && id < array_len(a)) {
+            return a->elems + a->elem_bgn + id;
+        }
+    }
+    return NULL;
+}
+
 const val_metadata_t metadata_array = {
     .name     = "object",
 
@@ -343,6 +367,8 @@ const val_metadata_t metadata_array = {
 
     .value_of = value_of_array,
     .get_prop = array_get_prop,
+    .get_elem = array_get_elem,
+    .ref_elem = array_ref_elem,
 };
 
 void array_proto_init(env_t *env)

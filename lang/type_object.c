@@ -319,6 +319,30 @@ static val_t object_get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
+static val_t *object_ref_prop(void *env, val_t *self, const char *name)
+{
+    object_t *obj = val_is_object(self) ? (object_t *)val_2_intptr(self) : NULL;
+    val_t *prop = NULL;
+
+    intptr_t sym_id = env_symbal_get(env, name);
+
+    if (sym_id) {
+        prop = object_find_prop_owned(obj, sym_id);
+        if (prop) {
+            return prop;
+        }
+        prop = object_add_prop(env, obj, sym_id);
+    } else {
+        prop = object_add_prop(env, obj, env_symbal_add(env, name));
+    }
+
+    if (prop) {
+        val_set_undefined(prop);
+    }
+
+    return prop;
+}
+
 void object_proto_init(env_t *env)
 {
     unsigned i;
@@ -335,5 +359,6 @@ const val_metadata_t metadata_object = {
 
     .value_of = val_as_nan,
     .get_prop = object_get_prop,
+    .ref_prop = object_ref_prop,
 };
 

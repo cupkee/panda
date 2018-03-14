@@ -246,6 +246,18 @@ static val_t string_get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
+static val_t string_get_elem(void *env, val_t *self, int id)
+{
+    const char *s = val_2_cstring(self);
+    int len = string_len(self);
+
+    if (id >= 0 && id < len) {
+        return val_mk_inner_string(s[id]);
+    } else {
+        return VAL_UNDEFINED;
+    }
+}
+
 
 const val_metadata_t metadata_str_inline = {
     .name     = "string",
@@ -254,6 +266,7 @@ const val_metadata_t metadata_str_inline = {
 
     .value_of = value_of_string,
     .get_prop = string_get_prop,
+    .get_elem = string_get_elem,
 
     .concat   = concat_string,
 };
@@ -265,6 +278,7 @@ const val_metadata_t metadata_str_heap = {
 
     .value_of = value_of_string,
     .get_prop = string_get_prop,
+    .get_elem = string_get_elem,
 
     .concat   = concat_string,
 };
@@ -276,6 +290,7 @@ const val_metadata_t metadata_str_foreign = {
 
     .value_of = value_of_string,
     .get_prop = string_get_prop,
+    .get_elem = string_get_elem,
 
     .concat   = concat_string,
 };

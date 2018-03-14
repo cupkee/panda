@@ -81,7 +81,7 @@ static inline void interp_elem_op_self(env_t *env, val_opx_t operate) {
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    val_t *prop = val_elem_ref(env, obj, key);
+    val_t *prop = val_prop_ref(env, obj, key);
     if (prop) {
         operate(env, prop, res);
     } else {
@@ -124,7 +124,7 @@ static inline void interp_elem_op_set(env_t *env, val_opxx_t operate) {
     val_t *reg3 = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *reg2 = reg3 + 1;
     val_t *reg1 = reg2 + 1;
-    val_t *elem = val_elem_ref(env, reg1, reg2);
+    val_t *elem = val_prop_ref(env, reg1, reg2);
 
     if (elem) {
         operate(env, elem, reg3, elem);
@@ -252,7 +252,8 @@ static inline void interp_elem_get(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = self;
 
-    val_op_elem(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
+    //val_op_elem(env, self, key, prop);
     env_stack_pop(env);
 }
 
@@ -276,7 +277,7 @@ static inline void interp_elem_set(env_t *env) {
     val_t *key = val + 1;
     val_t *obj = key + 1;
     val_t *res = obj;
-    val_t *ref = val_elem_ref(env, obj, key);
+    val_t *ref = val_prop_ref(env, obj, key);
 
     if (ref) {
         val_op_set(env, ref, val, res);
@@ -301,7 +302,8 @@ static inline void interp_elem_meth(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = key;
 
-    val_op_elem(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
+    //val_op_elem(env, self, key, prop);
     // No pop, to leave self in stack
 }
 
