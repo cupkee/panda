@@ -22,8 +22,6 @@
 
 #include "scope.h"
 
-//scope_t *gc_copy_scope(heap_t *heap, scope_t *scope);
-//void gc_copy_vals(heap_t *heap, int vc, val_t *vp);
 void gc_scan(void *env);
 
 void     gc_types_copy(void *env, int n, val_t *p);

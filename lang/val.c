@@ -31,36 +31,6 @@ const valnum_t const_nan = {
     .v = TAG_NAN
 };
 
-static inline int foreign_is_true(val_t *v) {
-    val_foreign_t *vf = (val_foreign_t *)val_2_intptr(v);
-
-    if (vf && vf->op && vf->op->is_true) {
-        return vf->op->is_true(vf->data);
-    } else {
-        return 0;
-    }
-}
-
-static inline int foreign_is_equal(val_t *a, val_t *b) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->is_equal) {
-        return f->op->is_equal(f->data, b);
-    } else {
-        return 0;
-    }
-}
-
-static inline void foreign_set(void *env, val_t *a, val_t *b, val_t *res) {
-    val_foreign_t *f = (val_foreign_t *)val_2_intptr(a);
-
-    if (f && f->op && f->op->set) {
-        f->op->set(env, f->data, b, res);
-    } else {
-        *res = *a = *b;
-    }
-}
-
 int val_as_true(val_t *self)
 {
     (void) self;
@@ -72,6 +42,8 @@ int val_as_false(val_t *self)
     (void) self;
     return 0;
 }
+
+
 
 double val_as_zero(val_t *self)
 {
@@ -159,8 +131,8 @@ const val_metadata_t metadata_data_view = {
 const val_metadata_t metadata_object_foreign = {
     .name     = "object",
 
-    .is_true  = foreign_is_true,
-    .is_equal = foreign_is_equal,
+    .is_true  = val_as_true,
+    .is_equal = val_op_false,
 
     .value_of = val_as_zero,
 };
@@ -498,6 +470,11 @@ void val_rshift(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia >> ib);
 }
 
+void foreign_set(void *env, val_t *self, val_t *b, val_t *r)
+{
+    *r = *self = *b;
+}
+
 void val_set(void *env, val_t *a, val_t *b, val_t *r)
 {
     if (!val_is_foreign(a)) {
@@ -545,38 +522,5 @@ val_t *val_prop_ref(void *env, val_t *self, val_t * key)
     }
 
     return NULL;
-}
-
-val_t val_create(void *env, const val_foreign_op_t *op, intptr_t data)
-{
-    val_foreign_t *vf = env_heap_alloc(env, SIZE_ALIGN(sizeof(val_foreign_t)));
-
-    if (vf) {
-        vf->magic = MAGIC_FOREIGN;
-        vf->age = 0;
-        vf->op = op;
-        vf->data = data;
-        return val_mk_foreign((intptr_t)vf);
-    } else {
-        env_set_error(env, ERR_NotEnoughMemory);
-        return VAL_UNDEFINED;
-    }
-}
-
-int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t data, val_t *foreign)
-{
-    val_foreign_t *vf = env_heap_alloc(env, SIZE_ALIGN(sizeof(val_foreign_t)));
-
-    if (vf) {
-        vf->magic = MAGIC_FOREIGN;
-        vf->age = 0;
-        vf->op = op;
-        vf->data = data;
-        val_set_foreign(foreign, (intptr_t)vf);
-        return 0;
-    } else {
-        env_set_error(env, ERR_NotEnoughMemory);
-        return -1;
-    }
 }
 

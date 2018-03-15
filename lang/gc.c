@@ -126,19 +126,6 @@ static inline void function_gc_scan(void *env, function_t *func)
     func->super = gc_scope_copy(env, func->super);
 }
 
-static inline intptr_t foreign_gc_dup(void *env, val_foreign_t *foreign)
-{
-    int size = foreign_mem_space(foreign);
-    void *dup = env_heap_alloc(env, size);
-
-    //printf("%s: free %d, %d, %s\n", __func__, heap->free, size, (char *)(str + 3));
-    //printf("[str size: %d, '%s']", size, (char *)str + 3);
-    memcpy(dup, (void*)foreign, size);
-    //printf("[dup size: %d, '%s']", string_mem_space((intptr_t)dup), dup + 3);
-
-    return (intptr_t) dup;
-}
-
 static inline object_t *gc_object_copy(void *env, object_t *obj)
 {
     object_t *dup;
@@ -200,21 +187,6 @@ static inline function_t *gc_function_copy(void *env, function_t *func)
     } else {
         function_t *dup = function_gc_dup(env, func);
         ADDR_VALUE(func) = dup;
-        return dup;
-    }
-}
-
-static inline intptr_t gc_foreign_copy(void *env, val_foreign_t *foreign)
-{
-    if (!foreign ||env_is_heap_memory(env, foreign)) {
-        return (intptr_t) foreign;
-    }
-
-    if (MAGIC_BYTE(foreign) != MAGIC_FOREIGN) {
-        return (intptr_t) ADDR_VALUE(foreign);
-    } else {
-        intptr_t dup = foreign_gc_dup(env, foreign);
-        ADDR_VALUE(foreign) = (void *)dup;
         return dup;
     }
 }
@@ -416,6 +388,11 @@ scope_t *gc_scope_copy(void *env, scope_t *scope)
     return dup;
 }
 
+void foreign_keep(intptr_t entry)
+{
+    (void) entry;
+}
+
 void gc_types_copy(void *env, int n, val_t *p)
 {
     int i = 0;
@@ -436,7 +413,7 @@ void gc_types_copy(void *env, int n, val_t *p)
             val_set_array(v, (intptr_t)gc_array_copy(env, (array_t *)val_2_intptr(v)));
         } else
         if (val_is_foreign(v)) {
-            val_set_foreign(v, gc_foreign_copy(env, (val_foreign_t *)val_2_intptr(v)));
+            foreign_keep(val_2_intptr(v));
         }
         i++;
     }
@@ -487,9 +464,6 @@ void gc_scan(void *env)
 
             break;
             }
-        case MAGIC_FOREIGN:
-            scan += foreign_mem_space((val_foreign_t *) (base + scan));
-            break;
         default: break;
         }
     }
