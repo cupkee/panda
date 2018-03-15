@@ -29,6 +29,9 @@
 #include "executable.h"
 #include "scope.h"
 
+#define PANDA_EVENT_GC_START 1
+#define PANDA_EVENT_GC_END   2
+
 struct native_t;
 
 typedef struct env_t {
@@ -61,7 +64,7 @@ typedef struct env_t {
 
     intptr_t *main_var_map;
 
-    void (*gc_callback)(void);
+    void (*callback)(struct env_t *, int);
 
     executable_t exe;
 } env_t;
@@ -80,15 +83,25 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
 
 int env_deinit(env_t *env);
 int env_reference_set(env_t *env, val_t *ent, int num);
-int env_callback_set(env_t *env, void (*cb)(void));
+int env_callback_set(env_t *env, void (*cb)(env_t *, int));
 int env_native_set(env_t *env, const native_t *ent, int num);
 
-void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
 
 scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av);
 int env_scope_get(env_t *env, int id, val_t **v);
 int env_scope_set(env_t *env, int id, val_t *v);
+
+static inline void *env_heap_alloc(env_t *env, int size) {
+    void *ptr = heap_alloc(env->heap, size);
+
+    if (!ptr) {
+        env_heap_gc(env, size);
+        return heap_alloc(env->heap, size);
+    }
+
+    return ptr;
+}
 
 intptr_t env_symbal_insert(env_t *env, const char *symbal, int alloc);
 intptr_t env_symbal_get(env_t *env, const char *name);
@@ -220,6 +233,11 @@ static inline void env_push_native(env_t *env, int id) {
 static inline
 heap_t *env_heap_get_free(env_t *env) {
     return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
+}
+
+static inline
+int env_is_heap_memory(env_t *env, void *p) {
+    return heap_is_owned(env->heap, p);
 }
 
 static inline

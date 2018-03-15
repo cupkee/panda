@@ -23,17 +23,6 @@
 #include "type_array.h"
 #include "type_object.h"
 
-
-static object_t object_proto;
-
-static intptr_t object_prop_keys[3] = {
-    (intptr_t)"length",
-    (intptr_t)"toString",
-    (intptr_t)"foreach"
-};
-
-static val_t object_prop_vals[3];
-
 static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
     val_t *vals;
     intptr_t *keys;
@@ -184,22 +173,6 @@ intptr_t object_create(env_t *env, int n, val_t *av)
     }
 
     return (intptr_t) obj;
-}
-
-int objects_env_init(env_t *env)
-{
-    object_t *Object    = &object_proto;
-
-    object_prop_vals[0] = val_mk_native((intptr_t) object_length);
-    object_prop_vals[1] = val_mk_native((intptr_t) native_object_to_string);
-    object_prop_vals[2] = val_mk_native((intptr_t) native_object_foreach);
-    Object->magic = MAGIC_OBJECT_STATIC;
-    Object->proto = NULL;
-    Object->prop_num = 3;
-    Object->keys = object_prop_keys;
-    Object->vals = object_prop_vals;
-
-    return env->error;
 }
 
 val_t *object_prop_ref(env_t *env, val_t *self, val_t *key)

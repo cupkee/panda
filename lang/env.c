@@ -56,24 +56,30 @@ static heap_t *env_heap_gc_init(env_t *env)
     int fp, sp, ss;
 
     heap_reset(heap);
+    env->heap = heap;
 
-    if (env->ref_num && env->ref_ent) {
-        gc_copy_vals(heap, env->ref_num, env->ref_ent);
+    if (env->callback) {
+        env->callback(env, PANDA_EVENT_GC_START);
     }
 
-    env->scope = gc_copy_scope(heap, env->scope);
+    env->scope = gc_scope_copy(env, env->scope);
+
+    if (env->ref_num && env->ref_ent) {
+        //"Todo: should move to callback"
+        gc_types_copy(env, env->ref_num, env->ref_ent);
+    }
 
     fp = env->fp, sp = env->sp, ss = env->ss;
     sb = env->sb;
     while (1) {
         if (fp == ss) {
-            gc_copy_vals(heap, fp - sp, sb + sp);
+            gc_types_copy(env, fp - sp, sb + sp);
             break;
         } else {
             frame_t *frame = (frame_t *)(sb + fp);
 
-            gc_copy_vals(heap, fp - sp, sb + sp);
-            frame->scope = (intptr_t)gc_copy_scope(heap, (scope_t *)frame->scope);
+            gc_types_copy(env, fp - sp, sb + sp);
+            frame->scope = (intptr_t)gc_scope_copy(env, (scope_t *)frame->scope);
 
             fp = frame->fp;
             sp = frame->sp;
@@ -195,169 +201,53 @@ intptr_t env_symbal_get(env_t *env, const char *name) {
     return 0;
 }
 
-int env_exe_memery_distribute(int size, int *num_max, int *str_max, int *fn_max, int *code_max)
+int env_number_find_add(env_t *env, double n)
 {
-    int code_space;
-    int fent_space;
-    int num_space;
-    int str_space;
-
-    if (code_max) {
-        // half of memory as code space
-        code_space = SIZE_ALIGN_8(size / 2);
-        *code_max = code_space;
-        size -= code_space;
-    } else {
-        code_space = 0;
-    }
-
-    if (str_max) {
-        // 7/16 of memory as function entry space
-        str_space = size * 7 / 8;
-        *str_max = str_space / (sizeof(intptr_t) * 2 + DEF_STRING_SIZE);
-        size -= str_space;
-    } else {
-        str_space = 0;
-    }
-
-    if (num_max) {
-        // 1/32 of memory as number
-        num_space = SIZE_ALIGN_8(size / 2);
-        *num_max = num_space / sizeof(double);
-        size -= num_space;
-    } else {
-        num_space = 0;
-    }
-
-    if (fn_max) {
-        // 1/32 of memory as function entry space
-        fent_space = SIZE_ALIGN_8(size);
-        *fn_max = fent_space / sizeof(intptr_t);
-    } else {
-        fent_space = 0;
-    }
-
-#if 0
-    printf("num space: %d\n", num_space);
-    printf("str space: %d\n", str_space);
-    printf("code space: %d\n", code_space);
-    printf("fent space: %d\n", fent_space);
-#endif
-
-    return 0;
+    return executable_number_find_add(&env->exe, n);
 }
 
-int env_init(env_t *env, void *mem_ptr, int mem_size,
-             void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
-             int number_max, int string_max, int func_max,
-             int code_max, int interactive)
+int env_string_find_add(env_t *env, intptr_t s)
 {
-    int mem_offset;
-    int exe_size, symbal_tbl_size;
+    return executable_string_find_add(&env->exe, s);
+}
 
-    env->error = 0;
+int env_native_find(env_t *env, intptr_t sym_id)
+{
+    int i;
 
-    // stack init
-    if (!stack_ptr) {
-        // alloc memory for stack
-        stack_ptr = ADDR_ALIGN_8(mem_ptr);
-        mem_offset = (intptr_t)stack_ptr - (intptr_t)mem_ptr;
-        mem_offset += sizeof(val_t) * stack_size;
-        // TODO: create a barrier here
-    } else {
-        mem_offset = 0;
+    for (i = 0; i < env->native_num; i++) {
+        if (sym_id == (intptr_t) env->native_ent[i].name) {
+            return i;
+        }
     }
-    env->sb = stack_ptr;
-    env->ss = stack_size;
-    env->sp = stack_size;
-    env->fp = stack_size;
 
-    // heap init
-    if (!heap_ptr) {
-        // alloc memory for heap
-        heap_size = SIZE_ALIGN_16(heap_size);
-        heap_ptr = ADDR_ALIGN_16(mem_ptr + mem_offset);
-        mem_offset += (intptr_t)heap_ptr - (intptr_t)(mem_ptr + mem_offset);
-        mem_offset += heap_size;
-    } else {
-        if (heap_size % 16 || ((intptr_t)heap_ptr & 0xf)) {
-            // heap should be align 16!
+    return -1;
+}
+
+int env_native_set(env_t *env, const native_t *ent, int num)
+{
+    int i;
+
+    for (i = 0; i < num; i++) {
+        if (0 == env_symbal_add_static(env, ent[i].name)) {
             return -1;
         }
     }
-    env_heap_setup(env, heap_ptr, heap_size);
 
-    // main_var_map init
-    if (interactive) {
-        env->main_var_map = (intptr_t *)(mem_ptr + mem_offset);
-        mem_offset += sizeof(intptr_t) * INTERACTIVE_VAR_MAX;
-    } else {
-        env->main_var_map = NULL;
-    }
-    env->main_var_num = 0;
-
-    // native init
-    env->native_num = 0;
-    env->native_ent = NULL;
-
-    // reference init
-    env->ref_num = 0;
-    env->ref_ent = NULL;
-
-    // static memory init
-    exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
-                    number_max, string_max, func_max, code_max);
-    if (exe_size < 0) {
-        return -1;
-    }
-    mem_offset += exe_size;
-
-    symbal_tbl_size = string_max * sizeof(intptr_t);
-    if (mem_offset + symbal_tbl_size > mem_size) {
-        return -1;
-    }
-    env->symbal_tbl = (intptr_t *) (mem_ptr + mem_offset);
-    env->symbal_tbl_size = string_max;
-    env->symbal_tbl_hold = 0;
-    memset(mem_ptr + mem_offset, 0, symbal_tbl_size);
-    mem_offset += symbal_tbl_size;
-
-    env->symbal_buf = mem_ptr + mem_offset;
-    env->symbal_buf_end = mem_size - mem_offset;
-    env->symbal_buf_used = 0;
-
-#if 0
-    printf("memory total: %d\n", mem_size);
-    printf("stack: %d\n", mem_offset - exe_size - heap_size);
-    printf("heap:  %d\n", heap_size);
-    printf("exe:   %d\n", exe_size);
-    printf("left:  %d\n", mem_size - mem_offset);
-#endif
-
-    if (env_is_interactive(env)) {
-        env->scope = env_scope_create(env, NULL, NULL, 0, NULL);
-    } else {
-        env->scope = NULL;
-    }
-
-    // Initialise callbacks
-    env->gc_callback = NULL;
-
-    object_proto_init(env);
-    string_proto_init(env);
-    array_proto_init(env);
-
-    if (0 != objects_env_init(env)) {
-        return -1;
-    } else {
-        return 0;
-    }
+    env->native_num = num;
+    env->native_ent = ent;
+    return 0;
 }
 
-int env_deinit(env_t *env)
+int env_reference_set(env_t *env, val_t *ref, int num)
 {
-    (void) env;
-    return 0;
+    if (env->ref_ent == NULL) {
+        env->ref_ent = ref;
+        env->ref_num = num;
+        return 0;
+    }
+
+    return -1;
 }
 
 scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av)
@@ -507,85 +397,183 @@ const uint8_t *env_main_entry_setup(env_t *env, int ac, val_t *av)
     return executable_func_get_code(entry);
 }
 
-void *env_heap_alloc(env_t *env, int size)
+int env_exe_memery_distribute(int size, int *num_max, int *str_max, int *fn_max, int *code_max)
 {
-    void *ptr = heap_alloc(env->heap, size);
+    int code_space;
+    int fent_space;
+    int num_space;
+    int str_space;
 
-    if (!ptr) {
-        env_heap_gc(env, size);
-        return heap_alloc(env->heap, size);
+    if (code_max) {
+        // half of memory as code space
+        code_space = SIZE_ALIGN_8(size / 2);
+        *code_max = code_space;
+        size -= code_space;
+    } else {
+        code_space = 0;
     }
 
-    return ptr;
+    if (str_max) {
+        // 7/16 of memory as function entry space
+        str_space = size * 7 / 8;
+        *str_max = str_space / (sizeof(intptr_t) * 2 + DEF_STRING_SIZE);
+        size -= str_space;
+    } else {
+        str_space = 0;
+    }
+
+    if (num_max) {
+        // 1/32 of memory as number
+        num_space = SIZE_ALIGN_8(size / 2);
+        *num_max = num_space / sizeof(double);
+        size -= num_space;
+    } else {
+        num_space = 0;
+    }
+
+    if (fn_max) {
+        // 1/32 of memory as function entry space
+        fent_space = SIZE_ALIGN_8(size);
+        *fn_max = fent_space / sizeof(intptr_t);
+    } else {
+        fent_space = 0;
+    }
+
+#if 0
+    printf("num space: %d\n", num_space);
+    printf("str space: %d\n", str_space);
+    printf("code space: %d\n", code_space);
+    printf("fent space: %d\n", fent_space);
+#endif
+
+    return 0;
+}
+
+int env_init(env_t *env, void *mem_ptr, int mem_size,
+             void *heap_ptr, int heap_size, val_t *stack_ptr, int stack_size,
+             int number_max, int string_max, int func_max,
+             int code_max, int interactive)
+{
+    int mem_offset;
+    int exe_size, symbal_tbl_size;
+
+    env->error = 0;
+
+    // stack init
+    if (!stack_ptr) {
+        // alloc memory for stack
+        stack_ptr = ADDR_ALIGN_8(mem_ptr);
+        mem_offset = (intptr_t)stack_ptr - (intptr_t)mem_ptr;
+        mem_offset += sizeof(val_t) * stack_size;
+        // TODO: create a barrier here
+    } else {
+        mem_offset = 0;
+    }
+    env->sb = stack_ptr;
+    env->ss = stack_size;
+    env->sp = stack_size;
+    env->fp = stack_size;
+
+    // heap init
+    if (!heap_ptr) {
+        // alloc memory for heap
+        heap_size = SIZE_ALIGN_16(heap_size);
+        heap_ptr = ADDR_ALIGN_16(mem_ptr + mem_offset);
+        mem_offset += (intptr_t)heap_ptr - (intptr_t)(mem_ptr + mem_offset);
+        mem_offset += heap_size;
+    } else {
+        if (heap_size % 16 || ((intptr_t)heap_ptr & 0xf)) {
+            // heap should be align 16!
+            return -1;
+        }
+    }
+    env_heap_setup(env, heap_ptr, heap_size);
+
+    // main_var_map init
+    if (interactive) {
+        env->main_var_map = (intptr_t *)(mem_ptr + mem_offset);
+        mem_offset += sizeof(intptr_t) * INTERACTIVE_VAR_MAX;
+    } else {
+        env->main_var_map = NULL;
+    }
+    env->main_var_num = 0;
+
+    // native init
+    env->native_num = 0;
+    env->native_ent = NULL;
+
+    // reference init
+    env->ref_num = 0;
+    env->ref_ent = NULL;
+
+    // static memory init
+    exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,
+                    number_max, string_max, func_max, code_max);
+    if (exe_size < 0) {
+        return -1;
+    }
+    mem_offset += exe_size;
+
+    symbal_tbl_size = string_max * sizeof(intptr_t);
+    if (mem_offset + symbal_tbl_size > mem_size) {
+        return -1;
+    }
+    env->symbal_tbl = (intptr_t *) (mem_ptr + mem_offset);
+    env->symbal_tbl_size = string_max;
+    env->symbal_tbl_hold = 0;
+    memset(mem_ptr + mem_offset, 0, symbal_tbl_size);
+    mem_offset += symbal_tbl_size;
+
+    env->symbal_buf = mem_ptr + mem_offset;
+    env->symbal_buf_end = mem_size - mem_offset;
+    env->symbal_buf_used = 0;
+
+#if 0
+    printf("memory total: %d\n", mem_size);
+    printf("stack: %d\n", mem_offset - exe_size - heap_size);
+    printf("heap:  %d\n", heap_size);
+    printf("exe:   %d\n", exe_size);
+    printf("left:  %d\n", mem_size - mem_offset);
+#endif
+
+    if (env_is_interactive(env)) {
+        env->scope = env_scope_create(env, NULL, NULL, 0, NULL);
+    } else {
+        env->scope = NULL;
+    }
+
+    // Initialise callbacks
+    env->callback = NULL;
+
+    object_proto_init(env);
+    string_proto_init(env);
+    array_proto_init(env);
+
+    return 0;
+}
+
+int env_deinit(env_t *env)
+{
+    (void) env;
+    return 0;
 }
 
 void env_heap_gc(env_t *env, int flags)
 {
-    heap_t *heap = env_heap_gc_init(env);
+    env_heap_gc_init(env);
 
     (void) flags;
 
-    gc_scan(heap);
+    gc_scan(env);
 
-    if (env->gc_callback) {
-        env->gc_callback();
+    if (env->callback) {
+        env->callback(env, PANDA_EVENT_GC_END);
     }
-
-    env->heap = heap;
 }
 
-int env_number_find_add(env_t *env, double n)
+int env_callback_set(env_t *env, void (*cb)(env_t *, int event))
 {
-    return executable_number_find_add(&env->exe, n);
-}
-
-int env_string_find_add(env_t *env, intptr_t s)
-{
-    return executable_string_find_add(&env->exe, s);
-}
-
-int env_native_find(env_t *env, intptr_t sym_id)
-{
-    int i;
-
-    for (i = 0; i < env->native_num; i++) {
-        if (sym_id == (intptr_t) env->native_ent[i].name) {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
-int env_native_set(env_t *env, const native_t *ent, int num)
-{
-    int i;
-
-    for (i = 0; i < num; i++) {
-        if (0 == env_symbal_add_static(env, ent[i].name)) {
-            return -1;
-        }
-    }
-
-    env->native_num = num;
-    env->native_ent = ent;
-    return 0;
-}
-
-int env_reference_set(env_t *env, val_t *ref, int num)
-{
-    if (env->ref_ent == NULL) {
-        env->ref_ent = ref;
-        env->ref_num = num;
-        return 0;
-    }
-
-    return -1;
-}
-
-int env_callback_set(env_t *env, void (*cb)(void))
-{
-    env->gc_callback = cb;
+    env->callback = cb;
     return 0;
 }
 

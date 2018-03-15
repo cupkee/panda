@@ -192,8 +192,9 @@ static inline void interp_set(env_t *env) {
     val_t *reg2 = env_stack_peek(env);
     val_t *reg1 = reg2 + 1;
     val_t *lft = interp_var_ref(env, reg1);
+
     if (lft) {
-        val_op_set(env, lft, reg2, reg1);
+        val_set(env, lft, reg2, reg1);
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
@@ -243,7 +244,6 @@ static inline void interp_prop_get(env_t *env) {
     val_t *prop = self;
 
     val_prop_get(env, self, key, prop);
-    //val_op_prop(env, self, key, prop);
     env_stack_pop(env);
 }
 
@@ -253,7 +253,6 @@ static inline void interp_elem_get(env_t *env) {
     val_t *prop = self;
 
     val_prop_get(env, self, key, prop);
-    //val_op_elem(env, self, key, prop);
     env_stack_pop(env);
 }
 
@@ -265,7 +264,7 @@ static inline void interp_prop_set(env_t *env) {
     val_t *ref = val_prop_ref(env, obj, key);
 
     if (ref) {
-        val_op_set(env, ref, val, res);
+        val_set(env, ref, val, res);
     } else {
         *res = *val;
     }
@@ -280,7 +279,7 @@ static inline void interp_elem_set(env_t *env) {
     val_t *ref = val_prop_ref(env, obj, key);
 
     if (ref) {
-        val_op_set(env, ref, val, res);
+        val_set(env, ref, val, res);
     } else {
         *res = *val;
     }
@@ -293,7 +292,6 @@ static inline void interp_prop_meth(env_t *env) {
     val_t *prop = key;
 
     val_prop_get(env, self, key, prop);
-    //val_op_prop(env, self, key, prop);
     // No pop, to leave self in stack
 }
 
@@ -303,7 +301,6 @@ static inline void interp_elem_meth(env_t *env) {
     val_t *prop = key;
 
     val_prop_get(env, self, key, prop);
-    //val_op_elem(env, self, key, prop);
     // No pop, to leave self in stack
 }
 
@@ -442,7 +439,6 @@ static int interp_run(env_t *env, const uint8_t *pc)
 
         case BC_PUSH_REF:   index = (*pc++); env_push_ref(env, index, *pc++);
                             break;
-
 
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             interp_push_function(env, index);

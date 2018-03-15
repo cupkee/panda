@@ -31,6 +31,7 @@
 typedef struct string_t {
     uint8_t magic;
     uint8_t age;
+
     uint16_t size;
     char    str[0];
 } string_t;

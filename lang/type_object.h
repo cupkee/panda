@@ -34,6 +34,7 @@ typedef struct object_t {
     uint8_t magic;
     uint8_t age;
     uint8_t reserved[2];
+
     uint16_t prop_size;
     uint16_t prop_num;
     struct object_t   *proto;
@@ -52,7 +53,7 @@ typedef struct object_iter_t {
     int       cur;
 } object_iter_t;
 
-int objects_env_init(env_t *env);
+//int objects_env_init(env_t *env);
 
 intptr_t object_create(env_t *env, int n, val_t *av);
 void   object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);

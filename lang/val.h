@@ -163,6 +163,7 @@ typedef struct val_foreign_t {
     uint8_t magic;
     uint8_t age;
     uint8_t reserved[2];
+
     intptr_t  data;
     const val_foreign_op_t *op;
 } val_foreign_t;
@@ -432,26 +433,18 @@ void val_incp(void *env, val_t *self, val_t *res);
 void val_dec (void *env, val_t *self, val_t *res);
 void val_decp(void *env, val_t *self, val_t *res);
 
-void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
-void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
-
 void val_set(void *env, val_t *self, val_t *b, val_t *r);
 
-/* New interface end */
-
-void val_op_prop(void *env, val_t *v, val_t *key, val_t *prop);
-void val_op_elem(void *env, val_t *v, val_t *key, val_t *elem);
-
+void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
+void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
 val_t *val_prop_ref(void *env, val_t *v, val_t *name);
-val_t *val_elem_ref(void *env, val_t *v, val_t *id);
 
-void val_op_set(void *env, val_t *a, val_t *b, val_t *r);
+/* New interface end */
 
 val_t val_create(void *env, const val_foreign_op_t *op, intptr_t entry);
 int val_foreign_create(void *env, const val_foreign_op_t *op, intptr_t entry, val_t *foreign);
 
-static inline
-int foreign_mem_space(val_foreign_t *foreign) {
+static inline int foreign_mem_space(val_foreign_t *foreign) {
     (void) foreign;
     return SIZE_ALIGN(sizeof(val_foreign_t));
 }
