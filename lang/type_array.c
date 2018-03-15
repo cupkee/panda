@@ -280,31 +280,43 @@ static double value_of_array(val_t *self)
 
 static val_t get_length(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_length);
 }
 
 static val_t get_push(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_push);
 }
 
 static val_t get_pop(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_pop);
 }
 
 static val_t get_shift(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_shift);
 }
 
 static val_t get_unshift(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_unshift);
 }
 
 static val_t get_foreach(env_t *env, void *entry)
 {
+    (void) env;
+    (void) entry;
     return val_mk_native((intptr_t)array_foreach);
 }
 
@@ -339,6 +351,7 @@ static val_t array_get_elem(void *env, val_t *self, int id)
 {
     array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
 
+    (void) env;
     if (a) {
         if (id >= 0 && id < array_len(a)) {
             return a->elems[a->elem_bgn + id];
@@ -351,6 +364,7 @@ static val_t *array_ref_elem(void *env, val_t *self, int id)
 {
     array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
 
+    (void) env;
     if (a) {
         if (id >= 0 && id < array_len(a)) {
             return a->elems + a->elem_bgn + id;

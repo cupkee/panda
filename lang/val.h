@@ -335,7 +335,7 @@ static inline val_t val_mk_foreign(intptr_t f) {
     return TAG_FOREIGN | f;
 }
 
-static inline val_t val_mk_null(intptr_t f) {
+static inline val_t val_mk_null(void) {
     return TAG_OBJECT;
 }
 

@@ -21,65 +21,8 @@
 #include "type_string.h"
 #include "type_number.h"
 
-val_t number_to_string(env_t *env, int ac, val_t *av)
-{
-    (void) env;
-    (void) ac;
-    (void) av;
-
-    return val_mk_foreign_string((intptr_t)"<number>");
-}
-
 static int number_is_true(val_t *self) {
     return val_2_double(self) != 0;
-}
-
-int number_is_gt(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_double(self) > val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_double(self) > val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int number_is_ge(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_double(self) >= val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_double(self) >= val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int number_is_lt(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_double(self) < val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_double(self) < val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int number_is_le(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_double(self) <= val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_double(self) <= val_2_double(to);
-    } else {
-        return 0;
-    }
 }
 
 const val_metadata_t metadata_num = {

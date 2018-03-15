@@ -267,16 +267,22 @@ int object_iter_next(object_iter_t *it, const char **name, val_t **v)
 
 static val_t object_get_length(env_t *env, void *obj)
 {
+    (void) env;
+    (void) obj;
     return val_mk_native((intptr_t) object_length);
 }
 
 static val_t object_get_to_str(env_t *env, void *obj)
 {
+    (void) env;
+    (void) obj;
     return val_mk_native((intptr_t) native_object_to_string);
 }
 
 static val_t object_get_foreach(env_t *env, void *obj)
 {
+    (void) env;
+    (void) obj;
     return val_mk_native((intptr_t) native_object_foreach);
 }
 

@@ -24,54 +24,6 @@ static int boolean_is_true(val_t *self)
     return val_2_intptr(self);
 }
 
-int boolean_is_gt(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_intptr(self) > val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_intptr(self) > val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int boolean_is_ge(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_intptr(self) >= val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_intptr(self) >= val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int boolean_is_lt(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_intptr(self) < val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_intptr(self) < val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
-int boolean_is_le(val_t *self, val_t *to)
-{
-    if (val_is_boolean(to)) {
-        return val_2_intptr(self) <= val_2_intptr(to);
-    } else
-    if (val_is_number(to)) {
-        return val_2_intptr(self) <= val_2_double(to);
-    } else {
-        return 0;
-    }
-}
-
 const val_metadata_t metadata_boolean = {
     .name     = "boolean",
 

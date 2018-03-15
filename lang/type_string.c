@@ -59,14 +59,15 @@ static inline string_t *string_alloc(env_t *env, int size)
     return s;
 }
 
-val_t string_create_heap_val(env_t *env, int size)
+val_t string_create_heap_val(env_t *env, const char *data)
 {
     string_t *s;
+    int size = strlen(data);
 
     size += 1;
     s = string_alloc(env, size);
     if (s) {
-        memset(s->str, 0, size);
+        memcpy(s->str, data, size);
         return val_mk_heap_string((intptr_t)s);
     }
     return VAL_UNDEFINED;
@@ -107,7 +108,7 @@ void string_elem_get(val_t *self, int i, val_t *elem)
     }
 }
 
-val_t string_length(env_t *env, int ac, val_t *av)
+static val_t string_length(env_t *env, int ac, val_t *av)
 {
     (void) env;
 
@@ -118,7 +119,7 @@ val_t string_length(env_t *env, int ac, val_t *av)
     }
 }
 
-val_t native_string_index_of(env_t *env, int ac, val_t *av)
+static val_t native_string_index_of(env_t *env, int ac, val_t *av)
 {
     const char *s, *f;
 
@@ -140,11 +141,15 @@ val_t native_string_index_of(env_t *env, int ac, val_t *av)
 
 static val_t get_length(env_t *env, void *s)
 {
+    (void) env;
+    (void) s;
     return val_mk_native((intptr_t) string_length);
 }
 
 static val_t get_index_of(env_t *env, void *s)
 {
+    (void) env;
+    (void) s;
     return val_mk_native((intptr_t) native_string_index_of);
 }
 
@@ -251,6 +256,7 @@ static val_t string_get_elem(void *env, val_t *self, int id)
     const char *s = val_2_cstring(self);
     int len = string_len(self);
 
+    (void) env;
     if (id >= 0 && id < len) {
         return val_mk_inner_string(s[id]);
     } else {
