@@ -66,12 +66,7 @@ static inline void interp_prop_op_self(env_t *env, val_opx_t operate) {
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    val_t *prop = val_prop_ref(env, obj, key);
-    if (prop) {
-        operate(env, prop, res);
-    } else {
-        val_set_nan(res);
-    }
+    val_prop_opx(env, obj, key, res, operate);
 
     env_stack_pop(env);
 }
@@ -81,12 +76,7 @@ static inline void interp_elem_op_self(env_t *env, val_opx_t operate) {
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    val_t *prop = val_prop_ref(env, obj, key);
-    if (prop) {
-        operate(env, prop, res);
-    } else {
-        val_set_nan(res);
-    }
+    val_prop_opx(env, obj, key, res, operate);
 
     env_stack_pop(env);
 }
@@ -105,18 +95,11 @@ static inline void interp_op_set(env_t *env, val_opxx_t operate) {
 }
 
 static inline void interp_prop_op_set(env_t *env, val_opxx_t operate) {
-    val_t *reg3 = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *reg3 = env_stack_peek(env); // keep the "data" in stack, defence GC
     val_t *reg2 = reg3 + 1;
     val_t *reg1 = reg2 + 1;
-    val_t *prop = val_prop_ref(env, reg1, reg2);
 
-    if (prop) {
-        operate(env, prop, reg3, prop);
-        *reg1 = *prop;
-    } else {
-        val_set_nan(reg1);
-    }
-
+    val_prop_opxx(env, reg1, reg2, reg3, reg1, operate);
     env_stack_release(env, 2);
 }
 
@@ -124,15 +107,8 @@ static inline void interp_elem_op_set(env_t *env, val_opxx_t operate) {
     val_t *reg3 = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *reg2 = reg3 + 1;
     val_t *reg1 = reg2 + 1;
-    val_t *elem = val_prop_ref(env, reg1, reg2);
 
-    if (elem) {
-        operate(env, elem, reg3, elem);
-        *reg1 = *elem;
-    } else {
-        val_set_nan(reg1);
-    }
-
+    val_prop_opxx(env, reg1, reg2, reg3, reg1, operate);
     env_stack_release(env, 2);
 }
 
@@ -261,13 +237,10 @@ static inline void interp_prop_set(env_t *env) {
     val_t *key = val + 1;
     val_t *obj = key + 1;
     val_t *res = obj;
-    val_t *ref = val_prop_ref(env, obj, key);
 
-    if (ref) {
-        val_set(env, ref, val, res);
-    } else {
-        *res = *val;
-    }
+    val_prop_set(env, obj, key, val);
+    *res = *val;
+
     env_stack_release(env, 2);
 }
 
@@ -276,13 +249,10 @@ static inline void interp_elem_set(env_t *env) {
     val_t *key = val + 1;
     val_t *obj = key + 1;
     val_t *res = obj;
-    val_t *ref = val_prop_ref(env, obj, key);
 
-    if (ref) {
-        val_set(env, ref, val, res);
-    } else {
-        *res = *val;
-    }
+    val_prop_set(env, obj, key, val);
+    *res = *val;
+
     env_stack_release(env, 2);
 }
 

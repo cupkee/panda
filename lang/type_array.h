@@ -37,7 +37,7 @@ typedef struct array_t {
 } array_t;
 
 static inline array_t *array_entry(val_t *v) {
-    return (array_t *)val_2_intptr(v);
+    return val_is_array(v) ? (array_t *)val_2_intptr(v) : NULL;
 }
 
 static inline int array_mem_space(array_t *a) {

@@ -24,10 +24,13 @@
 
 typedef uint64_t val_t;
 
-typedef union {
+typedef union valnum_t {
     val_t   v;
     double  d;
 } valnum_t;
+
+typedef void (*val_opx_t)(void *env, val_t *x, val_t *result);
+typedef void (*val_opxx_t)(void *env, val_t *x1, val_t *x2, val_t *result);
 
 extern const valnum_t const_nan;
 
@@ -121,15 +124,21 @@ typedef struct val_metadata_t {
     int (*is_equal) (val_t *self, val_t *to);
 
     double (*value_of)(val_t *self);
+
     val_t  (*get_prop)(void *env, val_t *self, const char *key);
     val_t  (*get_elem)(void *env, val_t *self, int id);
-    val_t *(*ref_prop)(void *env, val_t *self, const char *key);
-    val_t *(*ref_elem)(void *env, val_t *self, int id);
+
+    void   (*set_prop)(void *env, val_t *self, const char *key, val_t *data);
+    void   (*set_elem)(void *env, val_t *self, int id, val_t *data);
+
+    void   (*opx_prop)(void *env, val_t *self, const char *key, val_t *res, val_opx_t op);
+    void   (*opx_elem)(void *env, val_t *self, int id,          val_t *res, val_opx_t op);
+
+    void   (*opxx_prop)(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op);
+    void   (*opxx_elem)(void *env, val_t *self, int id,          val_t *data, val_t *res, val_opxx_t op);
 
     int (*concat)(void *env, val_t *self, val_t *other, val_t *to);
 } val_metadata_t;
-
-
 
 static inline int val_type(val_t *v) {
     int type = (*v) >> 48;
@@ -356,10 +365,6 @@ static inline void val_set_reference(val_t *p, uint8_t id, uint8_t generation) {
     *((uint64_t *)p) = TAG_REFERENCE | id * 256 | generation;
 }
 
-typedef void (*val_opx_t)(void *env, val_t *x, val_t *result);
-typedef void (*val_opxx_t)(void *env, val_t *x1, val_t *x2, val_t *result);
-
-/* New interface */
 int val_as_true(val_t *self);
 int val_as_false(val_t *self);
 int val_op_true(val_t *self, val_t *to);
@@ -400,10 +405,10 @@ void val_set(void *env, val_t *self, val_t *b, val_t *r);
 
 void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
 void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
-val_t *val_prop_ref(void *env, val_t *v, val_t *name);
+void val_prop_opx(void *env, val_t *self, val_t *key, val_t *res, val_opx_t op);
+void val_prop_opxx(void *env, val_t *self, val_t *key, val_t *data, val_t *res, val_opxx_t op);
 
-/* New interface end */
-
-
+void foreign_set(void *env, val_t *self, val_t *b, val_t *r);
+void foreign_keep(intptr_t entry);
 #endif /* __LANG_VALUE_INC__ */
 

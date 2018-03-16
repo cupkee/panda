@@ -470,11 +470,6 @@ void val_rshift(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia >> ib);
 }
 
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r)
-{
-    *r = *self = *b;
-}
-
 void val_set(void *env, val_t *a, val_t *b, val_t *r)
 {
     if (!val_is_foreign(a)) {
@@ -505,22 +500,72 @@ void val_prop_get(void *env, val_t *self, val_t * key, val_t *prop)
     }
 }
 
-val_t *val_prop_ref(void *env, val_t *self, val_t * key)
+void val_prop_set(void *env, val_t *self, val_t *key, val_t *data)
 {
     const val_metadata_t *meta = base_metadata[val_type(self)];
 
     if (val_is_number(key)) {
-        if (meta->ref_elem) {
-            return meta->ref_elem(env, self, val_2_integer(key));
+        if (meta->set_elem) {
+            meta->set_elem(env, self, val_2_integer(key), data);
         }
     } else {
         const char *name = val_2_cstring(key);
 
-        if (name && meta->ref_prop) {
-            return meta->ref_prop(env, self, name);
+        if (name && meta->set_prop) {
+            meta->set_prop(env, self, name, data);
         }
     }
+}
 
-    return NULL;
+void val_prop_opx(void *env, val_t *self, val_t * key, val_t *res, val_opx_t op)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    if (val_is_number(key)) {
+        if (meta->opx_elem) {
+            meta->opx_elem(env, self, val_2_integer(key), res, op);
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        const char *name = val_2_cstring(key);
+
+        if (name && meta->opx_prop) {
+            meta->opx_prop(env, self, name, res, op);
+        } else {
+            val_set_nan(res);
+        }
+    }
+}
+
+void val_prop_opxx(void *env, val_t *self, val_t * key, val_t *data, val_t *res, val_opxx_t op)
+{
+    const val_metadata_t *meta = base_metadata[val_type(self)];
+
+    if (val_is_number(key)) {
+        if (meta->opxx_elem) {
+            meta->opxx_elem(env, self, val_2_integer(key), data, res, op);
+        } else {
+            val_set_nan(res);
+        }
+    } else {
+        const char *name = val_2_cstring(key);
+
+        if (name && meta->opxx_prop) {
+            meta->opxx_prop(env, self, name, data, res, op);
+        } else {
+            val_set_nan(res);
+        }
+    }
+}
+
+void foreign_set(void *env, val_t *self, val_t *b, val_t *r)
+{
+    *r = *self = *b;
+}
+
+void foreign_keep(intptr_t entry)
+{
+    (void) entry;
 }
 

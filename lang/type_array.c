@@ -342,17 +342,42 @@ static val_t get_elem(void *env, val_t *self, int id)
     return VAL_UNDEFINED;
 }
 
-static val_t *ref_elem(void *env, val_t *self, int id)
+static void set_elem(void *env, val_t *self, int id, val_t *data)
 {
-    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+    array_t *a = array_entry(self);
 
     (void) env;
     if (a) {
         if (id >= 0 && id < array_length(a)) {
-            return a->elems + a->elem_bgn + id;
+            a->elems[a->elem_bgn + id] = *data;
         }
     }
-    return NULL;
+}
+
+static void opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a && id >= 0 && id < array_length(a)) {
+        op(env, a->elems + a->elem_bgn + id, res);
+    } else {
+        val_set_nan(res);
+    }
+}
+
+static void opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a && id >= 0 && id < array_length(a)) {
+        val_t *elem = a->elems + a->elem_bgn + id;
+        op(env, elem, data, elem);
+        *res = *elem;
+    } else {
+        val_set_nan(res);
+    }
 }
 
 const val_metadata_t metadata_array = {
@@ -362,9 +387,13 @@ const val_metadata_t metadata_array = {
     .is_equal = val_op_false,
 
     .value_of = value_of,
+
     .get_prop = get_prop,
+
     .get_elem = get_elem,
-    .ref_elem = ref_elem,
+    .set_elem = set_elem,
+    .opx_elem = opx_elem,
+    .opxx_elem = opxx_elem,
 };
 
 void array_proto_init(env_t *env)

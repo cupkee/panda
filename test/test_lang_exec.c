@@ -389,6 +389,9 @@ static void test_exec_selfop(void)
     CU_ASSERT(0 < interp_execute_string(&env, "--c.a;", &res) && val_is_nan(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.a;", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.y--;", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.y = 0;", &res) && val_is_number(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.y++;", &res) && val_is_number(res) && 0 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.y;", &res) && val_is_number(res) && 1 == val_2_double(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var c = [1];", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "c[0] == 1;", &res) && val_is_true(res));

@@ -24,7 +24,7 @@
 #include "type_object.h"
 
 static inline object_t *object_entry(val_t *v) {
-    return (object_t *)val_2_intptr(v);
+    return val_is_object(v) ? (object_t *)val_2_intptr(v) : NULL;
 }
 
 static val_t *object_add_prop(env_t *env, object_t *obj, intptr_t symbal) {
@@ -290,28 +290,94 @@ static val_t get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
-static val_t *ref_prop(void *env, val_t *self, const char *name)
+/*
+int object_set_proto_prop(void *env, object_t *obj, intptr_t symbal, val_t *data)
 {
-    object_t *obj = val_is_object(self) ? (object_t *)val_2_intptr(self) : NULL;
+    int i;
+
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        if (proto[i].symbal == symbal) {
+            proto[i].setter(env, obj, data);
+            return 1;
+        }
+    }
+    return 0;
+}
+*/
+
+static void set_prop(void *env, val_t *self, const char *name, val_t *data)
+{
+    object_t *obj = object_entry(self);
+    intptr_t sym = env_symbal_get(env, name);
     val_t *prop = NULL;
 
-    intptr_t sym_id = env_symbal_get(env, name);
+    if (sym) {
+        prop = object_find_prop_owned(obj, sym);
 
-    if (sym_id) {
-        prop = object_find_prop_owned(obj, sym_id);
-        if (prop) {
-            return prop;
+        if (!prop) {
+            prop = object_add_prop(env, obj, sym);
         }
-        prop = object_add_prop(env, obj, sym_id);
     } else {
         prop = object_add_prop(env, obj, env_symbal_add(env, name));
     }
 
     if (prop) {
+        *prop = *data;
+    }
+}
+
+static void opx_prop(void *env, val_t *self, const char *name, val_t *res, val_opx_t op)
+{
+    object_t *obj = object_entry(self);
+    intptr_t sym = env_symbal_get(env, name);
+    val_t *prop = NULL;
+
+    if (sym) {
+        prop = object_find_prop_owned(obj, sym);
+
+        if (prop) {
+            op(env, prop, res);
+            return;
+
+        } else {
+            prop = object_add_prop(env, obj, sym);
+        }
+    } else {
+        prop = object_add_prop(env, obj, env_symbal_add(env, name));
+    }
+
+    // vaule of prop is Undefined
+    if (prop) {
+        *res = *prop = VAL_NAN;
+        val_set_nan(res);
+    } else {
+        val_set_nan(res);
+    }
+}
+
+static void opxx_prop(void *env, val_t *self, const char *name, val_t *data, val_t *res, val_opxx_t op)
+{
+    object_t *obj = object_entry(self);
+    intptr_t sym = env_symbal_get(env, name);
+    val_t *prop = NULL;
+
+    if (sym) {
+        prop = object_find_prop_owned(obj, sym);
+        if (!prop) {
+            prop = object_add_prop(env, obj, sym);
+            val_set_undefined(prop);
+        }
+    } else {
+        prop = object_add_prop(env, obj, env_symbal_add(env, name));
         val_set_undefined(prop);
     }
 
-    return prop;
+    if (prop) {
+        op(env, prop, data, prop);
+        *res = *prop;
+    } else {
+        val_set_nan(res);
+    }
 }
 
 void object_proto_init(env_t *env)
@@ -329,7 +395,10 @@ const val_metadata_t metadata_object = {
     .is_equal = val_op_false,
 
     .value_of = val_as_nan,
+
     .get_prop = get_prop,
-    .ref_prop = ref_prop,
+    .set_prop = set_prop,
+    .opx_prop = opx_prop,
+    .opxx_prop = opxx_prop,
 };
 

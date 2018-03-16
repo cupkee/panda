@@ -388,11 +388,6 @@ scope_t *gc_scope_copy(void *env, scope_t *scope)
     return dup;
 }
 
-void foreign_keep(intptr_t entry)
-{
-    (void) entry;
-}
-
 void gc_types_copy(void *env, int n, val_t *p)
 {
     int i = 0;
