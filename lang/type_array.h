@@ -36,43 +36,30 @@ typedef struct array_t {
     val_t *elems;
 } array_t;
 
-static inline int array_mem_space(array_t *a) {
-    return SIZE_ALIGN(sizeof(array_t) + sizeof(val_t) * a->elem_size);
+static inline array_t *array_entry(val_t *v) {
+    return (array_t *)val_2_intptr(v);
 }
 
-static inline int array_is_true(val_t *v) {
-    array_t *a = (array_t *)val_2_intptr(v);
-    return a->elem_end - a->elem_bgn > 0 ? 1 : 0;
+static inline int array_mem_space(array_t *a) {
+    return SIZE_ALIGN(sizeof(array_t) + sizeof(val_t) * a->elem_size);
 }
 
 static inline val_t *array_values(array_t *a) {
     return a->elems + a->elem_bgn;
 }
 
-static inline int array_len(array_t *a) {
+static inline int array_length(array_t *a) {
     return a->elem_end - a->elem_bgn;
 }
 
-static inline
-val_t *_array_element(val_t *array, int i) {
-    array_t *a = (array_t *)val_2_intptr(array);
+static inline val_t *array_get(array_t *a, int i)
+{
     return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
-static inline
-val_t *_array_elem(array_t *a, int i) {
-    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
-}
 
 array_t *_array_create(env_t *env, int len);
 intptr_t array_create(env_t *env, int ac, val_t *av);
-
-val_t array_length(env_t *env, int ac, val_t *av);
-val_t array_push(env_t *env, int ac, val_t *av);
-val_t array_pop(env_t *env, int ac, val_t *av);
-val_t array_shift(env_t *env, int ac, val_t *av);
-val_t array_unshift(env_t *env, int ac, val_t *av);
-val_t array_foreach(env_t *env, int ac, val_t *av);
 
 void array_elem_val(val_t *self, int i, val_t *elem);
 val_t *array_elem_ref(val_t *self, int i);

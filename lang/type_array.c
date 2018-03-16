@@ -33,7 +33,7 @@ static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
     if (a->elem_size - a->elem_end > n) {
         return a;
     }
-    len = array_len(a);
+    len = array_length(a);
 
     if (a->elem_size -len > n) {
         memmove(a->elems, a->elems + a->elem_bgn, len);
@@ -69,7 +69,7 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
     if (a->elem_bgn > n) {
         return a;
     }
-    len = array_len(a);
+    len = array_length(a);
 
     if (a->elem_size - len > n) {
         n = a->elem_size - a->elem_end;
@@ -133,6 +133,7 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
     return (intptr_t) array;
 }
 
+/*
 val_t *array_elem_ref(val_t *self, int i)
 {
     array_t *array = (array_t *) val_2_intptr(self);
@@ -154,8 +155,9 @@ void array_elem_val(val_t *self, int i, val_t *elem)
         val_set_undefined(elem);
     }
 }
+*/
 
-val_t array_push(env_t *env, int ac, val_t *av)
+static val_t native_push(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av)) {
         int n = ac - 1;
@@ -164,7 +166,7 @@ val_t array_push(env_t *env, int ac, val_t *av)
         if (a) {
             memcpy(a->elems + a->elem_end, av + 1, sizeof(val_t) * n);
             a->elem_end += n;
-            return val_mk_number(array_len(a));
+            return val_mk_number(array_length(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -172,7 +174,7 @@ val_t array_push(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_unshift(env_t *env, int ac, val_t *av)
+static val_t native_unshift(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av)) {
         int n = ac - 1;
@@ -181,7 +183,7 @@ val_t array_unshift(env_t *env, int ac, val_t *av)
         if (a) {
             memcpy(a->elems + a->elem_bgn - n, av + 1, sizeof(val_t) * n);
             a->elem_bgn -= n;
-            return val_mk_number(array_len(a));
+            return val_mk_number(array_length(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -189,12 +191,12 @@ val_t array_unshift(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_pop(env_t *env, int ac, val_t *av)
+static val_t native_pop(env_t *env, int ac, val_t *av)
 {
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_len(a)) {
+        if (array_length(a)) {
             return a->elems[--a->elem_end];
         }
     } else {
@@ -203,12 +205,12 @@ val_t array_pop(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_shift(env_t *env, int ac, val_t *av)
+static val_t native_shift(env_t *env, int ac, val_t *av)
 {
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_len(a)) {
+        if (array_length(a)) {
             return a->elems[a->elem_bgn++];
         }
     } else {
@@ -217,11 +219,11 @@ val_t array_shift(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_foreach(env_t *env, int ac, val_t *av)
+static val_t native_foreach(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av) && val_is_function(av + 1)) {
         array_t *a = (array_t *)val_2_intptr(av);
-        int i, max = array_len(a);
+        int i, max = array_length(a);
 
         for (i = 0; i < max && !env->error; i++) {
             val_t key = val_mk_number(i);
@@ -237,34 +239,14 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_length(env_t *env, int ac, val_t *av)
-{
-    int len;
-
-    (void) env;
-
-    if (ac > 0 && val_is_array(av)) {
-        array_t *a = (array_t *)val_2_intptr(av);
-        len = array_len(a);
-    } else {
-        len = 0;
-    }
-
-    return val_mk_number(len);
+static inline int is_true(val_t *v) {
+    array_t *a = array_entry(v);
+    return a->elem_end - a->elem_bgn > 0 ? 1 : 0;
 }
 
-static inline array_t *entry_of_array(val_t *v) {
-    return (array_t *)val_2_intptr(v);
-}
-
-static inline val_t *array_get(array_t *a, int i)
+static double value_of(val_t *self)
 {
-    return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
-}
-
-static double value_of_array(val_t *self)
-{
-    array_t *a = entry_of_array(self);
+    array_t *a = array_entry(self);
     val_t *elem;
 
     if (NULL != (elem = array_get(a, 0))) {
@@ -278,58 +260,58 @@ static double value_of_array(val_t *self)
     }
 }
 
-static val_t get_length(env_t *env, void *entry)
+static val_t get_prop_length(env_t *env, void *entry)
 {
+    array_t *a = entry;
     (void) env;
-    (void) entry;
-    return val_mk_native((intptr_t)array_length);
+    return val_mk_number(array_length(a));
 }
 
-static val_t get_push(env_t *env, void *entry)
+static val_t get_prop_push(env_t *env, void *entry)
 {
     (void) env;
     (void) entry;
-    return val_mk_native((intptr_t)array_push);
+    return val_mk_native((intptr_t)native_push);
 }
 
-static val_t get_pop(env_t *env, void *entry)
+static val_t get_prop_pop(env_t *env, void *entry)
 {
     (void) env;
     (void) entry;
-    return val_mk_native((intptr_t)array_pop);
+    return val_mk_native((intptr_t)native_pop);
 }
 
-static val_t get_shift(env_t *env, void *entry)
+static val_t get_prop_shift(env_t *env, void *entry)
 {
     (void) env;
     (void) entry;
-    return val_mk_native((intptr_t)array_shift);
+    return val_mk_native((intptr_t)native_shift);
 }
 
-static val_t get_unshift(env_t *env, void *entry)
+static val_t get_prop_unshift(env_t *env, void *entry)
 {
     (void) env;
     (void) entry;
-    return val_mk_native((intptr_t)array_unshift);
+    return val_mk_native((intptr_t)native_unshift);
 }
 
-static val_t get_foreach(env_t *env, void *entry)
+static val_t get_prop_foreach(env_t *env, void *entry)
 {
     (void) env;
     (void) entry;
-    return val_mk_native((intptr_t)array_foreach);
+    return val_mk_native((intptr_t)native_foreach);
 }
 
 static const object_prop_t proto[] = {
-    {(intptr_t)"length",   get_length, NULL},
-    {(intptr_t)"push",     get_push, NULL},
-    {(intptr_t)"pop",      get_pop, NULL},
-    {(intptr_t)"shift",    get_shift, NULL},
-    {(intptr_t)"unshift",  get_unshift, NULL},
-    {(intptr_t)"foreach",  get_foreach, NULL},
+    {(intptr_t)"length",   get_prop_length, NULL},
+    {(intptr_t)"push",     get_prop_push, NULL},
+    {(intptr_t)"pop",      get_prop_pop, NULL},
+    {(intptr_t)"shift",    get_prop_shift, NULL},
+    {(intptr_t)"unshift",  get_prop_unshift, NULL},
+    {(intptr_t)"foreach",  get_prop_foreach, NULL},
 };
 
-static val_t array_get_prop(void *env, val_t *self, const char *name)
+static val_t get_prop(void *env, val_t *self, const char *name)
 {
     array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
     intptr_t symbal = (intptr_t)name;
@@ -347,26 +329,26 @@ static val_t array_get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
-static val_t array_get_elem(void *env, val_t *self, int id)
+static val_t get_elem(void *env, val_t *self, int id)
 {
     array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
 
     (void) env;
     if (a) {
-        if (id >= 0 && id < array_len(a)) {
+        if (id >= 0 && id < array_length(a)) {
             return a->elems[a->elem_bgn + id];
         }
     }
     return VAL_UNDEFINED;
 }
 
-static val_t *array_ref_elem(void *env, val_t *self, int id)
+static val_t *ref_elem(void *env, val_t *self, int id)
 {
     array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
 
     (void) env;
     if (a) {
-        if (id >= 0 && id < array_len(a)) {
+        if (id >= 0 && id < array_length(a)) {
             return a->elems + a->elem_bgn + id;
         }
     }
@@ -376,13 +358,13 @@ static val_t *array_ref_elem(void *env, val_t *self, int id)
 const val_metadata_t metadata_array = {
     .name     = "object",
 
-    .is_true  = array_is_true,
+    .is_true  = is_true,
     .is_equal = val_op_false,
 
-    .value_of = value_of_array,
-    .get_prop = array_get_prop,
-    .get_elem = array_get_elem,
-    .ref_elem = array_ref_elem,
+    .value_of = value_of,
+    .get_prop = get_prop,
+    .get_elem = get_elem,
+    .ref_elem = ref_elem,
 };
 
 void array_proto_init(env_t *env)

@@ -56,8 +56,11 @@ typedef struct object_iter_t {
 //int objects_env_init(env_t *env);
 
 intptr_t object_create(env_t *env, int n, val_t *av);
-void   object_prop_val(env_t *env, val_t *self, val_t *key, val_t *prop);
-val_t *object_prop_ref(env_t *env, val_t *self, val_t *key);
+
+static inline int object_length(object_t *obj)
+{
+    return obj->prop_num;
+}
 
 static inline int object_mem_space(object_t *o) {
     return SIZE_ALIGN(sizeof(object_t) + (sizeof(intptr_t) + sizeof(val_t)) * o->prop_size);

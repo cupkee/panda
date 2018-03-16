@@ -709,14 +709,13 @@ static void test_exec_string(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c ? true : false", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "'' ? true : false", &res) && !val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length", &res) && val_is_function(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length()", &res) && val_is_number(res) && 5 == val_2_double(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "c.length()", &res) && val_is_number(res) && 11 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length", &res) && val_is_number(res) && 5 == val_2_double(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.length", &res) && val_is_number(res) && 11 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf", &res) && val_is_function(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf(a)", &res) && val_is_number(res) && 0 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "c.indexOf(b)", &res) && val_is_number(res) && 6 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 'h'", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a[0].length()", &res) && val_is_number(res) && 1 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a[0].length", &res) && val_is_number(res) && 1 == val_2_integer(res));
 
     env_deinit(&env);
 }
@@ -784,10 +783,10 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "c", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "d", &res) && val_is_array(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "b.length() == 0", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "c.length() == 1", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "d.length() == 2", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "b.length == 0", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "c.length == 1", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "d.length == 2", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a[0] == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] == 'hello'", &res) && val_is_boolean(res) && val_is_true(res));
@@ -805,7 +804,7 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a[2] == a[3]", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var o = a.pop();", &res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "o == a[2]", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "a.push(o) == 4", &res) && val_is_boolean(res) && val_is_true(res));
@@ -814,10 +813,10 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "1 == a[4]", &res) && val_is_boolean(res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var s = a.shift();", &res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 4", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length == 4", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "'hello' == s", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.shift()[1] == 2", &res) && val_is_boolean(res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "a.length() == 3", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length == 3", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0].a == 0", &res) && val_is_boolean(res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[0].b = 1", &res) && val_is_number(res) && 1 == val_2_double(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a[1] = 1", &res) && val_is_number(res) && 1 == val_2_double(res));

@@ -21,32 +21,6 @@
 #include "type_object.h"
 #include "type_string.h"
 
-int string_compare(val_t *a, val_t *b)
-{
-    const char *s1 = val_2_cstring(a);
-    const char *s2 = val_2_cstring(b);
-
-    if (s1 && s2) {
-        return strcmp(s1, s2);
-    } else {
-        return 1;
-    }
-}
-
-void string_at(env_t *env, val_t *a, val_t *b, val_t *res)
-{
-    const char *s = val_2_cstring(a);
-    int l = strlen(s);
-    int i = val_2_integer(b);
-
-    (void) env;
-    if (i >= 0 && i < l) {
-        val_set_inner_string(res, s[i]);
-    } else {
-        val_set_undefined(res);
-    }
-}
-
 static inline string_t *string_alloc(env_t *env, int size)
 {
     string_t *s = env_heap_alloc(env, SIZE_ALIGN(sizeof(string_t) + size));
@@ -73,6 +47,7 @@ val_t string_create_heap_val(env_t *env, const char *data)
     return VAL_UNDEFINED;
 }
 
+/*
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res)
 {
     if (!val_is_string(b)) {
@@ -107,19 +82,9 @@ void string_elem_get(val_t *self, int i, val_t *elem)
         val_set_undefined(elem);
     }
 }
+*/
 
-static val_t string_length(env_t *env, int ac, val_t *av)
-{
-    (void) env;
-
-    if (ac > 0) {
-        return val_mk_number(string_len(av));
-    } else {
-        return val_mk_undefined();
-    }
-}
-
-static val_t native_string_index_of(env_t *env, int ac, val_t *av)
+static val_t native_index_of(env_t *env, int ac, val_t *av)
 {
     const char *s, *f;
 
@@ -142,29 +107,20 @@ static val_t native_string_index_of(env_t *env, int ac, val_t *av)
 static val_t get_length(env_t *env, void *s)
 {
     (void) env;
-    (void) s;
-    return val_mk_native((intptr_t) string_length);
+    return val_mk_number(strlen(s));
 }
 
 static val_t get_index_of(env_t *env, void *s)
 {
     (void) env;
     (void) s;
-    return val_mk_native((intptr_t) native_string_index_of);
+    return val_mk_native((intptr_t) native_index_of);
 }
 
 static object_prop_t proto[] = {
     {(intptr_t)"length",   get_length,   NULL},
     {(intptr_t)"indexOf",  get_index_of, NULL},
 };
-
-void string_proto_init(env_t *env)
-{
-    unsigned i;
-    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
-        env_symbal_add_static(env, (const char *)proto[i].symbal);
-    }
-}
 
 static int string_inline_is_true(val_t *self) {
     return ((const char *)self)[4];
@@ -206,7 +162,7 @@ static double value_of_string(val_t *self)
     return *s ? const_nan.d : 0;
 }
 
-static int concat_string(void *hnd, val_t *a, val_t *b, val_t *res)
+static int string_concat(void *hnd, val_t *a, val_t *b, val_t *res)
 {
     env_t *env = hnd;
 
@@ -264,7 +220,6 @@ static val_t string_get_elem(void *env, val_t *self, int id)
     }
 }
 
-
 const val_metadata_t metadata_str_inline = {
     .name     = "string",
     .is_true  = string_inline_is_true,
@@ -274,7 +229,7 @@ const val_metadata_t metadata_str_inline = {
     .get_prop = string_get_prop,
     .get_elem = string_get_elem,
 
-    .concat   = concat_string,
+    .concat   = string_concat,
 };
 
 const val_metadata_t metadata_str_heap = {
@@ -286,7 +241,7 @@ const val_metadata_t metadata_str_heap = {
     .get_prop = string_get_prop,
     .get_elem = string_get_elem,
 
-    .concat   = concat_string,
+    .concat   = string_concat,
 };
 
 const val_metadata_t metadata_str_foreign = {
@@ -298,6 +253,14 @@ const val_metadata_t metadata_str_foreign = {
     .get_prop = string_get_prop,
     .get_elem = string_get_elem,
 
-    .concat   = concat_string,
+    .concat   = string_concat,
 };
+
+void string_proto_init(env_t *env)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        env_symbal_add_static(env, (const char *)proto[i].symbal);
+    }
+}
 

@@ -87,7 +87,7 @@ static inline array_t *array_gc_dup(void *env, array_t *a)
 
     //printf("%s: free %d\n", __func__, heap->free);
     memcpy(dup, a, sizeof(array_t));
-    memcpy(vals, array_values(a), sizeof(val_t) * array_len(a));
+    memcpy(vals, array_values(a), sizeof(val_t) * array_length(a));
     dup->elems = vals;
 
     return dup;
@@ -95,7 +95,7 @@ static inline array_t *array_gc_dup(void *env, array_t *a)
 
 static inline void array_gc_scan(void *env, array_t *a)
 {
-    gc_types_copy(env, array_len(a), array_values(a));
+    gc_types_copy(env, array_length(a), array_values(a));
 }
 
 static inline intptr_t string_gc_dup(void *env, intptr_t str)
