@@ -24,18 +24,17 @@
 #include "type_array.h"
 #include "type_object.h"
 
-static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
+static array_t *array_space_extend_tail(env_t *env, array_t *a, int n)
 {
-    array_t *a = (array_t *)val_2_intptr(self);
     val_t *elems;
     int len;
 
     if (a->elem_size - a->elem_end > n) {
         return a;
     }
-    len = array_length(a);
 
-    if (a->elem_size -len > n) {
+    len = array_length(a);
+    if (a->elem_size - len > n) {
         memmove(a->elems, a->elems + a->elem_bgn, len);
         a->elem_bgn = 0;
         a->elem_end = len;
@@ -48,7 +47,6 @@ static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
         }
         elems = env_heap_alloc(env, size * sizeof(val_t));
         if (elems) {
-            a = (array_t *)val_2_intptr(self);
             memcpy(elems, a->elems + a->elem_bgn, sizeof(val_t) * len);
             a->elem_size = size;
             a->elem_bgn = 0;
@@ -95,6 +93,28 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
             return NULL;
         }
     }
+}
+
+static int array_space_set(array_t *a, env_t *env, int length)
+{
+    if (a) {
+        int n = length - array_length(a);
+        if (n > 0) {
+            if (!(a = array_space_extend_tail(env, a, n))) {
+                int i;
+
+                for (i = 0; i < n; i++) {
+                    a->elems[a->elem_end++] = VAL_UNDEFINED;
+                }
+            }
+        } else
+        if (n < 0){
+            a->elem_end = a->elem_bgn + length;
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 array_t *_array_create(env_t *env, int n)
@@ -159,9 +179,12 @@ void array_elem_val(val_t *self, int i, val_t *elem)
 
 static val_t native_push(env_t *env, int ac, val_t *av)
 {
-    if (ac > 1 && val_is_array(av)) {
+    array_t *a = array_entry(av);
+
+    if (ac > 1 && a) {
         int n = ac - 1;
-        array_t *a = array_space_extend_tail(env, av, n);
+
+        a = array_space_extend_tail(env, a, n);
 
         if (a) {
             memcpy(a->elems + a->elem_end, av + 1, sizeof(val_t) * n);
@@ -329,9 +352,21 @@ static val_t get_prop(void *env, val_t *self, const char *name)
     return VAL_UNDEFINED;
 }
 
+static void set_prop(void *env, val_t *self, const char *name, val_t *data)
+{
+    array_t *a = array_entry(self);
+
+
+    if (a && val_is_number(data)) {
+        if (env_symbal_get(env, name) == proto[0].symbal) {
+            array_space_set(a, env, val_2_integer(data));
+        }
+    }
+}
+
 static val_t get_elem(void *env, val_t *self, int id)
 {
-    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+    array_t *a = array_entry(self);
 
     (void) env;
     if (a) {
@@ -389,6 +424,7 @@ const val_metadata_t metadata_array = {
     .value_of = value_of,
 
     .get_prop = get_prop,
+    .set_prop = set_prop,
 
     .get_elem = get_elem,
     .set_elem = set_elem,

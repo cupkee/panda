@@ -832,6 +832,8 @@ static void test_exec_array(void)
     CU_ASSERT(0 < interp_execute_string(&env, "a = [1, 2, 3, 4, 5]", &res) && val_is_array(res));
     CU_ASSERT(0 < interp_execute_string(&env, "a.foreach(def(v) sum = sum + v)", &res) && val_is_undefined(res));
     CU_ASSERT(0 < interp_execute_string(&env, "sum == 15", &res) && val_is_boolean(res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length = 0", &res) && val_is_number(res) && 0 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "a.length == 0", &res) && val_is_true(res));
 
     env_deinit(&env);
 }
