@@ -22,8 +22,6 @@
 
 #include "def.h"
 
-typedef uint64_t val_t;
-
 typedef union valnum_t {
     val_t   v;
     double  d;
@@ -408,7 +406,5 @@ void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);
 void val_prop_opx(void *env, val_t *self, val_t *key, val_t *res, val_opx_t op);
 void val_prop_opxx(void *env, val_t *self, val_t *key, val_t *data, val_t *res, val_opxx_t op);
 
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r);
-void foreign_keep(intptr_t entry);
 #endif /* __LANG_VALUE_INC__ */
 

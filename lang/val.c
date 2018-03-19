@@ -20,6 +20,7 @@
 #include <math.h>
 #include "val.h"
 #include "env.h"
+#include "types.h"
 #include "type_boolean.h"
 #include "type_number.h"
 #include "type_string.h"
@@ -82,69 +83,6 @@ int val_op_false(val_t *self, val_t *to)
     (void) to;
     return 0;
 }
-
-const val_metadata_t metadata_undefined = {
-    .name     = "undefined",
-
-    .is_true  = val_as_false,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_nan,
-};
-
-const val_metadata_t metadata_nan = {
-    .name     = "number",
-
-    .is_true  = val_as_false,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_nan,
-};
-
-const val_metadata_t metadata_date = {
-    .name     = "object",
-
-    .is_true  = val_as_true,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_integer,
-};
-
-const val_metadata_t metadata_array_buffer = {
-    .name     = "object",
-
-    .is_true  = val_as_false,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_zero,
-};
-
-const val_metadata_t metadata_data_view = {
-    .name     = "object",
-
-    .is_true  = val_as_false,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_zero,
-};
-
-const val_metadata_t metadata_object_foreign = {
-    .name     = "object",
-
-    .is_true  = val_as_true,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_zero,
-};
-
-const val_metadata_t metadata_none = {
-    .name     = "object",
-
-    .is_true  = val_as_false,
-    .is_equal = val_op_false,
-
-    .value_of = val_as_zero,
-};
 
 
 static const val_metadata_t *base_metadata[] = {
@@ -557,15 +495,5 @@ void val_prop_opxx(void *env, val_t *self, val_t * key, val_t *data, val_t *res,
             val_set_nan(res);
         }
     }
-}
-
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r)
-{
-    *r = *self = *b;
-}
-
-void foreign_keep(intptr_t entry)
-{
-    (void) entry;
 }
 

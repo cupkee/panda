@@ -60,6 +60,8 @@
 #define SIZE_ALIGN                  SIZE_ALIGN_8
 #define ADDR_ALING                  ADDR_ALIGN_8
 
+typedef uint64_t val_t;
+
 // lang profile
 #define MAGIC_BASE                  (0xE0)
 #define TOKEN_MAX_SIZE              (128)

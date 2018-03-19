@@ -35,6 +35,23 @@
 
 uint8_t env_buf[ENV_BUF_SIZE];
 
+typedef struct foreign_entry_t {
+    struct foreign_entry_t *prev;
+    struct foreign_entry_t *next;
+    int prop;
+} foreign_entry_t;
+
+static intptr_t foreign_create(int a)
+{
+    foreign_entry_t *data = malloc(sizeof(foreign_entry_t));
+
+    if (data) {
+        data->prop = a;
+    }
+
+    return (intptr_t) data;
+}
+
 static int test_setup()
 {
     return 0;
@@ -45,14 +62,131 @@ static int test_clean()
     return 0;
 }
 
+int foreign_is_true(val_t *self)
+{
+    foreign_entry_t *entry = (void *)val_2_intptr(self);
+
+    return entry && entry->prop;
+}
+
+int foreign_is_equal(val_t *self, val_t *other)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    if (val_is_foreign(other)) {
+        foreign_entry_t *b = (void *)val_2_intptr(other);
+
+        if (a && b) {
+            return a->prop == b->prop;
+        } else {
+            return 0;
+        }
+    } else {
+        return a->prop == val_2_integer(other);
+    }
+}
+
+double foreign_value_of(val_t *self)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    if (a) {
+        return a->prop;
+    } else {
+        return 0;
+    }
+}
+
+val_t foreign_get_prop(void *env, val_t *self, const char *key)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && !strcmp(key, "a")) {
+        return val_mk_number(a->prop);
+    } else {
+        return VAL_UNDEFINED;
+    }
+}
+
+val_t foreign_get_elem(void *env, val_t *self, int id)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && id == 0) {
+        return val_mk_number(a->prop);
+    } else {
+        return VAL_UNDEFINED;
+    }
+}
+
+void foreign_set_prop(void *env, val_t *self, const char *key, val_t *data)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && val_is_number(data) && !strcmp(key, "a") ) {
+        a->prop = val_2_integer(data);
+    }
+}
+
+void foreign_set_elem(void *env, val_t *self, int id, val_t *data)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && val_is_number(data) && id == 0) {
+        a->prop = val_2_integer(data);
+    }
+}
+
+void foreign_opx_prop(void *env, val_t *self, const char *key, val_t *res, val_opx_t op)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && !strcmp(key, "a") ) {
+        val_t tmp = val_mk_number(a->prop);
+
+        op(env, &tmp, res);
+        if (val_is_number(&tmp)) {
+            a->prop = val_2_integer(&tmp);
+        }
+    }
+}
+
+void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+    if (a && !strcmp(key, "a") ) {
+        val_t tmp = val_mk_number(a->prop);
+
+        op(env, &tmp, data, res);
+
+        if (val_is_number(res)) {
+            a->prop = val_2_integer(res);
+        }
+    }
+}
+
 val_t test_native_foreign(env_t *env, int ac, val_t *av)
 {
     intptr_t data = 0;
 
     if (ac > 0 && val_is_number(av)) {
-        data = val_2_double(av);
+        data = val_2_integer(av);
+    } else {
     }
-    return val_mk_foreign(data);
+
+    return val_mk_foreign(foreign_create(data));
 }
 
 val_t test_native_show(env_t *env, int ac, val_t *av)
@@ -81,44 +215,84 @@ static void test_foreign_simple(void)
     CU_ASSERT(0 < interp_execute_string(&env, "f", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "f == 1", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f != 2", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f != 1", &res) && !val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f == 2", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f != 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f != ''", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "f > 0", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f >= 1", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f < 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f >= 1", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f <= 1", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f == 1", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "-f == 1", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "~f == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "-f == -1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "~f == -2", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f++ == 1", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "++f == 2", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f-- == 1", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "--f == 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f++", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++f", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f--", &res) && val_is_nan(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "--f", &res) && val_is_nan(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f * 1 == 2", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f / 2 == 3", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f % 4 == 4", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f + 0 == 5", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f - 1 == 6", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f * 1 == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f / 2 == 0.5", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f % 4 == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f + 0 == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f - 1 == 0", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f & 1 == 7", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f | 2 == 8", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f ^ 4 == 9", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f & 1 != 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f | 2 != 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f ^ 4 != 5", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f >> 0 != 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f << 1 != 2", &res) && val_is_true(res));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "f >> 1 == 10", &res) && val_is_true(res));
-    CU_ASSERT(0 < interp_execute_string(&env, "f << 1 == 11", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a != 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a > 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a < 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a >= 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a <= 1", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f.b == 1", &res) && !val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.b", &res) && val_is_undefined(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] == 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] != 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] > 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] < 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] >= 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] <= 1", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f[1] != 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[1]", &res) && val_is_undefined(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a = 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a > 1", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a < 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a >= 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a <= 2", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] = 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] == 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] != 0", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] > 2", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] < 4", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] >= 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f[0] <= 3", &res) && val_is_true(res));
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a++ == 3", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 4", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "++f.a == 5", &res) && val_is_true(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 5", &res) && val_is_true(res));
+
+
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a += 4", &res) && val_is_number(res) && 9 == val_2_integer(res));
+    CU_ASSERT(0 < interp_execute_string(&env, "f.a == 9", &res) && val_is_true(res));
+
+    /*
     CU_ASSERT(0 < interp_execute_string(&env, "f[0] == 12", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "f.a == 13", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "f = 2", &res) && val_is_number(res) && 0 == val_2_double(res));
-
-
-
-    //CU_ASSERT(0 < interp_execute_string(&env, "f.is(Foreign)", &res) && val_is_true(res));
+    */
 
     env_deinit(&env);
 }
@@ -137,7 +311,7 @@ static void test_foreign_gc(void)
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 2));
 
-    CU_ASSERT(0 < interp_execute_string(&env, "var foreign = Foreign(0)", &res));
+    CU_ASSERT(0 < interp_execute_string(&env, "var foreign = Foreign(1)", &res));
     CU_ASSERT(0 < interp_execute_string(&env, "foreign", &res) && val_is_true(res));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var n = 0;", &res));
@@ -193,10 +367,8 @@ CU_pSuite test_lang_type_foreign(void)
     CU_pSuite suite = CU_add_suite("TYPE: foreign", test_setup, test_clean);
 
     if (suite) {
-        //CU_add_test(suite, "foreign simple",       test_foreign_simple);
+        CU_add_test(suite, "foreign simple",       test_foreign_simple);
         CU_add_test(suite, "foreign gc",           test_foreign_gc);
-        if (0) {
-        }
     }
 
     return suite;

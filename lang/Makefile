@@ -29,6 +29,7 @@ lang_SRCS = heap.c \
 			compile.c\
 			executable.c \
 			interp.c \
+			types.c \
 			type_number.c \
 			type_boolean.c \
 			type_function.c \

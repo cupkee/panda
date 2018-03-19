@@ -22,6 +22,7 @@
 #include "gc.h"
 #include "scope.h"
 #include "env.h"
+#include "types.h"
 #include "type_string.h"
 #include "type_function.h"
 #include "type_array.h"
