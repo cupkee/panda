@@ -399,7 +399,7 @@ void val_incp(void *env, val_t *self, val_t *res);
 void val_dec (void *env, val_t *self, val_t *res);
 void val_decp(void *env, val_t *self, val_t *res);
 
-void val_set(void *env, val_t *self, val_t *b, val_t *r);
+val_t val_set(void *env, val_t *self, val_t *value);
 
 void val_prop_get(void *env, val_t *self, val_t *key, val_t *prop);
 void val_prop_set(void *env, val_t *self, val_t *key, val_t *data);

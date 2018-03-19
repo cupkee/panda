@@ -94,25 +94,25 @@ const val_metadata_t metadata_none = {
     .value_of = val_as_zero,
 };
 
-int foreign_is_true(val_t *self) __attribute__ ((weak));
-int foreign_is_equal(val_t *self, val_t *other) __attribute__ ((weak));
+int foreign_is_true(val_t *elf) __attribute__ ((weak));
+int foreign_is_equal(val_t *elf, val_t *other) __attribute__ ((weak));
 
-double foreign_value_of(val_t *self) __attribute__ ((weak));
+double foreign_value_of(val_t *elf) __attribute__ ((weak));
 
-val_t foreign_get_prop(void *env, val_t *self, const char *key) __attribute__ ((weak));
-val_t foreign_get_elem(void *env, val_t *self, int id) __attribute__ ((weak));
+val_t foreign_get_prop(void *, val_t *, const char *) __attribute__ ((weak));
+val_t foreign_get_elem(void *, val_t *, int ) __attribute__ ((weak));
 
-void foreign_set_prop(void *env, val_t *self, const char *key, val_t *data) __attribute__ ((weak));
-void foreign_set_elem(void *env, val_t *self, int id, val_t *data) __attribute__ ((weak));
+void foreign_set_prop(void *, val_t *, const char *, val_t *) __attribute__ ((weak));
+void foreign_set_elem(void *, val_t *, int , val_t *) __attribute__ ((weak));
 
-void foreign_opx_prop(void *env, val_t *self, const char *key, val_t *res, val_opx_t op) __attribute__ ((weak));
-void foreign_opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op) __attribute__ ((weak));
+void foreign_opx_prop(void *, val_t *, const char *, val_t *, val_opx_t ) __attribute__ ((weak));
+void foreign_opx_elem(void *, val_t *, int , val_t *, val_opx_t ) __attribute__ ((weak));
 
-void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op) __attribute__ ((weak));
-void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op) __attribute__ ((weak));
+void foreign_opxx_prop(void *, val_t *, const char *, val_t *, val_t *, val_opxx_t) __attribute__ ((weak));
+void foreign_opxx_elem(void *, val_t *, int d, val_t *ata, val_t *es, val_opxx_t) __attribute__ ((weak));
 
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r) __attribute__ ((weak));
-void foreign_keep(intptr_t entry) __attribute__ ((weak));
+val_t foreign_set(void *, val_t *, val_t *) __attribute__ ((weak));
+void foreign_keep(intptr_t ) __attribute__ ((weak));
 
 int foreign_is_true(val_t *self)
 {
@@ -203,9 +203,12 @@ void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, 
     (void) op;
 }
 
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r)
+val_t foreign_set(void *env, val_t *self, val_t *val)
 {
-    *r = *self = *b;
+    (void) env;
+    (void) self;
+
+    return *val;
 }
 
 void foreign_keep(intptr_t entry)

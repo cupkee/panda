@@ -408,15 +408,6 @@ void val_rshift(void *env, val_t *a, val_t *b, val_t *res)
     val_set_number(res, ia >> ib);
 }
 
-void val_set(void *env, val_t *a, val_t *b, val_t *r)
-{
-    if (!val_is_foreign(a)) {
-        *r = *a = *b;
-    } else {
-        foreign_set(env, a, b, r);
-    }
-}
-
 void val_prop_get(void *env, val_t *self, val_t * key, val_t *prop)
 {
     const val_metadata_t *meta = base_metadata[val_type(self)];

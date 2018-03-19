@@ -47,7 +47,7 @@ void foreign_opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op);
 void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op);
 void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op);
 
-void foreign_set(void *env, val_t *self, val_t *b, val_t *r);
+val_t foreign_set(void *env, val_t *self, val_t *value);
 void foreign_keep(intptr_t entry);
 
 #endif /* __LANG_TYPES_INC__ */

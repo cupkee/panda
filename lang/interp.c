@@ -24,6 +24,7 @@
 #include "compile.h"
 #include "interp.h"
 
+#include "types.h"
 #include "type_number.h"
 #include "type_string.h"
 #include "type_function.h"
@@ -169,8 +170,13 @@ static inline void interp_set(env_t *env) {
     val_t *reg1 = reg2 + 1;
     val_t *lft = interp_var_ref(env, reg1);
 
+
     if (lft) {
-        val_set(env, lft, reg2, reg1);
+        if (!val_is_foreign(lft)) {
+            *lft = *reg1 = *reg2;
+        } else {
+            *reg1 = foreign_set(env, lft, reg2);
+        }
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
