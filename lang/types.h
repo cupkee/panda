@@ -31,25 +31,24 @@ extern const val_metadata_t metadata_data_view;
 extern const val_metadata_t metadata_object_foreign;
 extern const val_metadata_t metadata_none;
 
-int foreign_is_true(val_t *self);
-int foreign_is_equal(val_t *self, val_t *other);
-double foreign_value_of(val_t *self);
+int foreign_is_true(val_t *self) __attribute__ ((weak));
+int foreign_is_equal(val_t *self, val_t *other) __attribute__ ((weak));
+double foreign_value_of(val_t *self) __attribute__ ((weak));
 
-val_t foreign_get_prop(void *env, val_t *self, const char *key);
-val_t foreign_get_elem(void *env, val_t *self, int id);
+val_t foreign_get_prop(void *env, val_t *self, const char *key) __attribute__ ((weak));
+val_t foreign_get_elem(void *env, val_t *self, int id) __attribute__ ((weak));
 
-void foreign_set_prop(void *env, val_t *self, const char *key, val_t *data);
-void foreign_set_elem(void *env, val_t *self, int id, val_t *data);
+void foreign_set_prop(void *env, val_t *self, const char *key, val_t *data) __attribute__ ((weak));
+void foreign_set_elem(void *env, val_t *self, int id, val_t *data) __attribute__ ((weak));
 
-void foreign_opx_prop(void *env, val_t *self, const char *key, val_t *res, val_opx_t op);
-void foreign_opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op);
+void foreign_opx_prop(void *env, val_t *self, const char *key, val_t *res, val_opx_t op) __attribute__ ((weak));
+void foreign_opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op) __attribute__ ((weak));
 
-void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op);
-void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op);
+void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op) __attribute__ ((weak));
+void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op) __attribute__ ((weak));
 
-val_t foreign_set(void *env, val_t *self, val_t *value);
-void foreign_keep(intptr_t entry);
+val_t foreign_set(void *env, val_t *self, val_t *value) __attribute__ ((weak));
+void  foreign_keep(intptr_t entry) __attribute__ ((weak));
 
 #endif /* __LANG_TYPES_INC__ */
-
 

@@ -475,6 +475,8 @@ void val_prop_opxx(void *env, val_t *self, val_t * key, val_t *data, val_t *res,
         if (meta->opxx_elem) {
             meta->opxx_elem(env, self, val_2_integer(key), data, res, op);
         } else {
+
+            printf("\n\nwa shit!!\n\n");
             val_set_nan(res);
         }
     } else {
@@ -483,6 +485,7 @@ void val_prop_opxx(void *env, val_t *self, val_t * key, val_t *data, val_t *res,
         if (name && meta->opxx_prop) {
             meta->opxx_prop(env, self, name, data, res, op);
         } else {
+            printf("\n\nwo shit!!\n\n");
             val_set_nan(res);
         }
     }

@@ -57,27 +57,12 @@ static inline val_t *array_get(array_t *a, int i)
     return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
-
 array_t *_array_create(env_t *env, int len);
-intptr_t array_create(env_t *env, int ac, val_t *av);
-
-void array_elem_val(val_t *self, int i, val_t *elem);
-val_t *array_elem_ref(val_t *self, int i);
+val_t *array_elem(array_t *a, int i);
 
 extern const val_metadata_t metadata_array;
 void array_proto_init(env_t *env);
-
-/* new api
-void *array_create(env_t *env, int size, val_t *elems);
-
-int array_length(void *entry);
-
-int array_push(void *entry, env_t *env, val_t *elem);
-int array_unshift(void *entry, env_t *env, val_t *elem);
-
-val_t *array_pop(void *entry);
-val_t *array_shift(void *entry);
-*/
+intptr_t array_create(env_t *env, int ac, val_t *av);
 
 #endif /* __LANG_ARRAY_INC__ */
 

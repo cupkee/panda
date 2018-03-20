@@ -166,12 +166,44 @@ void foreign_opx_prop(void *env, val_t *self, const char *key, val_t *res, val_o
     }
 }
 
+void foreign_opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+
+    if (a && id == 0) {
+        val_t tmp = val_mk_number(a->prop);
+
+        op(env, &tmp, res);
+        if (val_is_number(&tmp)) {
+            a->prop = val_2_integer(&tmp);
+        }
+    }
+}
+
 void foreign_opxx_prop(void *env, val_t *self, const char *key, val_t *data, val_t *res, val_opxx_t op)
 {
     foreign_entry_t *a = (void *)val_2_intptr(self);
 
     (void) env;
     if (a && !strcmp(key, "a") ) {
+        val_t tmp = val_mk_number(a->prop);
+
+        op(env, &tmp, data, res);
+
+        if (val_is_number(res)) {
+            a->prop = val_2_integer(res);
+        }
+    }
+}
+
+void foreign_opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op)
+{
+    foreign_entry_t *a = (void *)val_2_intptr(self);
+
+    (void) env;
+    if (a && id == 0) {
         val_t tmp = val_mk_number(a->prop);
 
         op(env, &tmp, data, res);

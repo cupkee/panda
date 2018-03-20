@@ -234,6 +234,7 @@ int object_iter_next(object_iter_t *it, const char **name, val_t **v)
 
 static val_t get_prop_length(env_t *env, void *obj)
 {
+    (void) env;
     return val_mk_number(object_length(obj));
 }
 

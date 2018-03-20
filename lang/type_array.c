@@ -153,6 +153,15 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
     return (intptr_t) array;
 }
 
+val_t *array_elem(array_t *a, int i)
+{
+    if (i >= 0 && i < array_length(a)) {
+        return a->elems + (a->elem_bgn + i);
+    } else {
+        return NULL;
+    }
+}
+
 /*
 val_t *array_elem_ref(val_t *self, int i)
 {

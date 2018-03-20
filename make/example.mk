@@ -19,7 +19,7 @@
 lib_NAMES = example
 bin_NAMES = compile dump repl panda
 
-example_SRCS = sal.c native.c
+example_SRCS = sal.c native.c foreign.c
 example_CPPFLAGS = -I${BASE} -Wall -Werror
 example_CFLAGS   = -g
 
