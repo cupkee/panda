@@ -153,6 +153,20 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
     return (intptr_t) array;
 }
 
+array_t *array_alloc_u8(env_t *env, int len, uint8_t *data)
+{
+    array_t *array = _array_create(env, len);
+    int i;
+
+    if (array) {
+        val_t *v = array->elems + array->elem_bgn;
+        for (i = 0; i < len; i++) {
+            val_set_number(v + i, data[i]);
+        }
+    }
+    return array;
+}
+
 val_t *array_elem(array_t *a, int i)
 {
     if (i >= 0 && i < array_length(a)) {

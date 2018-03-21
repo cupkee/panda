@@ -57,6 +57,8 @@ static inline val_t *array_get(array_t *a, int i)
     return (a->elem_bgn + i < a->elem_end) ? (a->elems + i) : NULL;
 }
 
+array_t *array_alloc_u8(env_t *env, int len, uint8_t *data);
+
 array_t *_array_create(env_t *env, int len);
 val_t *array_elem(array_t *a, int i);
 
