@@ -57,6 +57,8 @@ static intptr_t foreign_create(int a)
     return (intptr_t) data;
 }
 
+static val_t cache;
+
 static int test_setup()
 {
     return 0;
