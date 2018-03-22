@@ -1,26 +1,21 @@
-/*
-MIT License
-
-Copyright (c) 2016 Lixing Ding <ding.lixing@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* GPLv2 License
+ *
+ * Copyright (C) 2016-2018 Lixing Ding <ding.lixing@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ **/
 
 #include "err.h"
 #include "val.h"
@@ -29,183 +24,159 @@ SOFTWARE.
 #include "compile.h"
 #include "interp.h"
 
+#include "types.h"
 #include "type_number.h"
 #include "type_string.h"
 #include "type_function.h"
 #include "type_array.h"
 #include "type_object.h"
 
-static val_t *interp_var_ref(env_t *env, val_t *ref)
+static inline val_t *interp_var_ref(env_t *env, val_t *reg)
 {
-    if (val_is_reference(ref)) {
+    if (val_is_reference(reg)) {
         uint8_t id, generation;
-        val_2_reference(ref, &id, &generation);
+        val_2_reference(reg, &id, &generation);
         return env_get_var(env, id, generation);
     } else {
         return NULL;
     }
 }
 
-static inline
-void interp_op(env_t *env, val_op_t operate) {
-    val_t *op2 = env_stack_peek(env); // Note: keep in stack, deffence GC!
-    val_t *op1 = op2 + 1;
+static inline void interp_op(env_t *env, val_opxx_t operate) {
+    val_t *reg2 = env_stack_peek(env); // Note: keep in stack, deffence GC!
+    val_t *reg1 = reg2 + 1;
 
-    operate(env, op1, op2, op1);
+    operate(env, reg1, reg2, reg1);
 
     env_stack_pop(env);
 }
 
-static inline
-void interp_op_self(env_t *env, val_op_unary_t operate) {
-    val_t *ref = env_stack_peek(env);
-    val_t *lft = interp_var_ref(env, ref);
+static inline void interp_op_self(env_t *env, val_opx_t operate) {
+    val_t *reg = env_stack_peek(env);
+    val_t *lft = interp_var_ref(env, reg);
 
     if (lft) {
-        operate(env, lft, ref);
+        operate(env, lft, reg);
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
 }
 
-static inline
-void interp_prop_op_self(env_t *env, val_op_unary_t operate) {
+static inline void interp_prop_op_self(env_t *env, val_opx_t operate) {
     val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    val_t *prop = val_prop_ref(env, obj, key);
-    if (prop) {
-        operate(env, prop, res);
-    } else {
-        val_set_nan(res);
-    }
+    val_prop_opx(env, obj, key, res, operate);
 
     env_stack_pop(env);
 }
 
-static inline
-void interp_elem_op_self(env_t *env, val_op_unary_t operate) {
+static inline void interp_elem_op_self(env_t *env, val_opx_t operate) {
     val_t *key = env_stack_peek(env); // keep the "key" in stack, defence GC
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    val_t *prop = val_elem_ref(env, obj, key);
-    if (prop) {
-        operate(env, prop, res);
-    } else {
-        val_set_nan(res);
-    }
+    val_prop_opx(env, obj, key, res, operate);
 
     env_stack_pop(env);
 }
 
-static inline void interp_op_set(env_t *env, val_op_t operate) {
-    val_t *rht = env_stack_peek(env);
-    val_t *ref = rht + 1;
-    val_t *lft = interp_var_ref(env, ref);
+static inline void interp_op_set(env_t *env, val_opxx_t operate) {
+    val_t *reg2 = env_stack_peek(env);
+    val_t *reg1 = reg2 + 1;
+    val_t *lft = interp_var_ref(env, reg1);
     if (lft) {
-        operate(env, lft, rht, lft);
-        *ref = *lft;
+        operate(env, lft, reg2, lft);
+        *reg1 = *lft;
         env_stack_pop(env);
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
 }
 
-static inline void interp_prop_op_set(env_t *env, val_op_t operate) {
-    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
-    val_t *key = val + 1;
-    val_t *obj = key + 1;
-    val_t *res = obj;
-    val_t *prop = val_prop_ref(env, obj, key);
-    if (prop) {
-        operate(env, prop, val, prop);
-        *res = *prop;
-    } else {
-        val_set_nan(res);
-    }
+static inline void interp_prop_op_set(env_t *env, val_opxx_t operate) {
+    val_t *reg3 = env_stack_peek(env); // keep the "data" in stack, defence GC
+    val_t *reg2 = reg3 + 1;
+    val_t *reg1 = reg2 + 1;
 
-    //object_prop_add_set(env, obj, key, val, res);
+    val_prop_opxx(env, reg1, reg2, reg3, reg1, operate);
     env_stack_release(env, 2);
 }
 
-static inline void interp_elem_op_set(env_t *env, val_op_t operate) {
-    val_t *val = env_stack_peek(env); // keep the "key" in stack, defence GC
-    val_t *key = val + 1;
-    val_t *obj = key + 1;
-    val_t *res = obj;
-    val_t *elem = val_elem_ref(env, obj, key);
-    if (elem) {
-        operate(env, elem, val, elem);
-        *res = *elem;
-    } else {
-        val_set_nan(res);
-    }
+static inline void interp_elem_op_set(env_t *env, val_opxx_t operate) {
+    val_t *reg3 = env_stack_peek(env); // keep the "key" in stack, defence GC
+    val_t *reg2 = reg3 + 1;
+    val_t *reg1 = reg2 + 1;
 
-    //object_prop_add_set(env, obj, key, val, res);
+    val_prop_opxx(env, reg1, reg2, reg3, reg1, operate);
     env_stack_release(env, 2);
 }
 
-static inline void interp_op_unary(env_t *env, val_op_unary_t operate) {
-    val_t *val = env_stack_peek(env);
-
-    operate(env, val, val);
+static inline void interp_op_unary(env_t *env, val_opx_t operate) {
+    val_t *reg = env_stack_peek(env);
+    operate(env, reg, reg);
 }
 
 static inline void interp_logic_not(env_t *env) {
-    val_t *v = env_stack_peek(env);
-    val_set_boolean(v, !val_is_true(v));
+    val_t *reg = env_stack_peek(env);
+    val_set_boolean(reg, !val_is_true(reg));
 }
 
 static inline void interp_teq(env_t *env) {
-    val_t *b = env_stack_pop(env);
-    val_t *a = b + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(a, val_is_equal(a, b));
+    val_set_boolean(reg1, val_is_equal(reg1, reg2));
 }
 
 static inline void interp_tne(env_t *env) {
-    val_t *b = env_stack_pop(env);
-    val_t *a = b + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(a, !val_is_equal(a, b));
+    val_set_boolean(reg1, !val_is_equal(reg1, reg2));
 }
 
 static inline void interp_tgt(env_t *env) {
-    val_t *op2 = env_stack_pop(env);
-    val_t *op1 = op2 + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(op1, val_is_gt(op1, op2));
+    val_set_boolean(reg1, val_is_gt(reg1, reg2));
 }
 
 static inline void interp_tge(env_t *env) {
-    val_t *op2 = env_stack_pop(env);
-    val_t *op1 = op2 + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(op1, val_is_ge(op1, op2));
+    val_set_boolean(reg1, val_is_ge(reg1, reg2));
 }
 
 static inline void interp_tlt(env_t *env) {
-    val_t *op2 = env_stack_pop(env);
-    val_t *op1 = op2 + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(op1, val_is_lt(op1, op2));
+    val_set_boolean(reg1, val_is_lt(reg1, reg2));
 }
 
 static inline void interp_tle(env_t *env) {
-    val_t *op2 = env_stack_pop(env);
-    val_t *op1 = op2 + 1;
+    val_t *reg2 = env_stack_pop(env);
+    val_t *reg1 = reg2 + 1;
 
-    val_set_boolean(op1, val_is_le(op1, op2));
+    val_set_boolean(reg1, val_is_le(reg1, reg2));
 }
 
 static inline void interp_set(env_t *env) {
-    val_t *rht = env_stack_peek(env);
-    val_t *ref = rht + 1;
-    val_t *lft = interp_var_ref(env, ref);
+    val_t *reg2 = env_stack_peek(env);
+    val_t *reg1 = reg2 + 1;
+    val_t *lft = interp_var_ref(env, reg1);
+
+
     if (lft) {
-        val_op_set(env, lft, rht, ref);
+        if (!val_is_foreign(lft)) {
+            *lft = *reg1 = *reg2;
+        } else {
+            *reg1 = foreign_set(env, lft, reg2);
+        }
     } else {
         env_set_error(env, ERR_InvalidLeftValue);
     }
@@ -227,7 +198,7 @@ static inline const uint8_t *interp_call(env_t *env, int ac, const uint8_t *pc) 
     return pc;
 }
 
-static inline void interp_array(env_t *env, int n) {
+static inline void interp_array_build(env_t *env, int n) {
     val_t *av = env_stack_peek(env);
     intptr_t array = array_create(env, n, av);
 
@@ -238,7 +209,7 @@ static inline void interp_array(env_t *env, int n) {
     }
 }
 
-static inline void interp_dict(env_t *env, int n) {
+static inline void interp_object_build(env_t *env, int n) {
     val_t *av = env_stack_peek(env);
     intptr_t dict = object_create(env, n, av);
 
@@ -254,7 +225,7 @@ static inline void interp_prop_get(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = self;
 
-    val_op_prop(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
     env_stack_pop(env);
 }
 
@@ -263,7 +234,7 @@ static inline void interp_elem_get(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = self;
 
-    val_op_elem(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
     env_stack_pop(env);
 }
 
@@ -273,12 +244,7 @@ static inline void interp_prop_set(env_t *env) {
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    if (0 == val_prop_set(env, obj, key, val)) {
-        val_t *ref = val_prop_ref(env, obj, key);
-        if (ref) {
-            val_op_set(env, ref, val, res);
-        }
-    }
+    val_prop_set(env, obj, key, val);
     *res = *val;
 
     env_stack_release(env, 2);
@@ -290,12 +256,7 @@ static inline void interp_elem_set(env_t *env) {
     val_t *obj = key + 1;
     val_t *res = obj;
 
-    if (0 == val_prop_set(env, obj, key, val)) {
-        val_t *ref = val_elem_ref(env, obj, key);
-        if (ref) {
-            val_op_set(env, ref, val, res);
-        }
-    }
+    val_prop_set(env, obj, key, val);
     *res = *val;
 
     env_stack_release(env, 2);
@@ -306,7 +267,7 @@ static inline void interp_prop_meth(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = key;
 
-    val_op_prop(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
     // No pop, to leave self in stack
 }
 
@@ -315,7 +276,7 @@ static inline void interp_elem_meth(env_t *env) {
     val_t *self = key + 1;
     val_t *prop = key;
 
-    val_op_elem(env, self, key, prop);
+    val_prop_get(env, self, key, prop);
     // No pop, to leave self in stack
 }
 
@@ -455,7 +416,6 @@ static int interp_run(env_t *env, const uint8_t *pc)
         case BC_PUSH_REF:   index = (*pc++); env_push_ref(env, index, *pc++);
                             break;
 
-
         case BC_PUSH_SCRIPT:index = (*pc++); index = (index << 8) | (*pc++);
                             interp_push_function(env, index);
                             break;
@@ -466,22 +426,22 @@ static int interp_run(env_t *env, const uint8_t *pc)
 
         case BC_POP:        env_stack_pop(env); break;
 
-        case BC_NEG:        interp_op_unary(env, val_op_neg); break;
-        case BC_NOT:        interp_op_unary(env, val_op_not); break;
+        case BC_NEG:        interp_op_unary(env, val_neg); break;
+        case BC_NOT:        interp_op_unary(env, val_not); break;
         case BC_LOGIC_NOT:  interp_logic_not(env); break;
 
-        case BC_MUL:        interp_op(env, val_op_mul); break;
-        case BC_DIV:        interp_op(env, val_op_div); break;
-        case BC_MOD:        interp_op(env, val_op_mod); break;
-        case BC_ADD:        interp_op(env, val_op_add); break;
-        case BC_SUB:        interp_op(env, val_op_sub); break;
+        case BC_MUL:        interp_op(env, val_mul); break;
+        case BC_DIV:        interp_op(env, val_div); break;
+        case BC_MOD:        interp_op(env, val_mod); break;
+        case BC_ADD:        interp_op(env, val_add); break;
+        case BC_SUB:        interp_op(env, val_sub); break;
 
-        case BC_AAND:       interp_op(env, val_op_and); break;
-        case BC_AOR:        interp_op(env, val_op_or);  break;
-        case BC_AXOR:       interp_op(env, val_op_xor); break;
+        case BC_AAND:       interp_op(env, val_and); break;
+        case BC_AOR:        interp_op(env, val_or);  break;
+        case BC_AXOR:       interp_op(env, val_xor); break;
 
-        case BC_LSHIFT:     interp_op(env, val_op_lshift); break;
-        case BC_RSHIFT:     interp_op(env, val_op_rshift); break;
+        case BC_LSHIFT:     interp_op(env, val_lshift); break;
+        case BC_RSHIFT:     interp_op(env, val_rshift); break;
 
         case BC_TEQ:        interp_teq(env); break;
         case BC_TNE:        interp_tne(env); break;
@@ -497,74 +457,81 @@ static int interp_run(env_t *env, const uint8_t *pc)
         case BC_ELEM:               interp_elem_get(env);  break;
         case BC_ELEM_METH:          interp_elem_meth(env); break;
 
-        case BC_INC:                interp_op_self(env, val_op_inc); break;
-        case BC_INCP:               interp_op_self(env, val_op_incp); break;
-        case BC_DEC:                interp_op_self(env, val_op_dec); break;
-        case BC_DECP:               interp_op_self(env, val_op_decp); break;
+        case BC_INC:                interp_op_self(env, val_inc); break;
+        case BC_INCP:               interp_op_self(env, val_incp); break;
+        case BC_DEC:                interp_op_self(env, val_dec); break;
+        case BC_DECP:               interp_op_self(env, val_decp); break;
 
         case BC_ASSIGN:             interp_set(env); break;
 
-        case BC_ADD_ASSIGN:         interp_op_set(env, val_op_add); break;
-        case BC_SUB_ASSIGN:         interp_op_set(env, val_op_sub); break;
-        case BC_MUL_ASSIGN:         interp_op_set(env, val_op_mul); break;
-        case BC_DIV_ASSIGN:         interp_op_set(env, val_op_div); break;
-        case BC_MOD_ASSIGN:         interp_op_set(env, val_op_mod); break;
-        case BC_AND_ASSIGN:         interp_op_set(env, val_op_and); break;
-        case BC_OR_ASSIGN:          interp_op_set(env, val_op_or); break;
-        case BC_XOR_ASSIGN:         interp_op_set(env, val_op_xor); break;
-        case BC_LSHIFT_ASSIGN:      interp_op_set(env, val_op_lshift); break;
-        case BC_RSHIFT_ASSIGN:      interp_op_set(env, val_op_rshift); break;
+        case BC_ADD_ASSIGN:         interp_op_set(env, val_add); break;
+        case BC_SUB_ASSIGN:         interp_op_set(env, val_sub); break;
+        case BC_MUL_ASSIGN:         interp_op_set(env, val_mul); break;
+        case BC_DIV_ASSIGN:         interp_op_set(env, val_div); break;
+        case BC_MOD_ASSIGN:         interp_op_set(env, val_mod); break;
+        case BC_AND_ASSIGN:         interp_op_set(env, val_and); break;
+        case BC_OR_ASSIGN:          interp_op_set(env, val_or); break;
+        case BC_XOR_ASSIGN:         interp_op_set(env, val_xor); break;
+        case BC_LSHIFT_ASSIGN:      interp_op_set(env, val_lshift); break;
+        case BC_RSHIFT_ASSIGN:      interp_op_set(env, val_rshift); break;
 
-        case BC_PROP_INC:           interp_prop_op_self(env, val_op_inc); break;
-        case BC_PROP_INCP:          interp_prop_op_self(env, val_op_incp); break;
-        case BC_PROP_DEC:           interp_prop_op_self(env, val_op_dec); break;
-        case BC_PROP_DECP:          interp_prop_op_self(env, val_op_decp); break;
+        case BC_PROP_INC:           interp_prop_op_self(env, val_inc); break;
+        case BC_PROP_INCP:          interp_prop_op_self(env, val_incp); break;
+        case BC_PROP_DEC:           interp_prop_op_self(env, val_dec); break;
+        case BC_PROP_DECP:          interp_prop_op_self(env, val_decp); break;
         case BC_PROP_ASSIGN:        interp_prop_set(env); break;
 
-        case BC_PROP_ADD_ASSIGN:    interp_prop_op_set(env, val_op_add); break;
-        case BC_PROP_SUB_ASSIGN:    interp_prop_op_set(env, val_op_sub); break;
-        case BC_PROP_MUL_ASSIGN:    interp_prop_op_set(env, val_op_mul); break;
-        case BC_PROP_DIV_ASSIGN:    interp_prop_op_set(env, val_op_div); break;
-        case BC_PROP_MOD_ASSIGN:    interp_prop_op_set(env, val_op_mod); break;
-        case BC_PROP_AND_ASSIGN:    interp_prop_op_set(env, val_op_and); break;
-        case BC_PROP_OR_ASSIGN:     interp_prop_op_set(env, val_op_or); break;
-        case BC_PROP_XOR_ASSIGN:    interp_prop_op_set(env, val_op_xor); break;
-        case BC_PROP_LSHIFT_ASSIGN: interp_prop_op_set(env, val_op_lshift); break;
-        case BC_PROP_RSHIFT_ASSIGN: interp_prop_op_set(env, val_op_rshift); break;
+        case BC_PROP_ADD_ASSIGN:    interp_prop_op_set(env, val_add); break;
+        case BC_PROP_SUB_ASSIGN:    interp_prop_op_set(env, val_sub); break;
+        case BC_PROP_MUL_ASSIGN:    interp_prop_op_set(env, val_mul); break;
+        case BC_PROP_DIV_ASSIGN:    interp_prop_op_set(env, val_div); break;
+        case BC_PROP_MOD_ASSIGN:    interp_prop_op_set(env, val_mod); break;
+        case BC_PROP_AND_ASSIGN:    interp_prop_op_set(env, val_and); break;
+        case BC_PROP_OR_ASSIGN:     interp_prop_op_set(env, val_or); break;
+        case BC_PROP_XOR_ASSIGN:    interp_prop_op_set(env, val_xor); break;
+        case BC_PROP_LSHIFT_ASSIGN: interp_prop_op_set(env, val_lshift); break;
+        case BC_PROP_RSHIFT_ASSIGN: interp_prop_op_set(env, val_rshift); break;
 
-        case BC_ELEM_INC:           interp_elem_op_self(env, val_op_inc); break;
-        case BC_ELEM_INCP:          interp_elem_op_self(env, val_op_incp); break;
-        case BC_ELEM_DEC:           interp_elem_op_self(env, val_op_dec); break;
-        case BC_ELEM_DECP:          interp_elem_op_self(env, val_op_decp); break;
+        case BC_ELEM_INC:           interp_elem_op_self(env, val_inc); break;
+        case BC_ELEM_INCP:          interp_elem_op_self(env, val_incp); break;
+        case BC_ELEM_DEC:           interp_elem_op_self(env, val_dec); break;
+        case BC_ELEM_DECP:          interp_elem_op_self(env, val_decp); break;
 
         case BC_ELEM_ASSIGN:        interp_elem_set(env); break;
 
-        case BC_ELEM_ADD_ASSIGN:    interp_elem_op_set(env, val_op_add); break;
-        case BC_ELEM_SUB_ASSIGN:    interp_elem_op_set(env, val_op_sub); break;
-        case BC_ELEM_MUL_ASSIGN:    interp_elem_op_set(env, val_op_mul); break;
-        case BC_ELEM_DIV_ASSIGN:    interp_elem_op_set(env, val_op_div); break;
-        case BC_ELEM_MOD_ASSIGN:    interp_elem_op_set(env, val_op_mod); break;
-        case BC_ELEM_AND_ASSIGN:    interp_elem_op_set(env, val_op_and); break;
-        case BC_ELEM_OR_ASSIGN:     interp_elem_op_set(env, val_op_or); break;
-        case BC_ELEM_XOR_ASSIGN:    interp_elem_op_set(env, val_op_xor); break;
-        case BC_ELEM_LSHIFT_ASSIGN: interp_elem_op_set(env, val_op_lshift); break;
-        case BC_ELEM_RSHIFT_ASSIGN: interp_elem_op_set(env, val_op_rshift); break;
+        case BC_ELEM_ADD_ASSIGN:    interp_elem_op_set(env, val_add); break;
+        case BC_ELEM_SUB_ASSIGN:    interp_elem_op_set(env, val_sub); break;
+        case BC_ELEM_MUL_ASSIGN:    interp_elem_op_set(env, val_mul); break;
+        case BC_ELEM_DIV_ASSIGN:    interp_elem_op_set(env, val_div); break;
+        case BC_ELEM_MOD_ASSIGN:    interp_elem_op_set(env, val_mod); break;
+        case BC_ELEM_AND_ASSIGN:    interp_elem_op_set(env, val_and); break;
+        case BC_ELEM_OR_ASSIGN:     interp_elem_op_set(env, val_or); break;
+        case BC_ELEM_XOR_ASSIGN:    interp_elem_op_set(env, val_xor); break;
+        case BC_ELEM_LSHIFT_ASSIGN: interp_elem_op_set(env, val_lshift); break;
+        case BC_ELEM_RSHIFT_ASSIGN: interp_elem_op_set(env, val_rshift); break;
 
         case BC_FUNC_CALL:  index = *pc++;
                             pc = interp_call(env, index, pc);
                             break;
 
         case BC_ARRAY:      index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_array(env, index); break;
+                            interp_array_build(env, index); break;
 
         case BC_DICT:       index = (*pc++); index = (index << 8) | (*pc++);
-                            interp_dict(env, index); break;
+                            interp_object_build(env, index); break;
 
         default:            env_set_error(env, ERR_InvalidByteCode);
         }
     }
 DO_END:
     return -env->error;
+}
+
+static inline void interp_reset_parser_heap(env_t *env, parser_t *psr)
+{
+    heap_t *heap = env_heap_get_free((env_t*)env);
+
+    heap_init(&psr->heap, heap->base, heap->size);
 }
 
 static void parse_callback(void *u, parse_event_t *e)
@@ -777,13 +744,6 @@ int interp_execute_interactive(env_t *env, const char *input, char *(*input_more
     }
 
     return 1;
-}
-
-static inline void interp_reset_parser_heap(env_t *env, parser_t *psr)
-{
-    heap_t *heap = env_heap_get_free((env_t*)env);
-
-    heap_init(&psr->heap, heap->base, heap->size);
 }
 
 int interp_execute_stmts(env_t *env, const char *input, val_t **v)

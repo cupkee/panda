@@ -17,25 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  **/
 
-#ifndef __LANG_ERR_INC__
-#define __LANG_ERR_INC__
+#include "type_boolean.h"
 
-#define ERR_InvalidToken        1
-#define ERR_InvalidSyntax       2
-#define ERR_InvalidLeftValue    3
-#define ERR_InvalidSementic     4
+static int boolean_is_true(val_t *self)
+{
+    return val_2_intptr(self);
+}
 
-#define ERR_NotEnoughMemory     5
-#define ERR_NotImplemented      6
-#define ERR_StackOverflow       7
-#define ERR_ResourceOutLimit    8
+const val_metadata_t metadata_boolean = {
+    .name     = "boolean",
 
-#define ERR_InvalidByteCode     9
-#define ERR_InvalidInput        10
-#define ERR_InvalidCallor       11
-#define ERR_NotDefinedId        12
+    .is_true  = boolean_is_true,
+    .is_equal = val_op_false,
 
-#define ERR_SysError            255
+    .value_of = val_as_integer,
+};
 
-#endif /* __LANG_ERR_INC__ */
 

@@ -1,45 +1,40 @@
-/*
-MIT License
-
-Copyright (c) 2016 Lixing Ding <ding.lixing@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* GPLv2 License
+ *
+ * Copyright (C) 2016-2018 Lixing Ding <ding.lixing@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ **/
 
 #include "interp.h"
 
 #include "type_number.h"
 #include "type_string.h"
 #include "type_array.h"
+#include "type_object.h"
 
-static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
+static array_t *array_space_extend_tail(env_t *env, array_t *a, int n)
 {
-    array_t *a = (array_t *)val_2_intptr(self);
     val_t *elems;
     int len;
 
     if (a->elem_size - a->elem_end > n) {
         return a;
     }
-    len = array_len(a);
 
-    if (a->elem_size -len > n) {
+    len = array_length(a);
+    if (a->elem_size - len > n) {
         memmove(a->elems, a->elems + a->elem_bgn, len);
         a->elem_bgn = 0;
         a->elem_end = len;
@@ -52,7 +47,6 @@ static array_t *array_space_extend_tail(env_t *env, val_t *self, int n)
         }
         elems = env_heap_alloc(env, size * sizeof(val_t));
         if (elems) {
-            a = (array_t *)val_2_intptr(self);
             memcpy(elems, a->elems + a->elem_bgn, sizeof(val_t) * len);
             a->elem_size = size;
             a->elem_bgn = 0;
@@ -73,7 +67,7 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
     if (a->elem_bgn > n) {
         return a;
     }
-    len = array_len(a);
+    len = array_length(a);
 
     if (a->elem_size - len > n) {
         n = a->elem_size - a->elem_end;
@@ -99,6 +93,28 @@ static array_t *array_space_extend_head(env_t *env, val_t *self, int n)
             return NULL;
         }
     }
+}
+
+static int array_space_set(array_t *a, env_t *env, int length)
+{
+    if (a) {
+        int n = length - array_length(a);
+        if (n > 0) {
+            if (!(a = array_space_extend_tail(env, a, n))) {
+                int i;
+
+                for (i = 0; i < n; i++) {
+                    a->elems[a->elem_end++] = VAL_UNDEFINED;
+                }
+            }
+        } else
+        if (n < 0){
+            a->elem_end = a->elem_bgn + length;
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 array_t *_array_create(env_t *env, int n)
@@ -137,6 +153,30 @@ intptr_t array_create(env_t *env, int ac, val_t *av)
     return (intptr_t) array;
 }
 
+array_t *array_alloc_u8(env_t *env, int len, uint8_t *data)
+{
+    array_t *array = _array_create(env, len);
+    int i;
+
+    if (array) {
+        val_t *v = array->elems + array->elem_bgn;
+        for (i = 0; i < len; i++) {
+            val_set_number(v + i, data[i]);
+        }
+    }
+    return array;
+}
+
+val_t *array_elem(array_t *a, int i)
+{
+    if (i >= 0 && i < array_length(a)) {
+        return a->elems + (a->elem_bgn + i);
+    } else {
+        return NULL;
+    }
+}
+
+/*
 val_t *array_elem_ref(val_t *self, int i)
 {
     array_t *array = (array_t *) val_2_intptr(self);
@@ -158,17 +198,21 @@ void array_elem_val(val_t *self, int i, val_t *elem)
         val_set_undefined(elem);
     }
 }
+*/
 
-val_t array_push(env_t *env, int ac, val_t *av)
+static val_t native_push(env_t *env, int ac, val_t *av)
 {
-    if (ac > 1 && val_is_array(av)) {
+    array_t *a = array_entry(av);
+
+    if (ac > 1 && a) {
         int n = ac - 1;
-        array_t *a = array_space_extend_tail(env, av, n);
+
+        a = array_space_extend_tail(env, a, n);
 
         if (a) {
             memcpy(a->elems + a->elem_end, av + 1, sizeof(val_t) * n);
             a->elem_end += n;
-            return val_mk_number(array_len(a));
+            return val_mk_number(array_length(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -176,7 +220,7 @@ val_t array_push(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_unshift(env_t *env, int ac, val_t *av)
+static val_t native_unshift(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av)) {
         int n = ac - 1;
@@ -185,7 +229,7 @@ val_t array_unshift(env_t *env, int ac, val_t *av)
         if (a) {
             memcpy(a->elems + a->elem_bgn - n, av + 1, sizeof(val_t) * n);
             a->elem_bgn -= n;
-            return val_mk_number(array_len(a));
+            return val_mk_number(array_length(a));
         }
     } else {
         env_set_error(env, ERR_InvalidInput);
@@ -193,12 +237,12 @@ val_t array_unshift(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_pop(env_t *env, int ac, val_t *av)
+static val_t native_pop(env_t *env, int ac, val_t *av)
 {
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_len(a)) {
+        if (array_length(a)) {
             return a->elems[--a->elem_end];
         }
     } else {
@@ -207,12 +251,12 @@ val_t array_pop(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_shift(env_t *env, int ac, val_t *av)
+static val_t native_shift(env_t *env, int ac, val_t *av)
 {
     if (ac > 0 && val_is_array(av)) {
         array_t *a = (array_t *)val_2_intptr(av);
 
-        if (array_len(a)) {
+        if (array_length(a)) {
             return a->elems[a->elem_bgn++];
         }
     } else {
@@ -221,11 +265,11 @@ val_t array_shift(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_foreach(env_t *env, int ac, val_t *av)
+static val_t native_foreach(env_t *env, int ac, val_t *av)
 {
     if (ac > 1 && val_is_array(av) && val_is_function(av + 1)) {
         array_t *a = (array_t *)val_2_intptr(av);
-        int i, max = array_len(a);
+        int i, max = array_length(a);
 
         for (i = 0; i < max && !env->error; i++) {
             val_t key = val_mk_number(i);
@@ -241,19 +285,181 @@ val_t array_foreach(env_t *env, int ac, val_t *av)
     return val_mk_undefined();
 }
 
-val_t array_length(env_t *env, int ac, val_t *av)
+static inline int is_true(val_t *v) {
+    array_t *a = array_entry(v);
+    return a->elem_end - a->elem_bgn > 0 ? 1 : 0;
+}
+
+static double value_of(val_t *self)
 {
-    int len;
+    array_t *a = array_entry(self);
+    val_t *elem;
 
-    (void) env;
-
-    if (ac > 0 && val_is_array(av)) {
-        array_t *a = (array_t *)val_2_intptr(av);
-        len = array_len(a);
+    if (NULL != (elem = array_get(a, 0))) {
+        if (val_is_number(elem)) {
+            return val_2_double(elem);
+        } else {
+            return const_nan.d;
+        }
     } else {
-        len = 0;
+        return 0;
+    }
+}
+
+static val_t get_prop_length(env_t *env, void *entry)
+{
+    array_t *a = entry;
+    (void) env;
+    return val_mk_number(array_length(a));
+}
+
+static val_t get_prop_push(env_t *env, void *entry)
+{
+    (void) env;
+    (void) entry;
+    return val_mk_native((intptr_t)native_push);
+}
+
+static val_t get_prop_pop(env_t *env, void *entry)
+{
+    (void) env;
+    (void) entry;
+    return val_mk_native((intptr_t)native_pop);
+}
+
+static val_t get_prop_shift(env_t *env, void *entry)
+{
+    (void) env;
+    (void) entry;
+    return val_mk_native((intptr_t)native_shift);
+}
+
+static val_t get_prop_unshift(env_t *env, void *entry)
+{
+    (void) env;
+    (void) entry;
+    return val_mk_native((intptr_t)native_unshift);
+}
+
+static val_t get_prop_foreach(env_t *env, void *entry)
+{
+    (void) env;
+    (void) entry;
+    return val_mk_native((intptr_t)native_foreach);
+}
+
+static const object_prop_t proto[] = {
+    {(intptr_t)"length",   get_prop_length, NULL},
+    {(intptr_t)"push",     get_prop_push, NULL},
+    {(intptr_t)"pop",      get_prop_pop, NULL},
+    {(intptr_t)"shift",    get_prop_shift, NULL},
+    {(intptr_t)"unshift",  get_prop_unshift, NULL},
+    {(intptr_t)"foreach",  get_prop_foreach, NULL},
+};
+
+static val_t get_prop(void *env, val_t *self, const char *name)
+{
+    array_t *a = val_is_array(self) ? (array_t *)val_2_intptr(self) : NULL;
+    intptr_t symbal = (intptr_t)name;
+
+    if (a) {
+        unsigned i;
+
+        for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+            if (proto[i].symbal == symbal) {
+                return proto[i].getter(env, a);
+            }
+        }
     }
 
-    return val_mk_number(len);
+    return VAL_UNDEFINED;
+}
+
+static void set_prop(void *env, val_t *self, const char *name, val_t *data)
+{
+    array_t *a = array_entry(self);
+
+
+    if (a && val_is_number(data)) {
+        if (env_symbal_get(env, name) == proto[0].symbal) {
+            array_space_set(a, env, val_2_integer(data));
+        }
+    }
+}
+
+static val_t get_elem(void *env, val_t *self, int id)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a) {
+        if (id >= 0 && id < array_length(a)) {
+            return a->elems[a->elem_bgn + id];
+        }
+    }
+    return VAL_UNDEFINED;
+}
+
+static void set_elem(void *env, val_t *self, int id, val_t *data)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a) {
+        if (id >= 0 && id < array_length(a)) {
+            a->elems[a->elem_bgn + id] = *data;
+        }
+    }
+}
+
+static void opx_elem(void *env, val_t *self, int id, val_t *res, val_opx_t op)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a && id >= 0 && id < array_length(a)) {
+        op(env, a->elems + a->elem_bgn + id, res);
+    } else {
+        val_set_nan(res);
+    }
+}
+
+static void opxx_elem(void *env, val_t *self, int id, val_t *data, val_t *res, val_opxx_t op)
+{
+    array_t *a = array_entry(self);
+
+    (void) env;
+    if (a && id >= 0 && id < array_length(a)) {
+        val_t *elem = a->elems + a->elem_bgn + id;
+        op(env, elem, data, elem);
+        *res = *elem;
+    } else {
+        val_set_nan(res);
+    }
+}
+
+const val_metadata_t metadata_array = {
+    .name     = "object",
+
+    .is_true  = is_true,
+    .is_equal = val_op_false,
+
+    .value_of = value_of,
+
+    .get_prop = get_prop,
+    .set_prop = set_prop,
+
+    .get_elem = get_elem,
+    .set_elem = set_elem,
+    .opx_elem = opx_elem,
+    .opxx_elem = opxx_elem,
+};
+
+void array_proto_init(env_t *env)
+{
+    unsigned i;
+    for (i = 0; i < sizeof(proto) / sizeof(object_prop_t); i++) {
+        env_symbal_add_static(env, (const char *)proto[i].symbal);
+    }
 }
 

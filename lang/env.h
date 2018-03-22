@@ -1,38 +1,36 @@
-/*
-MIT License
-
-Copyright (c) 2016 Lixing Ding <ding.lixing@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* GPLv2 License
+ *
+ * Copyright (C) 2016-2018 Lixing Ding <ding.lixing@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ **/
 
 
 #ifndef __LANG_ENV_INC__
 #define __LANG_ENV_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "err.h"
 #include "heap.h"
 #include "executable.h"
 #include "scope.h"
+
+#define PANDA_EVENT_GC_START 1
+#define PANDA_EVENT_GC_END   2
 
 struct native_t;
 
@@ -66,7 +64,7 @@ typedef struct env_t {
 
     intptr_t *main_var_map;
 
-    void (*gc_callback)(void);
+    void (*callback)(struct env_t *, int);
 
     executable_t exe;
 } env_t;
@@ -85,15 +83,25 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
 
 int env_deinit(env_t *env);
 int env_reference_set(env_t *env, val_t *ent, int num);
-int env_callback_set(env_t *env, void (*cb)(void));
+int env_callback_set(env_t *env, void (*cb)(env_t *, int));
 int env_native_set(env_t *env, const native_t *ent, int num);
 
-void *env_heap_alloc(env_t *env, int size);
 void env_heap_gc(env_t *env, int level);
 
 scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av);
 int env_scope_get(env_t *env, int id, val_t **v);
 int env_scope_set(env_t *env, int id, val_t *v);
+
+static inline void *env_heap_alloc(env_t *env, int size) {
+    void *ptr = heap_alloc(env->heap, size);
+
+    if (!ptr) {
+        env_heap_gc(env, size);
+        return heap_alloc(env->heap, size);
+    }
+
+    return ptr;
+}
 
 intptr_t env_symbal_insert(env_t *env, const char *symbal, int alloc);
 intptr_t env_symbal_get(env_t *env, const char *name);
@@ -225,6 +233,11 @@ static inline void env_push_native(env_t *env, int id) {
 static inline
 heap_t *env_heap_get_free(env_t *env) {
     return env->heap == &env->heap_top ? &env->heap_bot : &env->heap_top;
+}
+
+static inline
+int env_is_heap_memory(env_t *env, void *p) {
+    return heap_is_owned(env->heap, p);
 }
 
 static inline

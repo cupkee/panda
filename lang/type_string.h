@@ -1,31 +1,26 @@
-/*
-MIT License
-
-Copyright (c) 2016 Lixing Ding <ding.lixing@gmail.com>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
+/* GPLv2 License
+ *
+ * Copyright (C) 2016-2018 Lixing Ding <ding.lixing@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ **/
 
 #ifndef __LANG_STRING_INC__
 #define __LANG_STRING_INC__
 
-#include "config.h"
+#include "def.h"
 
 #include "val.h"
 #include "env.h"
@@ -36,6 +31,7 @@ SOFTWARE.
 typedef struct string_t {
     uint8_t magic;
     uint8_t age;
+
     uint16_t size;
     char    str[0];
 } string_t;
@@ -65,16 +61,18 @@ static inline int string_len(val_t *v) {
     }
 }
 
-val_t string_create_heap_val(env_t *env, int size);
-val_t string_create_heap(env_t *env, const char *cstr);
+val_t string_create_heap_val(env_t *env, const char *data);
 
 int string_compare(val_t *a, val_t *b);
 
 void string_add(env_t *env, val_t *a, val_t *b, val_t *res);
 void string_at(env_t *env, val_t *a, val_t *b, val_t *res);
 void string_elem_get(val_t *self, int i, val_t *elem);
-val_t string_length(env_t *env, int ac, val_t *av);
-val_t string_index_of(env_t *env, int ac, val_t *av);
+
+void string_proto_init(env_t *env);
+extern const val_metadata_t metadata_str_inline;
+extern const val_metadata_t metadata_str_heap;
+extern const val_metadata_t metadata_str_foreign;
 
 #endif /* __LANG_STRING_INC__ */
 

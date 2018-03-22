@@ -17,25 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  **/
 
-#ifndef __LANG_ERR_INC__
-#define __LANG_ERR_INC__
+#ifndef __LANG_TYPE_BOOLEAN_INC__
+#define __LANG_TYPE_BOOLEAN_INC__
 
-#define ERR_InvalidToken        1
-#define ERR_InvalidSyntax       2
-#define ERR_InvalidLeftValue    3
-#define ERR_InvalidSementic     4
+#include "def.h"
 
-#define ERR_NotEnoughMemory     5
-#define ERR_NotImplemented      6
-#define ERR_StackOverflow       7
-#define ERR_ResourceOutLimit    8
+#include "val.h"
+#include "env.h"
 
-#define ERR_InvalidByteCode     9
-#define ERR_InvalidInput        10
-#define ERR_InvalidCallor       11
-#define ERR_NotDefinedId        12
+extern const val_metadata_t metadata_boolean;
 
-#define ERR_SysError            255
-
-#endif /* __LANG_ERR_INC__ */
-
+#endif /* __LANG_TYPE_BOOLEAN_INC__ */
