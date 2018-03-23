@@ -23,6 +23,9 @@
 #include "cunit/CUnit.h"
 #include "cunit/CUnit_Basic.h"
 
+#include "lang/env.h"
+#include "lang/val.h"
+#include "lang/gc.h"
 #include "lang/interp.h"
 
 
@@ -952,10 +955,17 @@ static void test_exec_gc(void)
 }
 
 static val_t ref[4];
-static int gc_count = 0;
-static void gc_callback()
+static int gc_enter_count = 0;
+static int gc_leave_count = 0;
+static void gc_callback(env_t *env, int event)
 {
-    gc_count++;
+    if (event == PANDA_EVENT_GC_START) {
+        ++gc_enter_count;
+        gc_types_copy(env, 4, ref);
+    } else
+    if (event == PANDA_EVENT_GC_END) {
+        ++gc_leave_count;
+    }
 }
 
 static val_t test_native_ref_check(env_t *env, int ac, val_t *av)
@@ -986,7 +996,6 @@ static void test_exec_gc_reference(void)
 
     CU_ASSERT_FATAL(0 == interp_env_init_interactive(&env, env_buf, ENV_BUF_SIZE, NULL, HEAP_SIZE, NULL, STACK_SIZE));
     CU_ASSERT(0 == env_native_set(&env, native_entry, 1));
-    CU_ASSERT(0 == env_reference_set(&env, ref, 4));
     CU_ASSERT(0 == env_callback_set(&env, gc_callback));
 
     CU_ASSERT(0 < interp_execute_string(&env, "var n = 0, a = [], o = {}, s;", &res));
@@ -1000,9 +1009,10 @@ static void test_exec_gc_reference(void)
     ref[3] = *res;
 
     // trigger gc
-    gc_count = 0;
+    gc_enter_count = 0;
+    gc_leave_count = 0;
     CU_ASSERT(0 < interp_execute_string(&env, "while(n < 1000) {'aaaaaa' + 'bbbbbb'; n += 1}", &res));
-    CU_ASSERT(0 < gc_count);
+    CU_ASSERT(0 < gc_enter_count && gc_enter_count == gc_leave_count);
 
     CU_ASSERT(0 < interp_execute_string(&env, "n == 1000", &res) && val_is_true(res));
     CU_ASSERT(0 < interp_execute_string(&env, "ref_check() == true", &res) && val_is_true(res));

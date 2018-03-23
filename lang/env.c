@@ -64,11 +64,6 @@ static heap_t *env_heap_gc_init(env_t *env)
 
     env->scope = gc_scope_copy(env, env->scope);
 
-    if (env->ref_num && env->ref_ent) {
-        //"Todo: should move to callback"
-        gc_types_copy(env, env->ref_num, env->ref_ent);
-    }
-
     fp = env->fp, sp = env->sp, ss = env->ss;
     sb = env->sb;
     while (1) {
@@ -237,17 +232,6 @@ int env_native_set(env_t *env, const native_t *ent, int num)
     env->native_num = num;
     env->native_ent = ent;
     return 0;
-}
-
-int env_reference_set(env_t *env, val_t *ref, int num)
-{
-    if (env->ref_ent == NULL) {
-        env->ref_ent = ref;
-        env->ref_num = num;
-        return 0;
-    }
-
-    return -1;
 }
 
 scope_t *env_scope_create(env_t *env, scope_t *super, uint8_t *entry, int ac, val_t *av)
@@ -501,10 +485,6 @@ int env_init(env_t *env, void *mem_ptr, int mem_size,
     // native init
     env->native_num = 0;
     env->native_ent = NULL;
-
-    // reference init
-    env->ref_num = 0;
-    env->ref_ent = NULL;
 
     // static memory init
     exe_size = executable_init(&env->exe, mem_ptr + mem_offset, mem_size - mem_offset,

@@ -49,7 +49,6 @@ typedef struct env_t {
     heap_t heap_top;
     heap_t heap_bot;
 
-    uint16_t ref_num;                   // External reference number
     uint16_t native_num;                // Native function number
 
     uint16_t symbal_tbl_size;           // Symbal hash table size
@@ -59,7 +58,6 @@ typedef struct env_t {
 
     intptr_t *symbal_tbl;
     char     *symbal_buf;
-    val_t    *ref_ent;                  // External reference entry
     const struct native_t *native_ent;  // Native function entry
 
     intptr_t *main_var_map;
@@ -82,7 +80,6 @@ int env_init(env_t *env, void * mem_ptr, int mem_size,
              int interactive);
 
 int env_deinit(env_t *env);
-int env_reference_set(env_t *env, val_t *ent, int num);
 int env_callback_set(env_t *env, void (*cb)(env_t *, int));
 int env_native_set(env_t *env, const native_t *ent, int num);
 
