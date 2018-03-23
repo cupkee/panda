@@ -25,6 +25,7 @@
 #include "../lang/val.h"
 #include "../lang/env.h"
 #include "../lang/types.h"
+#include "../lang/gc.h"
 #include "../lang/compile.h"
 #include "../lang/interp.h"
 #include "../lang/executable.h"
