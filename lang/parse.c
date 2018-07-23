@@ -634,13 +634,9 @@ static expr_t *parse_expr_form_array(parser_t *psr)
         return NULL;
     }
 
-    if (!parse_match(psr, ',')) {
-        expr = parse_expr_form_binary(psr, EXPR_ARRAY, NULL, expr);
-    } else {
+    expr = parse_expr_form_binary(psr, EXPR_ARRAY, NULL, expr);
+    while (expr && parse_match(psr, ',')) {
         expr = parse_expr_form_binary(psr, EXPR_ARRAY, expr, parse_expr_assign(psr));
-        while (expr && parse_match(psr, ',')) {
-            expr = parse_expr_form_binary(psr, EXPR_ARRAY, expr, parse_expr_assign(psr));
-        }
     }
 
     if (expr && !parse_match(psr, ']')) {
