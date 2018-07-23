@@ -635,7 +635,7 @@ static expr_t *parse_expr_form_array(parser_t *psr)
     }
 
     if (!parse_match(psr, ',')) {
-        expr = parse_expr_form_unary(psr, EXPR_ARRAY, expr);
+        expr = parse_expr_form_binary(psr, EXPR_ARRAY, NULL, expr);
     } else {
         expr = parse_expr_form_binary(psr, EXPR_ARRAY, expr, parse_expr_assign(psr));
         while (expr && parse_match(psr, ',')) {
