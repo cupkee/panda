@@ -36,6 +36,23 @@ typedef struct array_t {
     val_t *elems;
 } array_t;
 
+typedef struct array_iterator_t {
+    array_t *ref;
+    intptr_t cur;
+} array_iterator_t;
+
+static inline array_iterator_t *array_iterator_init(val_t *v, array_iterator_t *iter) {
+    array_t *ref = val_is_array(v) ? (array_t *)val_2_intptr(v) : NULL;
+
+    if (!ref || !iter) {
+        return NULL;
+    } else {
+        iter->ref = ref;
+        iter->cur = ref->elem_bgn;
+        return iter;
+    }
+}
+
 static inline array_t *array_entry(val_t *v) {
     return val_is_array(v) ? (array_t *)val_2_intptr(v) : NULL;
 }
