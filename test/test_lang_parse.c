@@ -55,7 +55,7 @@ static void test_expr_factor(void)
     parse_init(&psr, " [a, b] \n", NULL, heap_buf, PSR_BUF_SIZE);
     CU_ASSERT_FATAL(0 != (expr = parse_expr(&psr)));
     CU_ASSERT(ast_expr_type(expr) == EXPR_ARRAY);
-    CU_ASSERT(L_(expr) && ast_expr_type(L_((expr))) == EXPR_ID && !strcmp("a", TEXT(L_(expr))));
+    CU_ASSERT(L_(expr) && ast_expr_type(R_(L_((expr)))) == EXPR_ID && !strcmp("a", TEXT(R_(L_(expr)))));
     CU_ASSERT(R_(expr) && ast_expr_type(R_((expr))) == EXPR_ID && !strcmp("b", TEXT(R_(expr))));
 
     parse_init(&psr, " true false \n", NULL, heap_buf, PSR_BUF_SIZE);
@@ -703,15 +703,15 @@ static void test_expr_array(void)
     elem[2] = R_(L_(expr));
     CU_ASSERT_FATAL(L_(L_(expr)) && ast_expr_type(L_(L_(expr))) == EXPR_ARRAY);
     elem[1] = R_(L_(L_(expr)));
-    elem[0] = L_(L_(L_(expr)));
+    elem[0] = R_(L_(L_(L_(expr))));
 
     CU_ASSERT(ast_expr_type(elem[0]) == EXPR_ID);
     CU_ASSERT(ast_expr_type(elem[1]) == EXPR_STRING);
     CU_ASSERT(ast_expr_type(elem[2]) == EXPR_ARRAY);
     CU_ASSERT(ast_expr_type(elem[3]) == EXPR_DICT);
 
-    CU_ASSERT(ast_expr_type(L_(elem[2])) == EXPR_NUM);
-    CU_ASSERT(R_(elem[2]) == NULL);
+    CU_ASSERT(ast_expr_type(R_(elem[2])) == EXPR_NUM);
+    CU_ASSERT(L_(elem[2]) == NULL);
 }
 
 static void test_expr_dict(void)
